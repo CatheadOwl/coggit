@@ -1,0 +1,73 @@
+export type {
+	ObservedStatus,
+	SourceFactKind,
+	EvidenceDiagnostic,
+	StatusAction,
+	StatusIssue,
+	CognitionCoveragePresence,
+	CoverageSignals,
+	MaintenanceRecommendation,
+	StaleAction,
+	NodeStatusResult,
+	LocatedStatusIssue,
+	SubtreeIssueQueryResult,
+	ReasonKind,
+	Reason,
+	SourceFactIdentity,
+	TextMetrics,
+	SourceChangeMetrics,
+	StaleDegreeResult,
+	Evidence,
+	StatusResult,
+	NodeStatusInspection,
+	SourceFileInfo,
+	CognitionFileInfo,
+	LinkCheckResult,
+	StatusContext,
+} from './statusTypes';
+
+export type {
+	SnapshotOperationScope,
+	CoggitProjectContext,
+	CoggitOperationAction,
+} from './operationTypes';
+
+export type {
+	CognitionDocumentKind,
+	CognitionFrontmatterMetadata,
+	CognitionFrontmatter,
+	CognitionHeading,
+	CognitionDocumentMetrics,
+	CognitionDocumentDiagnostic,
+	CognitionDocumentFacts,
+	CognitionMetadataQuality,
+	CognitionContextStaleRisk,
+	CognitionRoutes,
+	CognitionRoutesEntry,
+	CognitionContextIdentity,
+	CognitionContextDocumentSummary,
+	CognitionContextQuality,
+	CognitionContextStatus,
+	RoutesProjectionNode,
+} from './cognitionTypes';
+
+export type {
+	AcceptedPair,
+	PathKeyRecord,
+	RegistryFile,
+	RegistryProvider,
+} from './registryTypes';
+
+export type {
+	MisplacedCognitionEntry,
+	OrphanedCognitionEntry,
+	StrayCognitionEntry,
+	CoggitNodeKind,
+	MappingIndex,
+	AffectedResult,
+	CoggitWorkspaceRoot,
+	CoggitTreeNode,
+	CoggitSnapshot,
+	TreeProjectionNode,
+	CoggitConfig,
+} from './snapshotTypes';

@@ -1,0 +1,637 @@
+import type { AddCognitionKind, CognitionKind } from './cognition';
+import type { CoggitProject } from './interfaces';
+import type {
+  CoggitSnapshot,
+  CoggitTreeNode,
+  CoggitNodeKind,
+  CoggitOperationAction,
+  CoggitProjectContext,
+  LocatedStatusIssue,
+  NodeStatusInspection,
+  ObservedStatus,
+  SnapshotOperationScope,
+  StaleAction,
+  StatusIssue,
+  CognitionRoutes,
+  CognitionRoutesEntry,
+  CognitionDocumentDiagnostic,
+} from './types';
+import { buildSnapshotFromProjects } from './project';
+import { inspectNodeStatus, querySubtreeIssues } from './status';
+import { toRelativeUriPath } from './mapping';
+import { projectContext as projectContextFromProject } from './projectContext';
+
+export type {
+  CoggitOperationAction,
+  CoggitProjectContext,
+  SnapshotOperationScope,
+} from './types';
+
+export interface CoggitHandbookCatalogEntry {
+  id: 'all' | CognitionKind;
+  nodeKind: CoggitNodeKind | null;
+  title: string;
+  kind: 'all' | CognitionKind;
+}
+
+export interface CoggitOperationIssue {
+  relativePath: string;
+  severity: 'info' | 'warning' | 'error';
+  code: StatusIssue['diagnostic']['code'] | 'path-not-found' | 'add-failed' | 'invalid-kind';
+  message: string;
+  actions: CoggitOperationAction[];
+}
+
+export interface SnapshotOperationResult {
+  scope: SnapshotOperationScope;
+  projectCount: number;
+  trackedCount: number;
+  untrackedCount: number;
+  issueCount: number;
+  nextScopes: SnapshotOperationScope[];
+  maxDepth: number | null;
+  truncated: boolean;
+  omittedChildrenCount: number;
+  suggestedActions: CoggitOperationAction[];
+  projects: CoggitProjectContext[];
+  sourcePath: string | null;
+  found: boolean;
+  snapshot: CoggitSnapshot | null;
+  node: CoggitTreeNode | null;
+}
+
+export interface StatusOperationResult {
+  found: boolean;
+  sourcePath: string;
+  nodeKind: CoggitNodeKind | null;
+  project: CoggitProjectContext | null;
+  cognitionPath: string | null;
+  status: ObservedStatus | null;
+  ownStatus: ObservedStatus | null;
+  descendantStatus: ObservedStatus | null;
+  staleAction: StaleAction | null;
+  issueCount: number;
+  ownIssueCount: number;
+  descendantIssueCount: number;
+  issues: CoggitOperationIssue[];
+  suggestedActions: CoggitOperationAction[];
+  handbookId: 'leaf' | 'skeleton' | null;
+  verify: { tool: 'coggit_status'; sourcePath: string } | null;
+  node: CoggitTreeNode | null;
+  /** Canonical status inspection when the node was found.
+   *  undefined when found is false. */
+  inspection?: NodeStatusInspection | undefined;
+}
+
+export const ADD_OPERATION_ERROR_CODES = [
+  'no-projects',
+  'path-not-found',
+  'invalid-kind',
+  'mapping-conflict',
+  'filesystem-failure',
+  'unknown',
+] as const;
+
+export type AddOperationErrorCode = typeof ADD_OPERATION_ERROR_CODES[number];
+
+export interface AddOperationError {
+  code: AddOperationErrorCode;
+  message: string;
+}
+
+export interface AddOperationResult {
+  success: boolean;
+  created: boolean | null;
+  kind: CognitionKind | null;
+  sourcePath: string;
+  cognitionPath: string | null;
+  project: CoggitProjectContext | null;
+  handbookId: 'leaf' | 'skeleton' | null;
+  verify: { tool: 'coggit_status'; sourcePath: string };
+  error: AddOperationError | null;
+}
+
+export const REVIEW_UNCHANGED_ERROR_CODES = [
+  'no-projects',
+  'path-not-found',
+  'registry-unavailable',
+  'registry-changed',
+  'content-changed',
+  'unknown',
+] as const;
+
+export type ReviewUnchangedErrorCode = typeof REVIEW_UNCHANGED_ERROR_CODES[number];
+
+export interface ReviewUnchangedOperationError {
+  code: ReviewUnchangedErrorCode;
+  message: string;
+}
+
+export interface ReviewUnchangedOperationResult {
+  success: boolean;
+  sourcePath: string;
+  cognitionPath: string | null;
+  project: CoggitProjectContext | null;
+  sourceKey: string | null;
+  verificationTimeMs: number | null;
+  verify: { tool: 'coggit_status'; sourcePath: string };
+  error: ReviewUnchangedOperationError | null;
+}
+
+export interface RoutesOperationResult {
+  project: CoggitProjectContext;
+  generatedAt: number;
+  entryCount: number;
+  entries: CognitionRoutesEntry[];
+  diagnostics: CognitionDocumentDiagnostic[];
+  routes: CognitionRoutes;
+}
+
+export function projectContext(project: CoggitProject): CoggitProjectContext {
+  return projectContextFromProject(project);
+}
+
+export function handbookCatalog(): CoggitHandbookCatalogEntry[] {
+  return [
+    { id: 'all', nodeKind: null, title: 'Complete CogGit cognition authoring handbook', kind: 'all' },
+    { id: 'leaf', nodeKind: 'file', title: 'CogGit leaf cognition handbook', kind: 'leaf' },
+    { id: 'skeleton', nodeKind: 'folder', title: 'CogGit skeleton cognition handbook', kind: 'skeleton' },
+  ];
+}
+
+export function handbookIdForNodeKind(kind: CoggitNodeKind): 'leaf' | 'skeleton' {
+  return kind === 'file' ? 'leaf' : 'skeleton';
+}
+
+export function handbookIdForCognitionKind(kind: CognitionKind): 'leaf' | 'skeleton' {
+  return kind;
+}
+
+export async function findProjectNode(
+  projects: readonly CoggitProject[],
+  sourcePath: string,
+): Promise<{ project: CoggitProject; node: CoggitTreeNode } | undefined> {
+  for (const project of projects) {
+    const node = await project.getNode(sourcePath);
+    if (node) {
+      return { project, node };
+    }
+  }
+
+  return undefined;
+}
+
+export async function snapshotOperation(
+  projects: readonly CoggitProject[],
+  options: { sourcePath?: string; scope?: SnapshotOperationScope; maxDepth?: number } = {},
+): Promise<SnapshotOperationResult> {
+  const scope = options.scope ?? 'tracked';
+  const maxDepth = normalizeMaxDepth(options.maxDepth);
+  const projectsContext = projects.map(projectContext);
+  const sourcePath = options.sourcePath ?? null;
+
+  if (sourcePath) {
+    const match = await findProjectNode(projects, sourcePath);
+    const node = match?.node ?? null;
+    const counts = snapshotCounts(node ? flattenNode(node) : []);
+    const omittedChildrenCount = node ? countOmittedChildren([node], maxDepth) : 0;
+    return {
+      ...counts,
+      scope,
+      projectCount: projects.length,
+      maxDepth,
+      truncated: omittedChildrenCount > 0,
+      omittedChildrenCount,
+      suggestedActions: suggestedActionsForSnapshot(counts, {
+        sourcePath,
+        foundSourcePath: node?.relativePath ?? null,
+        maxDepth,
+        projectCount: projects.length,
+      }),
+      projects: match ? [projectContext(match.project)] : projectsContext,
+      sourcePath,
+      found: match !== undefined,
+      snapshot: null,
+      node,
+    };
+  }
+
+  const snapshot = await buildSnapshotFromProjects(projects);
+  const counts = snapshotCounts(snapshot.allNodes);
+  const omittedChildrenCount = countOmittedChildren(snapshot.roots, maxDepth);
+  return {
+    ...counts,
+    scope,
+    projectCount: projects.length,
+    maxDepth,
+    truncated: omittedChildrenCount > 0,
+    omittedChildrenCount,
+    suggestedActions: suggestedActionsForSnapshot(counts, {
+      sourcePath: null,
+      foundSourcePath: projects.length === 1 ? '.' : null,
+      maxDepth,
+      projectCount: projects.length,
+    }),
+    projects: projectsContext,
+    sourcePath,
+    found: true,
+    snapshot,
+    node: null,
+  };
+}
+
+export async function statusOperation(
+  projects: readonly CoggitProject[],
+  sourcePath: string,
+): Promise<StatusOperationResult> {
+  const match = await findProjectNode(projects, sourcePath);
+  if (!match) {
+    return {
+      found: false,
+      sourcePath,
+      nodeKind: null,
+      project: null,
+      cognitionPath: null,
+      status: null,
+      ownStatus: null,
+      descendantStatus: null,
+      staleAction: null,
+      issueCount: 1,
+      ownIssueCount: 0,
+      descendantIssueCount: 0,
+      issues: [{
+        relativePath: sourcePath,
+        severity: 'error',
+        code: 'path-not-found',
+        message: 'Path not found in any CogGit project.',
+        actions: [],
+      }],
+      suggestedActions: [],
+      handbookId: null,
+      verify: { tool: 'coggit_status', sourcePath },
+      node: null,
+    };
+  }
+
+  const cognitionPath = cognitionRelativePath(match.node);
+  const handbookId = handbookIdForNodeKind(match.node.kind);
+  const inspection = inspectNodeStatus({
+    node: match.node,
+    sourcePath: match.node.relativePath,
+    cognitionPath,
+    handbookId,
+  });
+  const issues = [
+    ...inspection.subtreeIssues.own,
+    ...inspection.subtreeIssues.descendant,
+  ].map(operationIssue);
+
+  return {
+    found: true,
+    sourcePath: match.node.relativePath,
+    nodeKind: match.node.kind,
+    project: projectContext(match.project),
+    cognitionPath,
+    status: inspection.status,
+    ownStatus: inspection.ownStatus,
+    descendantStatus: inspection.descendantStatus,
+    staleAction: match.node.status?.staleAction ?? null,
+    issueCount: inspection.issueSummary.total,
+    ownIssueCount: inspection.issueSummary.own,
+    descendantIssueCount: inspection.issueSummary.descendant,
+    issues,
+    suggestedActions: inspection.suggestedActions,
+    handbookId,
+    verify: inspection.verify,
+    node: match.node,
+    inspection,
+  };
+}
+
+export async function addOperation(
+  projects: readonly CoggitProject[],
+  sourcePath: string,
+  options: { kind?: AddCognitionKind; overwrite?: boolean } = {},
+): Promise<AddOperationResult> {
+  const verify = { tool: 'coggit_status' as const, sourcePath };
+  if (projects.length === 0) {
+    return addFailure(sourcePath, null, verify, 'no-projects', 'No CogGit project found.');
+  }
+
+  const match = await findProjectNode(projects, sourcePath);
+  if (!match) {
+    return addFailure(sourcePath, null, verify, 'path-not-found', 'Path not found in any CogGit project.');
+  }
+
+  try {
+    const result = await match.project.addCognition(match.node.relativePath, {
+      kind: options.kind ?? 'auto',
+      overwrite: options.overwrite ?? false,
+    });
+    const sourcePath = match.node.relativePath;
+    const cognitionPath = toRelativeUriPath(match.project.root.cognitionRootUri, result.cognitionUri);
+    const verifyResult = { tool: 'coggit_status' as const, sourcePath };
+    return {
+      success: true,
+      created: result.created,
+      kind: result.kind,
+      sourcePath,
+      cognitionPath,
+      project: projectContext(match.project),
+      handbookId: handbookIdForCognitionKind(result.kind),
+      verify: verifyResult,
+      error: null,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = classifyAddError(message);
+    return addFailure(match.node.relativePath, projectContext(match.project), {
+      tool: 'coggit_status',
+      sourcePath: match.node.relativePath,
+    }, code, message);
+  }
+}
+
+export async function reviewUnchangedOperation(
+  projects: readonly CoggitProject[],
+  sourcePath: string,
+): Promise<ReviewUnchangedOperationResult> {
+  const verify = { tool: 'coggit_status' as const, sourcePath };
+  if (projects.length === 0) {
+    return reviewUnchangedFailure(sourcePath, null, null, verify, 'no-projects', 'No CogGit project found.');
+  }
+
+  let sawPathNotFound = false;
+  for (const candidate of projects) {
+    try {
+      // Do not call getNode before the acceptance operation: building a
+      // snapshot can bootstrap an unaccepted cognition pair, which would
+      // leave a partial acceptance if the final reread then fails.
+      const result = await candidate.markReviewedUnchanged(sourcePath);
+      const node = await candidate.getNode(sourcePath);
+      const matchedSourcePath = node?.relativePath ?? sourcePath;
+      const matchedVerify = { tool: 'coggit_status' as const, sourcePath: matchedSourcePath };
+      return {
+        success: true,
+        sourcePath: matchedSourcePath,
+        cognitionPath: node ? cognitionRelativePath(node) : null,
+        project: projectContext(candidate),
+        sourceKey: result.sourceKey,
+        verificationTimeMs: result.verificationTimeMs ?? null,
+        verify: matchedVerify,
+        error: null,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('Path not found')) {
+        sawPathNotFound = true;
+        continue;
+      }
+      const code = message.includes('Registry not available')
+        ? 'registry-unavailable'
+        : message.includes('Registry changed during reviewed-unchanged')
+          ? 'registry-changed'
+          : message.includes('changed during reviewed-unchanged')
+            ? 'content-changed'
+            : 'unknown';
+      return reviewUnchangedFailure(
+        sourcePath,
+        null,
+        projectContext(candidate),
+        verify,
+        code,
+        message,
+      );
+    }
+  }
+
+  return reviewUnchangedFailure(
+    sourcePath,
+    null,
+    null,
+    verify,
+    sawPathNotFound ? 'path-not-found' : 'unknown',
+    'Path not found in any CogGit project.',
+  );
+}
+
+export async function routesOperation(
+  project: CoggitProject,
+  options: Parameters<CoggitProject['buildCognitionRoutes']>[0] = {},
+): Promise<RoutesOperationResult> {
+  const routes = await project.buildCognitionRoutes(options);
+  return {
+    project: routes.project,
+    generatedAt: routes.generatedAt,
+    entryCount: routes.entries.length,
+    entries: routes.entries,
+    diagnostics: routes.diagnostics,
+    routes,
+  };
+}
+
+function flattenNode(node: CoggitTreeNode): CoggitTreeNode[] {
+  return [
+    node,
+    ...(node.children ?? []).flatMap(flattenNode),
+  ];
+}
+
+function snapshotCounts(nodes: readonly CoggitTreeNode[]): Pick<
+  SnapshotOperationResult,
+  'trackedCount' | 'untrackedCount' | 'issueCount' | 'nextScopes'
+> {
+  let trackedCount = 0;
+  let untrackedCount = 0;
+  let issueCount = 0;
+
+  for (const node of nodes) {
+    if (node.ownStatus?.coverage?.ownCognition === 'present') {
+      trackedCount++;
+    }
+    if (
+      node.ownStatus?.coverage?.ownCognition === 'missing'
+      && node.ownStatus.coverage.isMaterializable
+    ) {
+      untrackedCount++;
+    }
+    issueCount += querySubtreeIssues(node).ownIssues.length;
+  }
+
+  const nextScopes: SnapshotOperationScope[] = [];
+  if (untrackedCount > 0) {
+    nextScopes.push('untracked');
+  }
+  if (issueCount > 0) {
+    nextScopes.push('issues');
+  }
+  if (trackedCount === 0 && nodes.length > 0) {
+    nextScopes.push('all');
+  }
+
+  return { trackedCount, untrackedCount, issueCount, nextScopes };
+}
+
+function normalizeMaxDepth(maxDepth: number | undefined): number | null {
+  return maxDepth !== undefined && Number.isInteger(maxDepth) && maxDepth >= 0
+    ? maxDepth
+    : null;
+}
+
+function countOmittedChildren(nodes: readonly CoggitTreeNode[], maxDepth: number | null): number {
+  if (maxDepth === null) {
+    return 0;
+  }
+
+  return nodes.reduce((total, node) => total + countNodeOmittedChildren(node, 0, maxDepth), 0);
+}
+
+function countNodeOmittedChildren(node: CoggitTreeNode, depth: number, maxDepth: number): number {
+  const children = node.children ?? [];
+  if (depth >= maxDepth) {
+    return children.length;
+  }
+
+  return children.reduce(
+    (total, child) => total + countNodeOmittedChildren(child, depth + 1, maxDepth),
+    0,
+  );
+}
+
+function suggestedActionsForSnapshot(
+  counts: Pick<SnapshotOperationResult, 'untrackedCount' | 'issueCount'>,
+  context: {
+    sourcePath: string | null;
+    foundSourcePath: string | null;
+    maxDepth: number | null;
+    projectCount: number;
+  },
+): CoggitOperationAction[] {
+  const actions: CoggitOperationAction[] = [];
+  const snapshotActionBase = {
+    tool: 'coggit_snapshot' as const,
+    sourcePath: context.sourcePath ?? undefined,
+    maxDepth: context.maxDepth ?? undefined,
+  };
+
+  if (counts.untrackedCount > 0) {
+    actions.push({
+      code: 'inspect-untracked',
+      label: 'Inspect source paths missing paired cognition.',
+      ...snapshotActionBase,
+      scope: 'untracked',
+    });
+  }
+
+  if (counts.issueCount > 0) {
+    actions.push({
+      code: 'inspect-issues',
+      label: 'Inspect cognition maintenance issues.',
+      ...snapshotActionBase,
+      scope: 'issues',
+    });
+  }
+
+  if (context.foundSourcePath && (context.sourcePath !== null || context.projectCount === 1)) {
+    actions.push({
+      code: 'diagnose-source-path',
+      label: 'Diagnose this source path before explaining or editing it.',
+      tool: 'coggit_status',
+      sourcePath: context.foundSourcePath,
+    });
+  }
+
+  return uniqueActions(actions);
+}
+
+export function operationIssue(located: LocatedStatusIssue): CoggitOperationIssue {
+  return {
+    relativePath: located.relativePath,
+    severity: located.issue.diagnostic.severity,
+    code: located.issue.diagnostic.code,
+    message: located.issue.diagnostic.message,
+    actions: located.issue.actions.map((action) => ({
+      code: action.label.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-+|-+$/gu, '') || 'inspect',
+      label: action.label,
+      sourcePath: located.relativePath,
+    })),
+  };
+}
+
+function uniqueActions(actions: readonly CoggitOperationAction[]): CoggitOperationAction[] {
+  const seen = new Set<string>();
+  return actions.filter((action) => {
+    const key = `${action.code}:${action.tool ?? ''}:${action.sourcePath ?? ''}:${action.scope ?? ''}:${action.maxDepth ?? ''}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function cognitionRelativePath(node: CoggitTreeNode): string | null {
+  return node.cognitionUri
+    ? toRelativeUriPath(node.root.cognitionRootUri, node.cognitionUri)
+    : null;
+}
+
+function addFailure(
+  sourcePath: string,
+  project: CoggitProjectContext | null,
+  verify: { tool: 'coggit_status'; sourcePath: string },
+  code: AddOperationErrorCode,
+  message: string,
+): AddOperationResult {
+  return {
+    success: false,
+    created: null,
+    kind: null,
+    sourcePath,
+    cognitionPath: null,
+    project,
+    handbookId: null,
+    verify,
+    error: { code, message },
+  };
+}
+
+function reviewUnchangedFailure(
+  sourcePath: string,
+  cognitionPath: string | null,
+  project: CoggitProjectContext | null,
+  verify: { tool: 'coggit_status'; sourcePath: string },
+  code: ReviewUnchangedErrorCode,
+  message: string,
+): ReviewUnchangedOperationResult {
+  return {
+    success: false,
+    sourcePath,
+    cognitionPath,
+    project,
+    sourceKey: null,
+    verificationTimeMs: null,
+    verify,
+    error: { code, message },
+  };
+}
+
+function classifyAddError(message: string): AddOperationErrorCode {
+  if (message.includes('Cannot create leaf') || message.includes('Cannot create skeleton')) {
+    return 'invalid-kind';
+  }
+  if (message.includes('outside project root')) {
+    return 'mapping-conflict';
+  }
+  if (message.includes('not found')) {
+    return 'path-not-found';
+  }
+  if (
+    message.includes('EACCES')
+    || message.includes('EPERM')
+    || message.includes('ENOENT')
+  ) {
+    return 'filesystem-failure';
+  }
+  return 'unknown';
+}
