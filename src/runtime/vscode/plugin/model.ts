@@ -6,11 +6,11 @@ import {
 	aggregateNodeStatus,
 	buildMappingIndex,
 	buildSnapshotFromProjects,
-	calculateAffected,
 	discoverCoggitProjects,
 	createCoggitServices,
 	applyWatchEventToProjects,
 	debugLog,
+	planWatchRefresh,
 	RuntimeAcceptanceEvidence,
 	selectWatchRefreshMode,
 	summarizeRepresentativeMtime,
@@ -25,7 +25,7 @@ import { VscodeFileSystem } from '../adapter/fs';
 import { VscodeConfigProvider } from '../adapter/config';
 import { VscodeRegistryProvider } from '../adapter/registryFs';
 import { NodeProjectLockManager } from '../../node/locks';
-import { fromComponents, isEqualOrChildUri, toComponents, uriKey } from '../adapter/uri';
+import { fromComponents, toComponents, uriKey } from '../adapter/uri';
 import type { MisplacedTreeEntry } from '../tree/misplacedTreeTypes';
 import { handleSourceRenameFiles } from './sourceRename';
 import {
@@ -308,19 +308,25 @@ export class CoggitModel implements vscode.Disposable {
 		const refreshGeneration = ++this.refreshGeneration;
 		const changedUris = Array.from(this.pendingChanges.values());
 		this.pendingChanges.clear();
-		const changedPaths = changedUris.map((uri) => uriKey(uri));
+		const route = planWatchRefresh(this.snapshot, changedUris.map((uri) => toComponents(uri)));
+		debugLog(this.logger, 'watch.pipeline', 'Planned watcher refresh', {
+			mode: route.mode,
+			reason: route.reason,
+			changedPathCount: route.changedPaths.length,
+			affectedPairCount: route.affected.pairs.length,
+			affectedStats: route.affected.stats,
+		});
 
-		const mappingIndex = buildMappingIndex(this.snapshot.allNodes);
-		const affected = calculateAffected(changedPaths, mappingIndex);
-
-		if (affected.pairs.length === 0) {
-			if (this.hasChangesUnderKnownRoots(changedUris)) {
-				await this.refresh();
-			}
+		if (route.mode === 'none') {
 			return;
 		}
 
-		for (const pair of affected.pairs) {
+		if (route.mode === 'full') {
+			await this.refresh();
+			return;
+		}
+
+		for (const pair of route.affected.pairs) {
 			if (refreshGeneration !== this.refreshGeneration) {
 				return;
 			}
@@ -371,13 +377,6 @@ export class CoggitModel implements vscode.Disposable {
 		await Promise.all(this.projects.map((project) => project.flush()));
 
 		this.onDidChangeEmitter.fire();
-	}
-
-	private hasChangesUnderKnownRoots(changedUris: vscode.Uri[]): boolean {
-		return changedUris.some((uri) => this.snapshot.roots.some((rootNode) =>
-			isEqualOrChildUri(fromComponents(rootNode.root.sourceRootUri), uri) ||
-			isEqualOrChildUri(fromComponents(rootNode.root.cognitionRootUri), uri),
-		));
 	}
 
 	/**

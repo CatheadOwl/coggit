@@ -15,10 +15,13 @@ export {
 export { calculateAffected } from './affected';
 export {
   applyWatchEventToProjects,
+  planWatchRefresh,
   selectWatchRefreshMode,
 } from './watchPipeline';
 export type {
   NormalizedWatchEvent,
+  WatchBatchRefreshMode,
+  WatchRefreshRoute,
   WatcherEventApplyResult,
   WatchEventDomain,
   WatchFileChangeKind,
