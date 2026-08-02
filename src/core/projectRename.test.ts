@@ -517,7 +517,7 @@ suite('project — source rename tracking', () => {
       9000,
     );
 
-    assert.strictEqual(changed, false);
+    assert.strictEqual(changed, true);
     const saved = await provider.load();
     assert.strictEqual(saved?.entries['watch/'].accepted, null);
   });
@@ -548,7 +548,7 @@ suite('project — source rename tracking', () => {
       7000,
     );
 
-    assert.strictEqual(changed, false);
+    assert.strictEqual(changed, true);
     const saved = await provider.load();
     assert.strictEqual(saved?.entries['/'].accepted, null);
   });
@@ -581,12 +581,12 @@ suite('project — source rename tracking', () => {
       9000,
     );
 
-    assert.strictEqual(changed, false);
+    assert.strictEqual(changed, true);
     assert.strictEqual(fs.readFileCount, 0);
     assert.deepStrictEqual(fs.readDirectoryCalls, ['/workspace/src/watch']);
   });
 
-  test('does not record directory entry source fact when fingerprint is unchanged', async () => {
+  test('does not persist directory entry source fact when fingerprint is unchanged', async () => {
     const fs = new MockFileSystem();
     fs.addDirectory('/workspace/cognition');
     fs.addFile('/workspace/src/watch/foo.ts', 'source foo');
@@ -613,7 +613,7 @@ suite('project — source rename tracking', () => {
       9000,
     );
 
-    assert.strictEqual(changed, false);
+    assert.strictEqual(changed, true);
     assert.strictEqual(provider.saveCount, saveCountAfterOpen);
   });
 });

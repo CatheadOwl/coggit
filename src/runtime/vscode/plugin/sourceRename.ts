@@ -38,6 +38,10 @@ export async function handleSourceRenameFiles(
 		}
 	}
 
+	// `registryChanged` is deliberately broad: `recordDirectoryEntryChange`
+	// returns true whenever runtime ordering evidence was recorded, even if no
+	// durable registry write happened. For a rename any such observation means
+	// the tree may have changed, so a refresh is the right outcome.
 	if (registryChanged) {
 		onRegistryChanged();
 	}

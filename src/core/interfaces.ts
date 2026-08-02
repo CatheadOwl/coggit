@@ -159,11 +159,13 @@ export interface CoggitProject {
   /**
    * Observe a source-content watcher event without changing durable
    * acceptance. The generation must share the caller's watcher event order.
+   * Returns true when runtime ordering evidence was recorded.
    */
   recordSourceChange(uri: UriComponents, generation?: number): Promise<boolean>;
   /**
    * Observe a directory-entry watcher event for the parent folder/root of a
-   * changed source URI without changing durable acceptance.
+   * changed source URI without changing durable acceptance. Returns true when
+   * runtime ordering evidence was recorded.
    */
   recordDirectoryEntryChange(uri: UriComponents, generation?: number): Promise<boolean>;
   /**

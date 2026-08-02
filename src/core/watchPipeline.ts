@@ -22,8 +22,8 @@ export interface WatcherEventApplyResult {
   readonly kind: WatchFileChangeKind;
   readonly generation: number;
   readonly projectCount: number;
-  readonly sourceRecordChangedCount: number;
-  readonly directoryRecordChangedCount: number;
+  readonly sourceObservationCount: number;
+  readonly directoryObservationCount: number;
   readonly passiveAcceptanceCount: number;
 }
 
@@ -96,21 +96,21 @@ export async function applyWatchEventToProjects(
   projects: readonly CoggitProject[],
   event: NormalizedWatchEvent,
 ): Promise<WatcherEventApplyResult> {
-  let sourceRecordChangedCount = 0;
-  let directoryRecordChangedCount = 0;
+  let sourceObservationCount = 0;
+  let directoryObservationCount = 0;
   let passiveAcceptanceCount = 0;
 
   if (event.domain === 'source') {
     const sourceResults = await Promise.all(projects.map((project) =>
       project.recordSourceChange(event.uri, event.generation),
     ));
-    sourceRecordChangedCount = countTrue(sourceResults);
+    sourceObservationCount = countTrue(sourceResults);
 
     if (event.kind !== 'change') {
       const directoryResults = await Promise.all(projects.map((project) =>
         project.recordDirectoryEntryChange(event.uri, event.generation),
       ));
-      directoryRecordChangedCount = countTrue(directoryResults);
+      directoryObservationCount = countTrue(directoryResults);
     }
   } else if (event.domain === 'cognition') {
     const cognitionResults = await Promise.all(projects.map((project) =>
@@ -124,8 +124,8 @@ export async function applyWatchEventToProjects(
     kind: event.kind,
     generation: event.generation,
     projectCount: projects.length,
-    sourceRecordChangedCount,
-    directoryRecordChangedCount,
+    sourceObservationCount,
+    directoryObservationCount,
     passiveAcceptanceCount,
   };
 }

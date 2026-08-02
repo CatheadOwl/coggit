@@ -108,7 +108,7 @@ suite('watch pipeline', () => {
     const project = projectWithRecorders({
       recordSourceChange: async (_uri, generation) => {
         calls.push(`source:${generation}`);
-        return false;
+        return true;
       },
       recordDirectoryEntryChange: async (_uri, generation) => {
         calls.push(`directory:${generation}`);
@@ -122,7 +122,8 @@ suite('watch pipeline', () => {
     assert.strictEqual(result.domain, 'source');
     assert.strictEqual(result.kind, 'create');
     assert.strictEqual(result.generation, 7);
-    assert.strictEqual(result.directoryRecordChangedCount, 1);
+    assert.strictEqual(result.sourceObservationCount, 1);
+    assert.strictEqual(result.directoryObservationCount, 1);
   });
 
   test('reports passive acceptance count for cognition events', async () => {
@@ -142,8 +143,8 @@ suite('watch pipeline', () => {
     const result = await applyWatchEventToProjects([acceptingProject, ignoredProject], event);
 
     assert.strictEqual(result.passiveAcceptanceCount, 1);
-    assert.strictEqual(result.sourceRecordChangedCount, 0);
-    assert.strictEqual(result.directoryRecordChangedCount, 0);
+    assert.strictEqual(result.sourceObservationCount, 0);
+    assert.strictEqual(result.directoryObservationCount, 0);
   });
 
   test('does not touch project recorders for config events', async () => {

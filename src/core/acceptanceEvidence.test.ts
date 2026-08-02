@@ -2,9 +2,10 @@ import * as assert from 'node:assert';
 import type { ConfigProvider, FileStat, FileSystem, RegistryProviderFactory, UriComponents } from './interfaces';
 import type { CoggitWorkspaceRoot, PathKeyRecord, RegistryFile } from './types';
 import { computeCognitionIdentity, computeSourceFactIdentity } from './hash';
-import { RuntimeAcceptanceEvidence, createCoggitServices, openCoggitProject } from './project';
+import { RuntimeAcceptanceEvidence, buildSnapshotFromProjects, createCoggitServices, openCoggitProject } from './project';
 import { statusOperation } from './operations';
 import { REGISTRY_SCHEMA_VERSION } from './registry/index';
+import { applyWatchEventToProjects, planWatchRefresh } from './watchPipeline';
 
 interface Entry {
   isDirectory: boolean;
@@ -323,5 +324,108 @@ suite('runtime acceptance evidence', () => {
       fs.readDirectoryCalls.filter((path) => path.startsWith('/workspace/src')),
       ['/workspace/src/folder'],
     );
+  });
+});
+
+suite('watch pipeline direct diagnostics', () => {
+  test('accepts source then cognition watcher events into durable registry state', async () => {
+    const { fs, services, provider } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const initialSnapshot = await buildSnapshotFromProjects([project]);
+
+    const route = planWatchRefresh(initialSnapshot, [
+      uri('/workspace/src/tracked.ts'),
+    ]);
+    assert.strictEqual(route.mode, 'partial');
+
+    fs.addFile('/workspace/src/tracked.ts', 'const source = "a";');
+    const sourceResult = await applyWatchEventToProjects([project], {
+      domain: 'source',
+      uri: uri('/workspace/src/tracked.ts'),
+      kind: 'change',
+      generation: 1,
+    });
+    assert.strictEqual(sourceResult.projectCount, 1);
+    // Source observations update runtime ordering evidence but do not write durable registry acceptance.
+    assert.strictEqual(sourceResult.sourceObservationCount, 1);
+    assert.strictEqual(sourceResult.directoryObservationCount, 0);
+
+    fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nThis cognition now records the revised source relationship and explains the maintained behavior in detail.\n\nIt also records the verification boundary for future maintenance.\n\nThe document remains the maintained reference for this source.');
+    const cognitionResult = await applyWatchEventToProjects([project], {
+      domain: 'cognition',
+      uri: uri('/workspace/cognition/tracked.ts.md'),
+      kind: 'change',
+      generation: 2,
+    });
+
+    assert.strictEqual(cognitionResult.passiveAcceptanceCount, 1);
+    const accepted = provider.current().entries['tracked.ts'].accepted;
+    assert.strictEqual(accepted?.source, computeSourceFactIdentity('file-content', 'const source = "a";'));
+    assert.strictEqual(
+      accepted?.cognition,
+      computeCognitionIdentity(await fs.readFile(uri('/workspace/cognition/tracked.ts.md'))),
+    );
+    assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'fresh');
+  });
+
+  test('accepts cognition-only watcher events through the pipeline', async () => {
+    const { fs, services, provider } = await makeCase();
+    const project = await openCoggitProject(services, root());
+
+    fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nThis cognition records the accepted relationship after a pipeline-delivered cognition-only maintenance edit.\n\nIt keeps the same source fact but updates the maintained explanation in detail.\n\nThe document remains the maintained reference for this source.');
+
+    const result = await applyWatchEventToProjects([project], {
+      domain: 'cognition',
+      uri: uri('/workspace/cognition/tracked.ts.md'),
+      kind: 'change',
+      generation: 1,
+    });
+
+    assert.strictEqual(result.passiveAcceptanceCount, 1);
+    assert.strictEqual(
+      provider.current().entries['tracked.ts'].accepted?.cognition,
+      computeCognitionIdentity(await fs.readFile(uri('/workspace/cognition/tracked.ts.md'))),
+    );
+    assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'fresh');
+  });
+
+  test('keeps reversed source and cognition watcher ordering stale', async () => {
+    const { fs, services, provider } = await makeCase();
+    const project = await openCoggitProject(services, root());
+
+    fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nThis cognition now records the revised source relationship and explains the maintained behavior in detail.\n\nIt also records the verification boundary for future maintenance.\n\nThe document remains the maintained reference for this source.');
+    const cognitionResult = await applyWatchEventToProjects([project], {
+      domain: 'cognition',
+      uri: uri('/workspace/cognition/tracked.ts.md'),
+      kind: 'change',
+      generation: 1,
+    });
+    assert.strictEqual(cognitionResult.passiveAcceptanceCount, 1);
+
+    fs.addFile('/workspace/src/tracked.ts', 'const source = "a";');
+    await applyWatchEventToProjects([project], {
+      domain: 'source',
+      uri: uri('/workspace/src/tracked.ts'),
+      kind: 'change',
+      generation: 2,
+    });
+
+    const accepted = provider.current().entries['tracked.ts'].accepted;
+    // Source events record observed facts but do not rewrite the accepted source fact on their own.
+    assert.strictEqual(accepted?.source, computeSourceFactIdentity('file-content', 'const source = "A";'));
+    assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'stale');
+  });
+
+  test('routes outside-root watcher batches to none', async () => {
+    const { services } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const snapshot = await buildSnapshotFromProjects([project]);
+
+    const route = planWatchRefresh(snapshot, [
+      uri('/elsewhere/src/tracked.ts'),
+    ]);
+
+    assert.strictEqual(route.mode, 'none');
+    assert.strictEqual(route.reason, 'outside-known-roots');
   });
 });

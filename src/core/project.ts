@@ -471,12 +471,11 @@ export async function openCoggitProject(
       const eventGeneration = runtimeEvidence.normalizeGeneration(generation);
       runtimeEvidence.beginSource(registryKey, eventGeneration);
       const sourceContent = await services.fs.readFile(uri);
-      runtimeEvidence.completeSource(
+      return runtimeEvidence.completeSource(
         registryKey,
         eventGeneration,
         computeSourceFactIdentity('file-content', sourceContent),
       );
-      return false;
     },
     recordDirectoryEntryChange: async (uri, generation) => {
       const registry = runtime.registry;
@@ -506,7 +505,7 @@ export async function openCoggitProject(
       if (fingerprint === undefined) {
         return false;
       }
-      runtimeEvidence.completeSource(
+      return runtimeEvidence.completeSource(
         registryKey,
         eventGeneration,
         computeSourceFactIdentity(
@@ -514,7 +513,6 @@ export async function openCoggitProject(
           fingerprint,
         ),
       );
-      return false;
     },
     recordCognitionChange: async (uri, generation) => {
       if (!runtime.registry) {
@@ -1355,6 +1353,13 @@ function findRegistryKeyBySourceKey(
   return Object.entries(registry.getAllEntries()).find(([, entry]) => {
     if (!entry.sourcePath) {
       return false;
+    }
+    if (
+      sourceKey === '/'
+      && sourceRootName
+      && entry.sourcePath.replace(/\\/g, '/').replace(/\/+$/u, '') === sourceRootName
+    ) {
+      return true;
     }
     const sourceRootRelativePath = sourceRootName && entry.sourcePath.startsWith(`${sourceRootName}/`)
       ? entry.sourcePath.slice(sourceRootName.length + 1)
