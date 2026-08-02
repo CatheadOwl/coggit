@@ -14,6 +14,17 @@ export {
 } from './locks';
 export { calculateAffected } from './affected';
 export {
+  applyWatchEventToProjects,
+  selectWatchRefreshMode,
+} from './watchPipeline';
+export type {
+  NormalizedWatchEvent,
+  WatcherEventApplyResult,
+  WatchEventDomain,
+  WatchFileChangeKind,
+  WatchRefreshMode,
+} from './watchPipeline';
+export {
   ADD_OPERATION_ERROR_CODES,
   addOperation,
   reviewUnchangedOperation,

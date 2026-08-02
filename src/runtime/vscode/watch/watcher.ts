@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 
-export type FileChangeKind = 'change' | 'create' | 'delete';
+import type { WatchFileChangeKind } from '../../../core/index';
+
+export type FileChangeKind = WatchFileChangeKind;
 
 export type FileChangeCallback = (uri: vscode.Uri, kind: FileChangeKind) => void;
 

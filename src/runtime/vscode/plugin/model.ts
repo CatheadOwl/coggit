@@ -9,11 +9,15 @@ import {
 	calculateAffected,
 	discoverCoggitProjects,
 	createCoggitServices,
+	applyWatchEventToProjects,
+	debugLog,
 	RuntimeAcceptanceEvidence,
+	selectWatchRefreshMode,
 	summarizeRepresentativeMtime,
 	toCognitionFileUri,
 	toCognitionFolderReadmeUri,
 	type CoggitLogger,
+	type WatchEventDomain,
 	warnLog,
 } from '../../../core/index';
 import { createPatternWatcher, type FileChangeCallback, type FileChangeKind } from '../watch/watcher';
@@ -24,7 +28,6 @@ import { NodeProjectLockManager } from '../../node/locks';
 import { fromComponents, isEqualOrChildUri, toComponents, uriKey } from '../adapter/uri';
 import type { MisplacedTreeEntry } from '../tree/misplacedTreeTypes';
 import { handleSourceRenameFiles } from './sourceRename';
-import { selectWatchRefreshMode } from './watchRefreshPolicy';
 import {
 	moveAllMisplacedTreeEntries,
 	moveMisplacedTreeEntry,
@@ -432,42 +435,31 @@ export class CoggitModel implements vscode.Disposable {
 
 	private onSourceFileChanged(uri: vscode.Uri, kind: FileChangeKind): void {
 		const eventGeneration = ++this.watchEventGeneration;
-		void this.recordSourceChangeAndRefresh(uri, kind, eventGeneration);
-	}
-
-	private async recordSourceChangeAndRefresh(
-		uri: vscode.Uri,
-		kind: FileChangeKind,
-		eventGeneration: number,
-	): Promise<void> {
-		await Promise.all(this.projects.map((project) =>
-			project.recordSourceChange(toComponents(uri), eventGeneration),
-		));
-		if (kind !== 'change') {
-			await Promise.all(this.projects.map((project) =>
-				project.recordDirectoryEntryChange(toComponents(uri), eventGeneration),
-			));
-		}
-		if (selectWatchRefreshMode(kind, this.snapshot.mappingIndex !== undefined) === 'full') {
-			this.scheduleRefresh();
-			return;
-		}
-		this.schedulePartialRefresh(uri);
+		void this.recordWatchEventAndRefresh('source', uri, kind, eventGeneration);
 	}
 
 	private onCognitionFileChanged(uri: vscode.Uri, kind: FileChangeKind): void {
 		const eventGeneration = ++this.watchEventGeneration;
-		void this.recordCognitionChangeAndRefresh(uri, kind, eventGeneration);
+		void this.recordWatchEventAndRefresh('cognition', uri, kind, eventGeneration);
 	}
 
-	private async recordCognitionChangeAndRefresh(
+	private async recordWatchEventAndRefresh(
+		domain: WatchEventDomain,
 		uri: vscode.Uri,
 		kind: FileChangeKind,
 		eventGeneration: number,
 	): Promise<void> {
-		await Promise.all(this.projects.map((project) =>
-			project.recordCognitionChange(toComponents(uri), eventGeneration),
-		));
+		const result = await applyWatchEventToProjects(this.projects, {
+			domain,
+			uri: toComponents(uri),
+			kind,
+			generation: eventGeneration,
+			observedAtMs: Date.now(),
+		});
+		debugLog(this.logger, 'watch.pipeline', 'Applied watcher event', {
+			...result,
+			uri: uriKey(uri),
+		});
 		if (selectWatchRefreshMode(kind, this.snapshot.mappingIndex !== undefined) === 'full') {
 			this.scheduleRefresh();
 			return;
