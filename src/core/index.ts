@@ -18,6 +18,9 @@ export {
   planWatchRefresh,
   selectWatchRefreshMode,
 } from './watchPipeline';
+export {
+  createWatchHost,
+} from './watchHost';
 export type {
   NormalizedWatchEvent,
   WatchBatchRefreshMode,
@@ -27,6 +30,16 @@ export type {
   WatchFileChangeKind,
   WatchRefreshMode,
 } from './watchPipeline';
+export type {
+  WatchHost,
+  WatchHostObservationResult,
+  WatchHostOptions,
+  WatchHostRefreshIntent,
+  WatchObservation,
+  WatchObservationHandler,
+  WatchObserver,
+  WatchObserverSubscription,
+} from './watchHost';
 export {
   ADD_OPERATION_ERROR_CODES,
   addOperation,

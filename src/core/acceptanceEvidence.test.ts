@@ -6,6 +6,14 @@ import { RuntimeAcceptanceEvidence, buildSnapshotFromProjects, createCoggitServi
 import { statusOperation } from './operations';
 import { REGISTRY_SCHEMA_VERSION } from './registry/index';
 import { applyWatchEventToProjects, planWatchRefresh } from './watchPipeline';
+import {
+  createWatchHost,
+  type WatchHostObservationResult,
+  type WatchObservation,
+  type WatchObservationHandler,
+  type WatchObserver,
+  type WatchObserverSubscription,
+} from './watchHost';
 
 interface Entry {
   isDirectory: boolean;
@@ -92,6 +100,26 @@ class MockConfigProvider implements ConfigProvider {
 
   async findFiles(): Promise<UriComponents[]> {
     return [];
+  }
+}
+
+class FakeWatchObserver implements WatchObserver {
+  private handler: WatchObservationHandler | undefined;
+
+  subscribe(handler: WatchObservationHandler): WatchObserverSubscription {
+    this.handler = handler;
+    return {
+      dispose: () => {
+        this.handler = undefined;
+      },
+    };
+  }
+
+  async emit(observation: WatchObservation): Promise<WatchHostObservationResult> {
+    if (!this.handler) {
+      throw new Error('Fake watch observer has no subscriber');
+    }
+    return this.handler(observation);
   }
 }
 
@@ -427,5 +455,203 @@ suite('watch pipeline direct diagnostics', () => {
 
     assert.strictEqual(route.mode, 'none');
     assert.strictEqual(route.reason, 'outside-known-roots');
+  });
+});
+
+suite('native watch host boundary', () => {
+  test('accepts source then cognition observations into durable registry state', async () => {
+    const { fs, services, provider } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const observer = new FakeWatchObserver();
+    const host = createWatchHost({
+      projects: [project],
+      snapshotProvider: () => buildSnapshotFromProjects([project]),
+      observer,
+      now: () => 101,
+    });
+    host.start();
+
+    fs.addFile('/workspace/src/tracked.ts', 'const source = "a";');
+    const sourceResult = await observer.emit({
+      domain: 'source',
+      uri: uri('/workspace/src/tracked.ts'),
+      kind: 'change',
+    });
+    assert.deepStrictEqual(sourceResult.matchedRootIds, ['root']);
+    assert.strictEqual(sourceResult.matchedProjectCount, 1);
+    assert.strictEqual(sourceResult.normalizedEvent?.generation, 1);
+    assert.strictEqual(sourceResult.normalizedEvent?.observedAtMs, 101);
+    assert.strictEqual(sourceResult.applyResult?.sourceObservationCount, 1);
+    assert.strictEqual(sourceResult.refresh.mode, 'partial');
+    assert.strictEqual(sourceResult.refresh.reason, 'affected-pairs');
+
+    fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nThis cognition now records the revised source relationship through the native watch host boundary.\n\nIt also records the verification boundary for future maintenance.\n\nThe document remains the maintained reference for this source.');
+    const cognitionResult = await observer.emit({
+      domain: 'cognition',
+      uri: uri('/workspace/cognition/tracked.ts.md'),
+      kind: 'change',
+    });
+
+    assert.strictEqual(cognitionResult.applyResult?.passiveAcceptanceCount, 1);
+    assert.strictEqual(cognitionResult.refresh.mode, 'partial');
+    const accepted = provider.current().entries['tracked.ts'].accepted;
+    assert.strictEqual(accepted?.source, computeSourceFactIdentity('file-content', 'const source = "a";'));
+    assert.strictEqual(
+      accepted?.cognition,
+      computeCognitionIdentity(await fs.readFile(uri('/workspace/cognition/tracked.ts.md'))),
+    );
+    assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'fresh');
+  });
+
+  test('accepts cognition-only observations through the host', async () => {
+    const { fs, services, provider } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const observer = new FakeWatchObserver();
+    const host = createWatchHost({
+      projects: [project],
+      snapshotProvider: () => buildSnapshotFromProjects([project]),
+      observer,
+    });
+    host.start();
+
+    fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nThis cognition records the accepted relationship after a native watch host cognition-only edit.\n\nIt keeps the same source fact but updates the maintained explanation in detail.\n\nThe document remains the maintained reference for this source.');
+    const result = await observer.emit({
+      domain: 'cognition',
+      uri: uri('/workspace/cognition/tracked.ts.md'),
+      kind: 'change',
+    });
+
+    assert.strictEqual(result.applyResult?.passiveAcceptanceCount, 1);
+    assert.strictEqual(
+      provider.current().entries['tracked.ts'].accepted?.cognition,
+      computeCognitionIdentity(await fs.readFile(uri('/workspace/cognition/tracked.ts.md'))),
+    );
+    assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'fresh');
+  });
+
+  test('keeps reversed host ordering stale', async () => {
+    const { fs, services, provider } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const host = createWatchHost({
+      projects: [project],
+      snapshotProvider: () => buildSnapshotFromProjects([project]),
+    });
+
+    fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nThis cognition now records the revised source relationship through a reversed native host order.\n\nIt also records the verification boundary for future maintenance.\n\nThe document remains the maintained reference for this source.');
+    const cognitionResult = await host.observe({
+      domain: 'cognition',
+      uri: uri('/workspace/cognition/tracked.ts.md'),
+      kind: 'change',
+    });
+    assert.strictEqual(cognitionResult.applyResult?.passiveAcceptanceCount, 1);
+
+    fs.addFile('/workspace/src/tracked.ts', 'const source = "a";');
+    const sourceResult = await host.observe({
+      domain: 'source',
+      uri: uri('/workspace/src/tracked.ts'),
+      kind: 'change',
+    });
+
+    assert.strictEqual(sourceResult.applyResult?.sourceObservationCount, 1);
+    assert.strictEqual(provider.current().entries['tracked.ts'].accepted?.source, computeSourceFactIdentity('file-content', 'const source = "A";'));
+    assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'stale');
+  });
+
+  test('reports config observations as full rediscovery intent without project mutation', async () => {
+    const { services } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const host = createWatchHost({
+      projects: [project],
+      snapshotProvider: () => buildSnapshotFromProjects([project]),
+    });
+
+    const result = await host.observe({
+      domain: 'config',
+      uri: uri('/workspace/.coggit/config.yaml'),
+      kind: 'change',
+    });
+
+    assert.deepStrictEqual(result.matchedRootIds, ['root']);
+    assert.strictEqual(result.applyResult, undefined);
+    assert.strictEqual(result.refresh.mode, 'full');
+    assert.strictEqual(result.refresh.reason, 'config-event');
+  });
+
+  test('reports outside-root observations without entering the pipeline', async () => {
+    const { services } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const host = createWatchHost({
+      projects: [project],
+      snapshotProvider: () => buildSnapshotFromProjects([project]),
+    });
+
+    const result = await host.observe({
+      domain: 'source',
+      uri: uri('/elsewhere/src/tracked.ts'),
+      kind: 'change',
+    });
+
+    assert.deepStrictEqual(result.matchedRootIds, []);
+    assert.strictEqual(result.matchedProjectCount, 0);
+    assert.strictEqual(result.applyResult, undefined);
+    assert.strictEqual(result.refresh.mode, 'none');
+    assert.strictEqual(result.refresh.reason, 'outside-known-roots');
+  });
+
+  test('surfaces unmapped known-root changes as full refresh intent', async () => {
+    const { fs, services } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    const preEventSnapshot = await buildSnapshotFromProjects([project]);
+    const host = createWatchHost({
+      projects: [project],
+      snapshotProvider: () => preEventSnapshot,
+    });
+
+    fs.addFile('/workspace/src/untracked.ts', 'export const untracked = true;');
+    const result = await host.observe({
+      domain: 'source',
+      uri: uri('/workspace/src/untracked.ts'),
+      kind: 'change',
+    });
+
+    assert.deepStrictEqual(result.matchedRootIds, ['root']);
+    assert.strictEqual(result.applyResult?.sourceObservationCount, 0);
+    assert.strictEqual(result.refresh.mode, 'full');
+    assert.strictEqual(result.refresh.reason, 'known-root-unmapped');
+  });
+
+  test('matches only the project root that contains the observation', async () => {
+    const { services } = await makeCase();
+    const project = await openCoggitProject(services, root());
+    let otherSourceCalls = 0;
+    const otherProject = {
+      ...project,
+      root: {
+        ...root(),
+        id: 'other-root',
+        projectRootUri: uri('/other'),
+        configUri: uri('/other/.coggit/config.yaml'),
+        sourceRootUri: uri('/other/src'),
+        cognitionRootUri: uri('/other/cognition'),
+      },
+      recordSourceChange: async () => {
+        otherSourceCalls += 1;
+        return true;
+      },
+    };
+    const host = createWatchHost({
+      projects: [project, otherProject],
+      snapshotProvider: () => buildSnapshotFromProjects([project]),
+    });
+
+    const result = await host.observe({
+      domain: 'source',
+      uri: uri('/workspace/src/tracked.ts'),
+      kind: 'change',
+    });
+
+    assert.deepStrictEqual(result.matchedRootIds, ['root']);
+    assert.strictEqual(result.matchedProjectCount, 1);
+    assert.strictEqual(otherSourceCalls, 0);
   });
 });
