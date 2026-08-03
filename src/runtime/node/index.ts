@@ -5,6 +5,11 @@ import { NodeFileSystem } from './fs';
 import { NodeProjectLockManager } from './locks';
 import { NodeRegistryProviderFactory } from './registry';
 
+export {
+  createNodeFileWatchObserver,
+  type NodeFileWatchObserverOptions,
+} from './watch';
+
 export interface CreateNodeServicesOptions {
   workspacePath?: string;
 }
