@@ -55,6 +55,21 @@ export function pathHintsTryText(pathHints: readonly string[]): string {
   return `Try: ${pathHints.map((hint) => `\`${hint}\``).join(', ')}`;
 }
 
+/** Render the full miss line plus optional hint suggestion lines. */
+export function renderPathMissText(result: {
+  sourcePath: string | null;
+  pathMissMessage?: string;
+  pathHintMessage?: string;
+  pathHints: readonly string[];
+}): string {
+  const lines = [result.pathMissMessage ?? pathMissMessage(result.sourcePath ?? '')];
+  if (result.pathHintMessage && result.pathHints.length > 0) {
+    lines.push(result.pathHintMessage);
+    lines.push(pathHintsTryText(result.pathHints));
+  }
+  return lines.join('\n');
+}
+
 function pathHintMatches(candidate: string, sourcePath: string): boolean {
   if (candidate === sourcePath) {
     return false;
@@ -70,5 +85,36 @@ function pathHintMatches(candidate: string, sourcePath: string): boolean {
     return true;
   }
 
-  return candidateSegments.slice(-sourceSegments.length).join('/') === sourcePath;
+  const tail = candidateSegments.slice(-sourceSegments.length);
+  if (tail.length !== sourceSegments.length) {
+    return false;
+  }
+
+  // Tolerate a file extension on the candidate's leaf, but only when the
+  // query's leaf is plain (no dot at all). This encodes the intent that a
+  // dotless leaf query like `registry` can suggest the source path
+  // `src/registry.ts`, while a query that already names an extension
+  // (`registry.ts`) or a hidden file (`.gitignore`) must match a leaf named
+  // exactly that, never `registry.ts.md` or `.gitignore.bak`.
+  const queryLeaf = sourceSegments[sourceSegments.length - 1];
+  if (queryLeaf.includes('.')) {
+    return tail.join('/') === sourcePath;
+  }
+
+  tail[tail.length - 1] = stripLeafExtension(tail[tail.length - 1]);
+  return tail.join('/') === sourcePath;
+}
+
+/** Strip the trailing file extension from a path segment when present. Hidden
+ *  files such as `.gitignore` (a dot at index 0) and all-dot names are left
+ *  unchanged, mirroring the `sourcePathToKey` convention in identity.ts. */
+function stripLeafExtension(segment: string): string {
+  if (/^\.+$/u.test(segment)) {
+    return segment;
+  }
+  const dot = segment.lastIndexOf('.');
+  if (dot <= 0) {
+    return segment;
+  }
+  return segment.slice(0, dot);
 }

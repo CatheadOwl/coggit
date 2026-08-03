@@ -129,6 +129,7 @@ export {
   PATH_MISS_MESSAGE,
   pathHintsTryText,
   pathMissMessage,
+  renderPathMissText,
   suggestPathHints,
 } from './pathHints';
 export type {

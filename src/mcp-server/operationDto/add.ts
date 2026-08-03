@@ -27,6 +27,9 @@ export const addOperationOutputSchema = {
     message: z.string(),
   }).nullable(),
   nextActions: z.array(mcpMaintenanceNextActionSchema),
+  pathHints: z.array(z.string()),
+  pathMissMessage: z.string().optional(),
+  pathHintMessage: z.string().optional(),
 };
 
 function addNextActions(result: AddOperationResult): ReturnType<typeof createHandbookMaintenanceAction>[] {
@@ -51,6 +54,9 @@ export function addStructuredContent(result: AddOperationResult): {
   project: z.infer<typeof projectContextSchema> | null;
   error: AddOperationResult['error'];
   nextActions: ReturnType<typeof createHandbookMaintenanceAction>[];
+  pathHints: string[];
+  pathMissMessage?: string;
+  pathHintMessage?: string;
 } {
   return {
     success: result.success,
@@ -63,5 +69,8 @@ export function addStructuredContent(result: AddOperationResult): {
     project: result.project ? toMcpProjectContext(result.project) : null,
     error: result.error,
     nextActions: addNextActions(result),
+    pathHints: result.pathHints,
+    ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
+    ...(result.pathHintMessage ? { pathHintMessage: result.pathHintMessage } : {}),
   };
 }

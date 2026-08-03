@@ -108,6 +108,68 @@ suite('mcp operation DTO adapter', () => {
     assert.deepStrictEqual(addStructuredContent(result).nextActions, []);
   });
 
+  test('add structured content omits fuzzy hint fields when there are no hints', () => {
+    const result: AddOperationResult = {
+      success: false,
+      created: null,
+      kind: null,
+      sourcePath: 'missing.ts',
+      cognitionPath: null,
+      project: null,
+      handbookId: null,
+      verify: { tool: 'coggit_status', sourcePath: 'missing.ts' },
+      error: {
+        code: 'path-not-found',
+        message: 'Path not found in any CogGit project.',
+      },
+      pathHints: [],
+    };
+
+    const structuredContent = addStructuredContent(result);
+
+    // The optional miss/hint prose keys are only present when core supplies
+    // them, so a miss with no hints stays lean and schema-conformant.
+    assert.strictEqual('pathMissMessage' in structuredContent, false);
+    assert.strictEqual('pathHintMessage' in structuredContent, false);
+    assert.deepStrictEqual(
+      z.object(addOperationOutputSchema).parse(structuredContent),
+      structuredContent,
+    );
+  });
+
+  test('add structured content carries fuzzy path hints for a miss', () => {
+    const result: AddOperationResult = {
+      success: false,
+      created: null,
+      kind: null,
+      sourcePath: 'registry',
+      cognitionPath: null,
+      project: null,
+      handbookId: null,
+      verify: { tool: 'coggit_status', sourcePath: 'registry' },
+      error: {
+        code: 'path-not-found',
+        message: 'Path not found in any CogGit project.',
+      },
+      pathHints: ['src/registry.ts'],
+      pathMissMessage: 'Path not found in any CogGit project: registry',
+      pathHintMessage: 'You may mean one of these source-root-relative source paths.',
+    };
+
+    const structuredContent = addStructuredContent(result);
+
+    assert.deepStrictEqual(structuredContent.pathHints, ['src/registry.ts']);
+    assert.strictEqual(structuredContent.pathMissMessage, 'Path not found in any CogGit project: registry');
+    assert.strictEqual(
+      structuredContent.pathHintMessage,
+      'You may mean one of these source-root-relative source paths.',
+    );
+    assert.deepStrictEqual(
+      z.object(addOperationOutputSchema).parse(structuredContent),
+      structuredContent,
+    );
+  });
+
   test('resolve structured content conforms to reviewed unchanged output schema', () => {
     const result: ReviewUnchangedOperationResult = {
       success: true,

@@ -50,4 +50,48 @@ suite('core pathHints — fuzzy source-path hints', () => {
     const hints = suggestPathHints(['a/x/y.ts', 'a/x/y.ts', 'b/x/y.ts'], 'x/y.ts');
     assert.deepStrictEqual(hints, ['a/x/y.ts', 'b/x/y.ts']);
   });
+
+  test('suggests a candidate whose leaf matches after stripping the file extension', () => {
+    const hints = suggestPathHints(['coggit/src/registry.ts', 'coggit/src/other.ts'], 'registry');
+    assert.deepStrictEqual(hints, ['coggit/src/registry.ts']);
+  });
+
+  test('suggests a multi-segment match when only the leaf extension is missing', () => {
+    const hints = suggestPathHints(['coggit/src/config/manifest.ts', 'coggit/src/scope.ts'], 'src/config/manifest');
+    assert.deepStrictEqual(hints, ['coggit/src/config/manifest.ts']);
+  });
+
+  test('suggests a markdown leaf when the query omits the extension', () => {
+    const hints = suggestPathHints(['coggit/README.md', 'coggit/package.json'], 'coggit/README');
+    assert.deepStrictEqual(hints, ['coggit/README.md']);
+  });
+
+  test('exact leaf query matches through trailing segments', () => {
+    assert.deepStrictEqual(suggestPathHints(['coggit/src/registry.ts'], 'registry.ts'), ['coggit/src/registry.ts']);
+  });
+
+  test('does not strip-match a query against a folder or a mismatched leaf', () => {
+    assert.deepStrictEqual(suggestPathHints(['coggit/src/registry.ts', 'coggit/src/capabilities'], 'registry.ts.md'), []);
+    assert.deepStrictEqual(suggestPathHints(['coggit/src/registry.ts'], 'registryx'), []);
+    assert.deepStrictEqual(suggestPathHints(['coggit/src/registry.ts'], 'registry.md'), []);
+  });
+
+  test('does not strip-match an extensioned query against a doubly-suffixed leaf', () => {
+    // A query that already names an extension must match a leaf named exactly
+    // that, never `registry.ts.md`.
+    assert.deepStrictEqual(suggestPathHints(['src/registry.ts.md'], 'registry.ts'), []);
+    assert.deepStrictEqual(suggestPathHints(['src/registry.ts.md'], 'src/registry.ts'), []);
+  });
+
+  test('does not strip-match a hidden-file query against a suffixed hidden leaf', () => {
+    // `.gitignore` and `.gitignore.bak` are different files; a hidden query
+    // must not map onto a hidden leaf with an extra suffix.
+    assert.deepStrictEqual(suggestPathHints(['src/.gitignore.bak'], '.gitignore'), []);
+  });
+
+  test('does not suggest a hidden candidate for a plain leaf query', () => {
+    // The candidate-side hidden guard: `.gitignore` is never stripped, so a
+    // plain query only matches the real file.
+    assert.deepStrictEqual(suggestPathHints(['src/.gitignore', 'src/gitignore.ts'], 'gitignore'), ['src/gitignore.ts']);
+  });
 });

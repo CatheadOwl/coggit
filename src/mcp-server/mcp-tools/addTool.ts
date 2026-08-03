@@ -1,7 +1,7 @@
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { addOperation } from '../../core/index.js';
+import { addOperation, renderPathMissText } from '../../core/index.js';
 import type { AddOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
@@ -69,6 +69,9 @@ export function registerAddTool(
 
 function addText(result: AddOperationResult): string {
   if (!result.success) {
+    if (result.error?.code === 'path-not-found') {
+      return renderPathMissText(result);
+    }
     return `Add failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`;
   }
 

@@ -1,6 +1,5 @@
 import {
-  pathHintsTryText,
-  pathMissMessage,
+  renderPathMissText,
   type AddOperationResult,
   type ReviewUnchangedOperationResult,
   type SnapshotOperationResult,
@@ -14,20 +13,7 @@ import {
 } from '../render';
 import { formatTimestamp } from '../core/time';
 
-/** Shared miss rendering: full miss line + optional hint suggestion lines. */
-export function renderPathMissText(result: {
-  sourcePath: string | null;
-  pathMissMessage?: string;
-  pathHintMessage?: string;
-  pathHints: readonly string[];
-}): string {
-  const lines = [result.pathMissMessage ?? pathMissMessage(result.sourcePath ?? '')];
-  if (result.pathHintMessage && result.pathHints.length > 0) {
-    lines.push(result.pathHintMessage);
-    lines.push(pathHintsTryText(result.pathHints));
-  }
-  return lines.join('\n');
-}
+export { renderPathMissText };
 
 export function renderStatusOperationResult(
   result: StatusOperationResult,
