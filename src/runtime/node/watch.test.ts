@@ -176,6 +176,56 @@ suite('node file watch observer', () => {
     }
   });
 
+  test('allowlists known config file events under the config directory', async function () {
+    this.timeout(10000);
+
+    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
+    const observations: WatchObservation[] = [];
+    const fakeWatch = new FakeWatchDirectory();
+
+    try {
+      const services = createNodeCoggitServices({ workspacePath: tempRoot });
+      await initProject(services.fs, pathToUriComponents(tempRoot), {
+        sourceRoot: 'src',
+        cognitionRoot: 'cognition',
+      });
+      const [project] = await discoverCoggitProjects(services);
+      assert.ok(project);
+
+      const observer = createNodeFileWatchObserver({
+        roots: [project.root],
+        persistent: false,
+        watchDirectory: fakeWatch.watchDirectory,
+      });
+      const subscription = observer.subscribe(async (observation: WatchObservation) => {
+        observations.push(observation);
+        return createWatchHost({
+          projects: [project],
+          snapshotProvider: () => buildSnapshotFromProjects([project]),
+        }).observe(observation);
+      });
+
+      try {
+        const configDirectory = path.join(tempRoot, '.coggit');
+        await waitFor(() => fakeWatch.hasWatcher(configDirectory));
+        fakeWatch.emit(configDirectory, 'change', 'registry.json');
+        await sleep(100);
+
+        assert.strictEqual(observations.length, 0);
+
+        fakeWatch.emit(configDirectory, 'change', 'config.yaml');
+        await waitFor(() => observations.length === 1);
+        assert.strictEqual(observations[0].domain, 'config');
+        assert.strictEqual(observations[0].kind, 'change');
+        assert.ok(observations[0].uri.path.endsWith('/.coggit/config.yaml'));
+      } finally {
+        subscription.dispose();
+      }
+    } finally {
+      await nodeFs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   test('replaces stale subtree watchers when a watched directory is recreated quickly', async function () {
     this.timeout(10000);
 
