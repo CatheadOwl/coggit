@@ -19,11 +19,18 @@ interface WatchedDirectory {
   readonly watcher: FSWatcher;
 }
 
+type NodeWatchDirectory = (
+  directoryPath: string,
+  options: { persistent: boolean },
+  listener: (eventType: string, filename: string | Buffer | null) => void,
+) => FSWatcher;
+
 export interface NodeFileWatchObserverOptions {
   readonly roots: readonly CoggitWorkspaceRoot[];
   readonly persistent?: boolean;
   readonly now?: () => number;
   readonly onError?: (error: Error) => void;
+  readonly watchDirectory?: NodeWatchDirectory;
 }
 
 export function createNodeFileWatchObserver(
@@ -122,11 +129,12 @@ class NodeFileWatchObserver implements WatchObserver {
 
     let watcher: FSWatcher;
     try {
-      watcher = watch(directoryPath, {
+      const watchDirectory = this.options.watchDirectory ?? watch;
+      watcher = watchDirectory(directoryPath, {
         persistent: this.options.persistent ?? false,
       }, (eventType, filename) => {
         const observedAtMs = this.options.now?.() ?? Date.now();
-        const changedPath = resolveChangedPath(directoryPath, filename);
+        const changedPath = resolveChangedPath(target, directoryPath, filename);
         this.delivery = this.delivery
           .then(() => this.deliver(target, changedPath, eventType, observedAtMs, handler))
           .catch((error: unknown) => this.reportError(error));
@@ -158,6 +166,10 @@ class NodeFileWatchObserver implements WatchObserver {
     const normalizedChangedPath = path.resolve(changedPath);
     const stat = await safeStat(normalizedChangedPath);
     if (target.domain === 'source' || target.domain === 'cognition') {
+      if (eventType === 'rename' && this.hasWatchedDirectoryTree(target, normalizedChangedPath)) {
+        this.unwatchDirectoryTree(target, normalizedChangedPath);
+      }
+
       if (stat?.isDirectory()) {
         await this.watchDirectoryTree(normalizedChangedPath, target, handler);
       } else if (!stat) {
@@ -170,6 +182,20 @@ class NodeFileWatchObserver implements WatchObserver {
       return;
     }
     await handler(observation);
+  }
+
+  private hasWatchedDirectoryTree(target: WatchTarget, directoryPath: string): boolean {
+    const normalizedDirectoryPath = path.resolve(directoryPath);
+    for (const watched of this.watchers.values()) {
+      if (
+        watched.target.rootId === target.rootId
+        && watched.target.domain === target.domain
+        && isEqualOrChildPath(normalizedDirectoryPath, watched.directoryPath)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private unwatchDirectoryTree(target: WatchTarget, deletedPath: string): void {
@@ -217,8 +243,11 @@ function changeKind(eventType: string, stat: Stats | undefined): WatchFileChange
   return stat ? 'change' : 'delete';
 }
 
-function resolveChangedPath(directoryPath: string, filename: string | Buffer | null): string {
+function resolveChangedPath(target: WatchTarget, directoryPath: string, filename: string | Buffer | null): string {
   if (!filename) {
+    if (target.domain === 'config') {
+      return path.join(directoryPath, 'config.yaml');
+    }
     return directoryPath;
   }
   return path.resolve(directoryPath, filename.toString());

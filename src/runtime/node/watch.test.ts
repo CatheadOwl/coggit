@@ -1,4 +1,5 @@
 import * as assert from 'node:assert';
+import type { FSWatcher } from 'node:fs';
 import * as nodeFs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -127,6 +128,103 @@ suite('node file watch observer', () => {
       await nodeFs.rm(tempRoot, { recursive: true, force: true });
     }
   });
+
+  test('maps config events without filenames to config.yaml', async function () {
+    this.timeout(10000);
+
+    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
+    const observations: WatchObservation[] = [];
+    const fakeWatch = new FakeWatchDirectory();
+
+    try {
+      const services = createNodeCoggitServices({ workspacePath: tempRoot });
+      await initProject(services.fs, pathToUriComponents(tempRoot), {
+        sourceRoot: 'src',
+        cognitionRoot: 'cognition',
+      });
+      const [project] = await discoverCoggitProjects(services);
+      assert.ok(project);
+
+      const observer = createNodeFileWatchObserver({
+        roots: [project.root],
+        persistent: false,
+        watchDirectory: fakeWatch.watchDirectory,
+      });
+      const subscription = observer.subscribe(async (observation: WatchObservation) => {
+        observations.push(observation);
+        return createWatchHost({
+          projects: [project],
+          snapshotProvider: () => buildSnapshotFromProjects([project]),
+        }).observe(observation);
+      });
+
+      try {
+        const configDirectory = path.join(tempRoot, '.coggit');
+        await waitFor(() => fakeWatch.hasWatcher(configDirectory));
+        fakeWatch.emit(configDirectory, 'change', null);
+
+        await waitFor(() => observations.some((observation) =>
+          observation.domain === 'config'
+          && observation.kind === 'change'
+          && observation.uri.path.endsWith('/.coggit/config.yaml'),
+        ));
+      } finally {
+        subscription.dispose();
+      }
+    } finally {
+      await nodeFs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('replaces stale subtree watchers when a watched directory is recreated quickly', async function () {
+    this.timeout(10000);
+
+    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
+    const fakeWatch = new FakeWatchDirectory();
+
+    try {
+      const services = createNodeCoggitServices({ workspacePath: tempRoot });
+      await initProject(services.fs, pathToUriComponents(tempRoot), {
+        sourceRoot: 'src',
+        cognitionRoot: 'cognition',
+      });
+      const nestedDirectory = path.join(tempRoot, 'src', 'nested');
+      await nodeFs.mkdir(nestedDirectory, { recursive: true });
+
+      const [project] = await discoverCoggitProjects(services);
+      assert.ok(project);
+
+      const observer = createNodeFileWatchObserver({
+        roots: [project.root],
+        persistent: false,
+        watchDirectory: fakeWatch.watchDirectory,
+      });
+      const subscription = observer.subscribe(async (observation: WatchObservation) =>
+        createWatchHost({
+          projects: [project],
+          snapshotProvider: () => buildSnapshotFromProjects([project]),
+        }).observe(observation));
+
+      try {
+        const sourceDirectory = path.join(tempRoot, 'src');
+        await waitFor(() => fakeWatch.hasWatcher(sourceDirectory));
+        await waitFor(() => fakeWatch.hasWatcher(nestedDirectory));
+
+        const originalNestedWatcher = fakeWatch.currentWatcher(nestedDirectory);
+        fakeWatch.emit(sourceDirectory, 'rename', 'nested');
+
+        await waitFor(() => {
+          const replacementNestedWatcher = fakeWatch.currentWatcher(nestedDirectory);
+          return originalNestedWatcher.closed
+            && replacementNestedWatcher !== originalNestedWatcher;
+        });
+      } finally {
+        subscription.dispose();
+      }
+    } finally {
+      await nodeFs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
 });
 
 function maintainedCognition(label: string): string {
@@ -155,4 +253,63 @@ async function waitFor(predicate: () => boolean, timeoutMs = 5000): Promise<void
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type FakeWatchListener = (
+  eventType: string,
+  filename: string | Buffer | null,
+) => void;
+
+class FakeWatchDirectory {
+  private readonly watchers = new Map<string, FakeFsWatcher[]>();
+
+  readonly watchDirectory = (
+    directoryPath: string,
+    _options: { persistent: boolean },
+    listener: FakeWatchListener,
+  ): FSWatcher => {
+    const watcher = new FakeFsWatcher(listener);
+    const key = path.resolve(directoryPath);
+    const watchers = this.watchers.get(key) ?? [];
+    watchers.push(watcher);
+    this.watchers.set(key, watchers);
+    return watcher as unknown as FSWatcher;
+  };
+
+  hasWatcher(directoryPath: string): boolean {
+    return this.liveWatchers(directoryPath).length > 0;
+  }
+
+  currentWatcher(directoryPath: string): FakeFsWatcher {
+    const [watcher] = this.liveWatchers(directoryPath).slice(-1);
+    assert.ok(watcher, `Expected watcher for ${directoryPath}`);
+    return watcher;
+  }
+
+  emit(directoryPath: string, eventType: string, filename: string | Buffer | null): void {
+    this.currentWatcher(directoryPath).emit(eventType, filename);
+  }
+
+  private liveWatchers(directoryPath: string): FakeFsWatcher[] {
+    return (this.watchers.get(path.resolve(directoryPath)) ?? [])
+      .filter((watcher) => !watcher.closed);
+  }
+}
+
+class FakeFsWatcher {
+  closed = false;
+
+  constructor(private readonly listener: FakeWatchListener) {}
+
+  on(_event: string, _listener: (error: Error) => void): this {
+    return this;
+  }
+
+  close(): void {
+    this.closed = true;
+  }
+
+  emit(eventType: string, filename: string | Buffer | null): void {
+    this.listener(eventType, filename);
+  }
 }
