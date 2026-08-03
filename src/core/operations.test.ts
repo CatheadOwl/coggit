@@ -280,6 +280,34 @@ suite('core operations', () => {
     });
   });
 
+  test('add resolves a candidate form through sourcePathCandidates', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/coggit/src/core/watchPipeline.ts', 'export const w = 1;');
+    const project = await makeProject(fs);
+
+    const result = await addOperation([project], 'src/core/watchPipeline.ts', {
+      sourcePathCandidates: () => ['coggit/src/core/watchPipeline.ts'],
+    });
+
+    assert.strictEqual(result.success, true);
+    assert.strictEqual(result.sourcePath, 'coggit/src/core/watchPipeline.ts');
+    assert.strictEqual(result.cognitionPath, 'coggit/src/core/watchPipeline.ts.md');
+  });
+
+  test('add path-not-found carries fuzzy hints and miss fields', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/coggit/src/core/watchPipeline.ts', 'export const w = 1;');
+    const project = await makeProject(fs);
+
+    const result = await addOperation([project], 'src/core/watchPipeline.ts');
+
+    assert.strictEqual(result.success, false);
+    assert.strictEqual(result.error?.code, 'path-not-found');
+    assert.ok(result.pathHints.includes('coggit/src/core/watchPipeline.ts'));
+    assert.strictEqual(result.pathMissMessage, 'Path not found in any CogGit project: src/core/watchPipeline.ts');
+    assert.ok(result.pathHintMessage);
+  });
+
   test('handbook catalog exposes stable ids and node-kind routing', () => {
     const catalog = handbookCatalog();
 
@@ -451,5 +479,57 @@ suite('core operations', () => {
     const result = await snapshotOperation([project], { sourcePath: 'src/missing.ts' });
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.sourcePath, 'src/missing.ts');
+  });
+
+  test('status returns fuzzy path hints when the source path misses', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/coggit/src/core/watchPipeline.ts', 'export const w = 1;');
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], 'src/core/watchPipeline.ts');
+
+    assert.strictEqual(result.found, false);
+    assert.strictEqual(result.pathMissMessage, 'Path not found in any CogGit project: src/core/watchPipeline.ts');
+    assert.ok(result.pathHints.includes('coggit/src/core/watchPipeline.ts'));
+    assert.ok(result.pathHintMessage);
+  });
+
+  test('status returns no hints when the source path resolves', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/coggit/src/core/watchPipeline.ts', 'export const w = 1;');
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], 'coggit/src/core/watchPipeline.ts');
+
+    assert.strictEqual(result.found, true);
+    assert.deepStrictEqual(result.pathHints, []);
+    assert.strictEqual(result.pathMissMessage, undefined);
+    assert.strictEqual(result.pathHintMessage, undefined);
+  });
+
+  test('status miss without fuzzy hints omits the hint lead-in', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/other/main.ts', 'export const o = 1;');
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], 'src/core/watchPipeline.ts');
+
+    assert.strictEqual(result.found, false);
+    assert.deepStrictEqual(result.pathHints, []);
+    assert.strictEqual(result.pathMissMessage, 'Path not found in any CogGit project: src/core/watchPipeline.ts');
+    assert.strictEqual(result.pathHintMessage, undefined);
+  });
+
+  test('snapshot returns fuzzy path hints when the source path misses', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/coggit/src/core/watchPipeline.ts', 'export const w = 1;');
+    const project = await makeProject(fs);
+
+    const result = await snapshotOperation([project], { sourcePath: 'src/core/watchPipeline.ts' });
+
+    assert.strictEqual(result.found, false);
+    assert.strictEqual(result.pathMissMessage, 'Path not found in any CogGit project: src/core/watchPipeline.ts');
+    assert.ok(result.pathHints.includes('coggit/src/core/watchPipeline.ts'));
+    assert.ok(result.pathHintMessage);
   });
 });

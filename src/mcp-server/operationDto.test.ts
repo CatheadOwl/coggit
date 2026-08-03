@@ -60,6 +60,7 @@ suite('mcp operation DTO adapter', () => {
       handbookId: 'leaf',
       verify: null,
       node: null,
+      pathHints: [],
       inspection: {
         sourcePath: 'src/main.ts',
         cognitionPath: 'src/main.ts.md',
@@ -99,6 +100,7 @@ suite('mcp operation DTO adapter', () => {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
       },
+      pathHints: [],
     };
 
     assert.deepStrictEqual(addStructuredContent(result).error, result.error);
@@ -116,6 +118,7 @@ suite('mcp operation DTO adapter', () => {
       verificationTimeMs: 1710000000000,
       verify: { tool: 'coggit_status', sourcePath: 'src/app' },
       error: null,
+      pathHints: [],
     };
 
     const structuredContent = resolveStructuredContent(result);
@@ -157,6 +160,7 @@ suite('mcp operation DTO adapter', () => {
       found: true,
       snapshot: null,
       node: null,
+      pathHints: [],
     };
 
     const tree: TreeProjectionNode[] = [{ path: 'src/main.ts', label: 'main.ts', kind: 'file' }];
@@ -185,6 +189,7 @@ suite('mcp operation DTO adapter', () => {
         tool: 'coggit_status',
         sourcePath: 'src',
       }],
+      pathHints: [],
     });
   });
 
@@ -212,6 +217,7 @@ suite('mcp operation DTO adapter', () => {
       found: true,
       snapshot: null,
       node: null,
+      pathHints: [],
     };
 
     const tree: TreeProjectionNode[] = [{
@@ -290,6 +296,7 @@ suite('mcp operation DTO adapter', () => {
       handbookId: 'leaf',
       verify: { tool: 'coggit_status', sourcePath: 'src/main.ts' },
       node: null,
+      pathHints: [],
       inspection: {
         sourcePath: 'src/main.ts',
         cognitionPath: 'src/main.ts.md',
@@ -372,6 +379,7 @@ suite('mcp operation DTO adapter', () => {
       handbookId: 'skeleton',
       verify: { tool: 'coggit_status', sourcePath: 'src/app' },
       node: null,
+      pathHints: [],
       inspection: {
         sourcePath: 'src/app',
         cognitionPath: 'src/app/README.md',
@@ -437,6 +445,41 @@ suite('mcp operation DTO adapter', () => {
     assert.strictEqual(structuredContent.nextActions[0].resourceUri, 'coggit://handbook/skeleton');
   });
 
+  test('status structured content carries fuzzy path hints for a miss', () => {
+    const result: StatusOperationResult = {
+      found: false,
+      sourcePath: 'src/core/watchPipeline.ts',
+      nodeKind: null,
+      project: null,
+      cognitionPath: null,
+      status: null,
+      ownStatus: null,
+      descendantStatus: null,
+      staleAction: null,
+      issueCount: 1,
+      ownIssueCount: 0,
+      descendantIssueCount: 0,
+      issues: [],
+      suggestedActions: [],
+      handbookId: null,
+      verify: { tool: 'coggit_status', sourcePath: 'src/core/watchPipeline.ts' },
+      node: null,
+      pathHints: ['coggit/src/core/watchPipeline.ts'],
+      pathMissMessage: 'Path not found in any CogGit project: src/core/watchPipeline.ts',
+      pathHintMessage: 'You may mean one of these source-root-relative source paths.',
+    };
+
+    const structuredContent = statusStructuredContent(statusMcpView(result));
+
+    assert.deepStrictEqual(structuredContent.pathHints, ['coggit/src/core/watchPipeline.ts']);
+    assert.strictEqual(structuredContent.pathMissMessage, 'Path not found in any CogGit project: src/core/watchPipeline.ts');
+    assert.strictEqual(structuredContent.pathHintMessage, 'You may mean one of these source-root-relative source paths.');
+    assert.deepStrictEqual(
+      z.object(statusOperationOutputSchema).parse(structuredContent),
+      structuredContent,
+    );
+  });
+
   test('add structured content conforms to output schema', () => {
     const result: AddOperationResult = {
       success: true,
@@ -448,6 +491,7 @@ suite('mcp operation DTO adapter', () => {
       handbookId: 'leaf',
       verify: { tool: 'coggit_status', sourcePath: 'src/main.ts' },
       error: null,
+      pathHints: [],
     };
 
     const structuredContent = addStructuredContent(result);

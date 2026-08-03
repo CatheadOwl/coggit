@@ -90,6 +90,7 @@ function makeProject(
 			content: '',
 		}),
 		getNode: async (): Promise<CoggitTreeNode | undefined> => undefined,
+		resolveSourcePath: async (sourcePath: string) => ({ node: undefined, normalizedPath: sourcePath }),
 		listUntracked: async (): Promise<CoggitTreeNode[]> => [],
 		listOrphanedCognition: async (): Promise<OrphanedCognitionEntry[]> => [],
 		listMisplacedCognition: async (): Promise<MisplacedCognitionEntry[]> => [],

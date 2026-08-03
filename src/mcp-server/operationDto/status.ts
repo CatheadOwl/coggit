@@ -25,6 +25,9 @@ export const statusOperationOutputSchema = {
     tool: z.literal('coggit_status'),
   }).nullable(),
   nextActions: z.array(mcpMaintenanceNextActionSchema),
+  pathHints: z.array(z.string()),
+  pathMissMessage: z.string().optional(),
+  pathHintMessage: z.string().optional(),
 };
 
 export interface MaintenanceNextAction {
@@ -60,6 +63,9 @@ export interface StatusMcpView {
   handbookUri: string | null;
   verify: { tool: 'coggit_status' } | null;
   nextActions: MaintenanceNextAction[];
+  pathHints: string[];
+  pathMissMessage?: string;
+  pathHintMessage?: string;
 }
 
 function toMcpStatusIssue(
@@ -103,6 +109,9 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
       handbookUri: null,
       verify: result.verify ? { tool: 'coggit_status' } : null,
       nextActions: statusNextActions({ handbookUri: null }),
+      pathHints: result.pathHints,
+      ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
+      ...(result.pathHintMessage ? { pathHintMessage: result.pathHintMessage } : {}),
     };
   }
 
@@ -129,6 +138,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
     handbookUri: resolvedHandbookUri,
     verify: inspection.verify ? { tool: 'coggit_status' } : null,
     nextActions: statusNextActions({ handbookUri: resolvedHandbookUri }),
+    pathHints: result.pathHints,
   };
 }
 

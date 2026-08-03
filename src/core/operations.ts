@@ -1,5 +1,5 @@
 import type { AddCognitionKind, CognitionKind } from './cognition';
-import type { CoggitProject } from './interfaces';
+import type { CoggitProject, SourcePathResolution } from './interfaces';
 import type {
   CoggitSnapshot,
   CoggitTreeNode,
@@ -19,6 +19,12 @@ import type {
 import { buildSnapshotFromProjects } from './project';
 import { inspectNodeStatus, querySubtreeIssues } from './status';
 import { toRelativeUriPath } from './mapping';
+import {
+  PATH_HINT_MESSAGE,
+  PATH_MISS_MESSAGE,
+  pathMissMessage,
+  suggestPathHints,
+} from './pathHints';
 import { projectContext as projectContextFromProject } from './projectContext';
 
 export type {
@@ -58,6 +64,12 @@ export interface SnapshotOperationResult {
   found: boolean;
   snapshot: CoggitSnapshot | null;
   node: CoggitTreeNode | null;
+  /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
+  pathHints: string[];
+  /** Present only when the source path matched no node. */
+  pathMissMessage?: string;
+  /** Present only when a miss produced fuzzy hints. */
+  pathHintMessage?: string;
 }
 
 export interface StatusOperationResult {
@@ -78,6 +90,12 @@ export interface StatusOperationResult {
   handbookId: 'leaf' | 'skeleton' | null;
   verify: { tool: 'coggit_status'; sourcePath: string } | null;
   node: CoggitTreeNode | null;
+  /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
+  pathHints: string[];
+  /** Present only when the source path matched no node. */
+  pathMissMessage?: string;
+  /** Present only when a miss produced fuzzy hints. */
+  pathHintMessage?: string;
   /** Canonical status inspection when the node was found.
    *  undefined when found is false. */
   inspection?: NodeStatusInspection | undefined;
@@ -109,6 +127,12 @@ export interface AddOperationResult {
   handbookId: 'leaf' | 'skeleton' | null;
   verify: { tool: 'coggit_status'; sourcePath: string };
   error: AddOperationError | null;
+  /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
+  pathHints: string[];
+  /** Present only when the source path matched no node. */
+  pathMissMessage?: string;
+  /** Present only when a miss produced fuzzy hints. */
+  pathHintMessage?: string;
 }
 
 export const REVIEW_UNCHANGED_ERROR_CODES = [
@@ -136,6 +160,12 @@ export interface ReviewUnchangedOperationResult {
   verificationTimeMs: number | null;
   verify: { tool: 'coggit_status'; sourcePath: string };
   error: ReviewUnchangedOperationError | null;
+  /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
+  pathHints: string[];
+  /** Present only when the source path matched no node. */
+  pathMissMessage?: string;
+  /** Present only when a miss produced fuzzy hints. */
+  pathHintMessage?: string;
 }
 
 export interface RoutesOperationResult {
@@ -181,9 +211,54 @@ export async function findProjectNode(
   return undefined;
 }
 
+/** Expand a raw input path into candidate source-root-relative paths to try, per project. */
+export type SourcePathCandidatesExpander = (
+  project: CoggitProject,
+  sourcePath: string,
+) => readonly string[];
+
+const identitySourcePathCandidates: SourcePathCandidatesExpander = (_project, sourcePath) => [sourcePath];
+
+/**
+ * Shared source-path resolution for operations: resolve the first matching
+ * node across candidate input forms (default: the input as-is), or collect
+ * fuzzy hints from every project when none match.
+ */
+async function resolveSourcePathWithHits(
+  projects: readonly CoggitProject[],
+  sourcePath: string,
+  expandCandidates: SourcePathCandidatesExpander = identitySourcePathCandidates,
+): Promise<{
+  match: { project: CoggitProject; node: CoggitTreeNode } | undefined;
+  pathHints: string[];
+}> {
+  let allCandidates: string[] = [];
+  let normalizedPath: string | undefined;
+  for (const project of projects) {
+    for (const candidate of expandCandidates(project, sourcePath)) {
+      const resolution: SourcePathResolution = await project.resolveSourcePath(candidate);
+      if (resolution.node) {
+        return { match: { project, node: resolution.node }, pathHints: [] };
+      }
+      if (resolution.candidatePaths) {
+        allCandidates.push(...resolution.candidatePaths);
+      }
+      normalizedPath ??= resolution.normalizedPath;
+    }
+  }
+  return { match: undefined, pathHints: suggestPathHints(allCandidates, normalizedPath ?? sourcePath) };
+}
+
+export interface SnapshotOperationOptions {
+  sourcePath?: string;
+  scope?: SnapshotOperationScope;
+  maxDepth?: number;
+  sourcePathCandidates?: SourcePathCandidatesExpander;
+}
+
 export async function snapshotOperation(
   projects: readonly CoggitProject[],
-  options: { sourcePath?: string; scope?: SnapshotOperationScope; maxDepth?: number } = {},
+  options: SnapshotOperationOptions = {},
 ): Promise<SnapshotOperationResult> {
   const scope = options.scope ?? 'tracked';
   const maxDepth = normalizeMaxDepth(options.maxDepth);
@@ -191,7 +266,11 @@ export async function snapshotOperation(
   const sourcePath = options.sourcePath ?? null;
 
   if (sourcePath) {
-    const match = await findProjectNode(projects, sourcePath);
+    const { match, pathHints } = await resolveSourcePathWithHits(
+      projects,
+      sourcePath,
+      options.sourcePathCandidates,
+    );
     const node = match?.node ?? null;
     const counts = snapshotCounts(node ? flattenNode(node) : []);
     const omittedChildrenCount = node ? countOmittedChildren([node], maxDepth) : 0;
@@ -213,6 +292,13 @@ export async function snapshotOperation(
       found: match !== undefined,
       snapshot: null,
       node,
+      pathHints,
+      pathMissMessage: match
+        ? undefined
+        : pathMissMessage(sourcePath),
+      pathHintMessage: !match && pathHints.length > 0
+        ? PATH_HINT_MESSAGE
+        : undefined,
     };
   }
 
@@ -237,14 +323,24 @@ export async function snapshotOperation(
     found: true,
     snapshot,
     node: null,
+    pathHints: [],
   };
+}
+
+export interface StatusOperationOptions {
+  sourcePathCandidates?: SourcePathCandidatesExpander;
 }
 
 export async function statusOperation(
   projects: readonly CoggitProject[],
   sourcePath: string,
+  options: StatusOperationOptions = {},
 ): Promise<StatusOperationResult> {
-  const match = await findProjectNode(projects, sourcePath);
+  const { match, pathHints } = await resolveSourcePathWithHits(
+    projects,
+    sourcePath,
+    options.sourcePathCandidates,
+  );
   if (!match) {
     return {
       found: false,
@@ -263,13 +359,18 @@ export async function statusOperation(
         relativePath: sourcePath,
         severity: 'error',
         code: 'path-not-found',
-        message: 'Path not found in any CogGit project.',
+        message: PATH_MISS_MESSAGE,
         actions: [],
       }],
       suggestedActions: [],
       handbookId: null,
       verify: { tool: 'coggit_status', sourcePath },
       node: null,
+      pathHints,
+      pathMissMessage: pathMissMessage(sourcePath),
+      pathHintMessage: pathHints.length > 0
+        ? PATH_HINT_MESSAGE
+        : undefined,
     };
   }
 
@@ -305,22 +406,31 @@ export async function statusOperation(
     verify: inspection.verify,
     node: match.node,
     inspection,
+    pathHints: [],
   };
 }
 
 export async function addOperation(
   projects: readonly CoggitProject[],
   sourcePath: string,
-  options: { kind?: AddCognitionKind; overwrite?: boolean } = {},
+  options: { kind?: AddCognitionKind; overwrite?: boolean; sourcePathCandidates?: SourcePathCandidatesExpander } = {},
 ): Promise<AddOperationResult> {
   const verify = { tool: 'coggit_status' as const, sourcePath };
   if (projects.length === 0) {
     return addFailure(sourcePath, null, verify, 'no-projects', 'No CogGit project found.');
   }
 
-  const match = await findProjectNode(projects, sourcePath);
+  const { match, pathHints } = await resolveSourcePathWithHits(
+    projects,
+    sourcePath,
+    options.sourcePathCandidates,
+  );
   if (!match) {
-    return addFailure(sourcePath, null, verify, 'path-not-found', 'Path not found in any CogGit project.');
+    return addFailure(sourcePath, null, verify, 'path-not-found', PATH_MISS_MESSAGE, {
+      pathHints,
+      pathMissMessage: pathMissMessage(sourcePath),
+      pathHintMessage: pathHints.length > 0 ? PATH_HINT_MESSAGE : undefined,
+    });
   }
 
   try {
@@ -341,6 +451,7 @@ export async function addOperation(
       handbookId: handbookIdForCognitionKind(result.kind),
       verify: verifyResult,
       error: null,
+      pathHints: [],
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -355,63 +466,75 @@ export async function addOperation(
 export async function reviewUnchangedOperation(
   projects: readonly CoggitProject[],
   sourcePath: string,
+  options: { sourcePathCandidates?: SourcePathCandidatesExpander } = {},
 ): Promise<ReviewUnchangedOperationResult> {
   const verify = { tool: 'coggit_status' as const, sourcePath };
   if (projects.length === 0) {
     return reviewUnchangedFailure(sourcePath, null, null, verify, 'no-projects', 'No CogGit project found.');
   }
 
+  const expandCandidates = options.sourcePathCandidates ?? identitySourcePathCandidates;
   let sawPathNotFound = false;
   for (const candidate of projects) {
-    try {
-      // Do not call getNode before the acceptance operation: building a
-      // snapshot can bootstrap an unaccepted cognition pair, which would
-      // leave a partial acceptance if the final reread then fails.
-      const result = await candidate.markReviewedUnchanged(sourcePath);
-      const node = await candidate.getNode(sourcePath);
-      const matchedSourcePath = node?.relativePath ?? sourcePath;
-      const matchedVerify = { tool: 'coggit_status' as const, sourcePath: matchedSourcePath };
-      return {
-        success: true,
-        sourcePath: matchedSourcePath,
-        cognitionPath: node ? cognitionRelativePath(node) : null,
-        project: projectContext(candidate),
-        sourceKey: result.sourceKey,
-        verificationTimeMs: result.verificationTimeMs ?? null,
-        verify: matchedVerify,
-        error: null,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message.includes('Path not found')) {
-        sawPathNotFound = true;
-        continue;
+    for (const candidatePath of expandCandidates(candidate, sourcePath)) {
+      try {
+        // Do not call getNode before the acceptance operation: building a
+        // snapshot can bootstrap an unaccepted cognition pair, which would
+        // leave a partial acceptance if the final reread then fails.
+        const result = await candidate.markReviewedUnchanged(candidatePath);
+        const node = await candidate.getNode(candidatePath);
+        const matchedSourcePath = node?.relativePath ?? candidatePath;
+        const matchedVerify = { tool: 'coggit_status' as const, sourcePath: matchedSourcePath };
+        return {
+          success: true,
+          sourcePath: matchedSourcePath,
+          cognitionPath: node ? cognitionRelativePath(node) : null,
+          project: projectContext(candidate),
+          sourceKey: result.sourceKey,
+          verificationTimeMs: result.verificationTimeMs ?? null,
+          verify: matchedVerify,
+          error: null,
+          pathHints: [],
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('Path not found')) {
+          sawPathNotFound = true;
+          continue;
+        }
+        const code = message.includes('Registry not available')
+          ? 'registry-unavailable'
+          : message.includes('Registry changed during reviewed-unchanged')
+            ? 'registry-changed'
+            : message.includes('changed during reviewed-unchanged')
+              ? 'content-changed'
+              : 'unknown';
+        return reviewUnchangedFailure(
+          sourcePath,
+          null,
+          projectContext(candidate),
+          verify,
+          code,
+          message,
+          { pathHints: [] },
+        );
       }
-      const code = message.includes('Registry not available')
-        ? 'registry-unavailable'
-        : message.includes('Registry changed during reviewed-unchanged')
-          ? 'registry-changed'
-          : message.includes('changed during reviewed-unchanged')
-            ? 'content-changed'
-            : 'unknown';
-      return reviewUnchangedFailure(
-        sourcePath,
-        null,
-        projectContext(candidate),
-        verify,
-        code,
-        message,
-      );
     }
   }
 
+  const { pathHints } = await resolveSourcePathWithHits(projects, sourcePath, expandCandidates);
   return reviewUnchangedFailure(
     sourcePath,
     null,
     null,
     verify,
     sawPathNotFound ? 'path-not-found' : 'unknown',
-    'Path not found in any CogGit project.',
+    PATH_MISS_MESSAGE,
+    {
+      pathHints,
+      pathMissMessage: pathMissMessage(sourcePath),
+      pathHintMessage: pathHints.length > 0 ? PATH_HINT_MESSAGE : undefined,
+    },
   );
 }
 
@@ -582,6 +705,11 @@ function addFailure(
   verify: { tool: 'coggit_status'; sourcePath: string },
   code: AddOperationErrorCode,
   message: string,
+  miss?: {
+    pathHints: string[];
+    pathMissMessage?: string;
+    pathHintMessage?: string;
+  },
 ): AddOperationResult {
   return {
     success: false,
@@ -593,6 +721,9 @@ function addFailure(
     handbookId: null,
     verify,
     error: { code, message },
+    pathHints: miss?.pathHints ?? [],
+    ...(miss?.pathMissMessage ? { pathMissMessage: miss.pathMissMessage } : {}),
+    ...(miss?.pathHintMessage ? { pathHintMessage: miss.pathHintMessage } : {}),
   };
 }
 
@@ -603,6 +734,11 @@ function reviewUnchangedFailure(
   verify: { tool: 'coggit_status'; sourcePath: string },
   code: ReviewUnchangedErrorCode,
   message: string,
+  miss?: {
+    pathHints: string[];
+    pathMissMessage?: string;
+    pathHintMessage?: string;
+  },
 ): ReviewUnchangedOperationResult {
   return {
     success: false,
@@ -613,6 +749,9 @@ function reviewUnchangedFailure(
     verificationTimeMs: null,
     verify,
     error: { code, message },
+    pathHints: miss?.pathHints ?? [],
+    ...(miss?.pathMissMessage ? { pathMissMessage: miss.pathMissMessage } : {}),
+    ...(miss?.pathHintMessage ? { pathHintMessage: miss.pathHintMessage } : {}),
   };
 }
 

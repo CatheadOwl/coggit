@@ -1,32 +1,20 @@
 import * as path from 'node:path';
 
 import type { CoggitProject } from '../core/interfaces';
-import type { CoggitTreeNode } from '../core/types';
+import type { SourcePathCandidatesExpander } from '../core';
 import { uriRelativePath } from '../core';
 import { pathToUriComponents } from '../runtime/node/uri';
 
-export interface ResolvedProjectNode {
-  project: CoggitProject;
-  node: CoggitTreeNode;
-}
-
-export async function resolveProjectNode(
-  projects: readonly CoggitProject[],
+/**
+ * Runtime source-path candidate expander: map a raw CLI input path into the
+ * candidate source-root-relative forms to try per project. Operations consume
+ * this via their `sourcePathCandidates` option, so the CLI renders the
+ * operation result (including fuzzy hints) instead of re-deriving it.
+ */
+export const sourcePathCandidates: SourcePathCandidatesExpander = (
+  project: CoggitProject,
   inputPath: string,
-): Promise<ResolvedProjectNode | undefined> {
-  for (const project of projects) {
-    for (const candidate of getSourcePathCandidates(project, inputPath)) {
-      const node = await project.getNode(candidate);
-      if (node) {
-        return { project, node };
-      }
-    }
-  }
-
-  return undefined;
-}
-
-function getSourcePathCandidates(project: CoggitProject, inputPath: string): string[] {
+): string[] => {
   const candidates = new Set<string>();
   const normalized = normalizeCliPath(inputPath);
   candidates.add(normalized);
@@ -56,7 +44,7 @@ function getSourcePathCandidates(project: CoggitProject, inputPath: string): str
   }
 
   return Array.from(candidates);
-}
+};
 
 function normalizeCliPath(inputPath: string): string {
   const normalized = inputPath.replace(/\\/g, '/').replace(/\/+$/u, '');

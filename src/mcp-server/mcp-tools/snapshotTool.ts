@@ -2,6 +2,8 @@ import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server
 import { z } from 'zod';
 
 import {
+  pathHintsTryText,
+  pathMissMessage,
   projectSnapshotTree,
   projectTreeFromSnapshot,
   snapshotOperation,
@@ -79,7 +81,12 @@ export function registerSnapshotTool(
 
 function snapshotText(result: SnapshotOperationResult): string {
   if (!result.found) {
-    return `Path not found in any CogGit project: ${result.sourcePath}`;
+    const lines = [result.pathMissMessage ?? pathMissMessage(result.sourcePath ?? '')];
+    if (result.pathHintMessage && result.pathHints.length > 0) {
+      lines.push(result.pathHintMessage);
+      lines.push(pathHintsTryText(result.pathHints));
+    }
+    return lines.join('\n');
   }
   if (result.node) {
     return nodeSnapshotTreeText(result.node, { scope: result.scope, maxDepth: result.maxDepth ?? undefined });

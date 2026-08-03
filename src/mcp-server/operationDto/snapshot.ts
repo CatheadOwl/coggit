@@ -46,6 +46,9 @@ export const snapshotOperationOutputSchema = {
   projects: z.array(projectContextSchema),
   nextScopes: z.array(z.enum(['tracked', 'untracked', 'issues', 'all'])),
   suggestedActions: z.array(operationActionSchema),
+  pathHints: z.array(z.string()),
+  pathMissMessage: z.string().optional(),
+  pathHintMessage: z.string().optional(),
 };
 
 export interface SnapshotMcpView {
@@ -66,6 +69,9 @@ export interface SnapshotMcpView {
   projects: Array<z.infer<typeof projectContextSchema>>;
   nextScopes: SnapshotOperationResult['nextScopes'];
   suggestedActions: SnapshotOperationResult['suggestedActions'];
+  pathHints: string[];
+  pathMissMessage?: string;
+  pathHintMessage?: string;
 }
 
 export function snapshotMcpView(result: SnapshotOperationResult, options: { tree: TreeProjectionNode[] }): SnapshotMcpView {
@@ -86,6 +92,9 @@ export function snapshotMcpView(result: SnapshotOperationResult, options: { tree
     projects: result.projects.map(toMcpProjectContext),
     nextScopes: result.nextScopes,
     suggestedActions: result.suggestedActions,
+    pathHints: result.pathHints,
+    ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
+    ...(result.pathHintMessage ? { pathHintMessage: result.pathHintMessage } : {}),
   };
 }
 

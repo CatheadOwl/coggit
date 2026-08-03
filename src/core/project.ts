@@ -1,4 +1,4 @@
-import type { AcceptanceStore, CoggitProject, CoggitServices, ReviewUnchangedResult, UriComponents } from './interfaces';
+import type { AcceptanceStore, CoggitProject, CoggitServices, ReviewUnchangedResult, SourcePathResolution, UriComponents } from './interfaces';
 import type { CoggitLogger } from './logger';
 import { warnLog } from './logger';
 import type { AcceptedPair, CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, PathKeyRecord } from './types';
@@ -255,13 +255,29 @@ export async function openCoggitProject(
 		'project.get-node',
 		async () => {
 			try {
-				return await findProjectNode(root, services.fs, runtime, sourcePath);
+				return (await resolveProjectNode(root, services.fs, runtime, sourcePath)).node;
 			} catch (error) {
 				if (!(error instanceof RegistryRevisionMismatchError) || !services.registry) {
 					throw error;
 				}
 				runtime = await reconcileProjectRuntimeInLock(services, root, runtimeEvidence);
-				return findProjectNode(root, services.fs, runtime, sourcePath);
+				return (await resolveProjectNode(root, services.fs, runtime, sourcePath)).node;
+			}
+		},
+	),
+	resolveSourcePath: async (sourcePath) => withProjectWriteLock(
+		services,
+		root,
+		'project.resolve-source-path',
+		async () => {
+			try {
+				return await resolveProjectNode(root, services.fs, runtime, sourcePath);
+			} catch (error) {
+				if (!(error instanceof RegistryRevisionMismatchError) || !services.registry) {
+					throw error;
+				}
+				runtime = await reconcileProjectRuntimeInLock(services, root, runtimeEvidence);
+				return resolveProjectNode(root, services.fs, runtime, sourcePath);
 			}
 		},
 	),
@@ -668,13 +684,13 @@ export async function openCoggitProject(
 		'project.refresh-node',
 		async () => {
 			try {
-				return await findProjectNode(root, services.fs, runtime, sourcePath);
+				return (await resolveProjectNode(root, services.fs, runtime, sourcePath)).node;
 			} catch (error) {
 				if (!(error instanceof RegistryRevisionMismatchError) || !services.registry) {
 					throw error;
 				}
 				runtime = await reconcileProjectRuntimeInLock(services, root, runtimeEvidence);
-				return findProjectNode(root, services.fs, runtime, sourcePath);
+				return (await resolveProjectNode(root, services.fs, runtime, sourcePath)).node;
 			}
 		},
 	),
@@ -1369,12 +1385,12 @@ function findRegistryKeyBySourceKey(
   })?.[0];
 }
 
-async function findProjectNode(
+async function resolveProjectNode(
   root: CoggitWorkspaceRoot,
   fs: CoggitServices['fs'],
   runtime: ProjectRuntime,
   sourcePath: string,
-): Promise<CoggitTreeNode | undefined> {
+): Promise<SourcePathResolution> {
   const snapshot = await buildProjectSnapshot(root, fs, {
     acceptance: runtime.acceptance,
   });
@@ -1385,9 +1401,17 @@ async function findProjectNode(
   });
 
   if (normalizedPath === '.') {
-    return snapshot.roots[0];
+    return { node: snapshot.roots[0], normalizedPath };
   }
-  return findNodeByPath(snapshot.allNodes, normalizedPath);
+  const node = findNodeByPath(snapshot.allNodes, normalizedPath);
+  if (node) {
+    return { node, normalizedPath };
+  }
+  return {
+    node: undefined,
+    normalizedPath,
+    candidatePaths: snapshot.allNodes.map((candidate) => candidate.relativePath),
+  };
 }
 
 /** Match a source-root-relative path against snapshot nodes. */

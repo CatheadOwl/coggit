@@ -111,6 +111,23 @@ export interface CoggitServices {
   readonly locks?: ProjectLockManager;
 }
 
+/**
+ * Result of resolving a source path against a project's source tree.
+ * A shared resolution contract so status, snapshot, and routes can surface
+ * consistent "you may mean" hints instead of a bare not-found miss.
+ */
+export interface SourcePathResolution {
+  /** The matched node, or undefined when the path matched nothing. */
+  node: CoggitTreeNode | undefined;
+  /** Source-root-relative path used for matching, after normalization. */
+  normalizedPath: string;
+  /**
+   * Source-root-relative candidate paths available for fuzzy hinting.
+   * Present only when node is undefined.
+   */
+  candidatePaths?: string[];
+}
+
 export interface CoggitProject {
   readonly root: CoggitWorkspaceRoot;
   /**
@@ -141,6 +158,12 @@ export interface CoggitProject {
   getCognitionHandbook(kind?: 'all'): CognitionHandbook;
   getCognitionTemplate(kind: CognitionKind): CognitionTemplate;
   getNode(sourcePath: string): Promise<CoggitTreeNode | undefined>;
+  /**
+   * Resolve a source path to a snapshot node, reusing one snapshot build.
+   * When the path matches nothing, also expose the normalized path and the
+   * source tree candidate paths so callers can offer fuzzy path hints.
+   */
+  resolveSourcePath(sourcePath: string): Promise<SourcePathResolution>;
   listUntracked(): Promise<CoggitTreeNode[]>;
   listOrphanedCognition(): Promise<OrphanedCognitionEntry[]>;
   listMisplacedCognition(): Promise<MisplacedCognitionEntry[]>;

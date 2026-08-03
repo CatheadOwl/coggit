@@ -67,7 +67,10 @@ export type {
   CoggitProjectContext,
   RoutesOperationResult,
   SnapshotOperationResult,
+  SnapshotOperationOptions,
   SnapshotOperationScope,
+  SourcePathCandidatesExpander,
+  StatusOperationOptions,
   StatusOperationResult,
 } from './operations';
 export type {
@@ -121,6 +124,16 @@ export {
   toCognitionFolderReadmeUri,
   toRelativeUriPath,
 } from './mapping';
+export {
+  PATH_HINT_MESSAGE,
+  PATH_MISS_MESSAGE,
+  pathHintsTryText,
+  pathMissMessage,
+  suggestPathHints,
+} from './pathHints';
+export type {
+  SourcePathResolution,
+} from './interfaces';
 export {
   externalPathFromString,
   uriRelativePath,

@@ -1,5 +1,6 @@
 import {
-  describeObservedStatus,
+  pathHintsTryText,
+  pathMissMessage,
   type AddOperationResult,
   type ReviewUnchangedOperationResult,
   type SnapshotOperationResult,
@@ -13,6 +14,21 @@ import {
 } from '../render';
 import { formatTimestamp } from '../core/time';
 
+/** Shared miss rendering: full miss line + optional hint suggestion lines. */
+export function renderPathMissText(result: {
+  sourcePath: string | null;
+  pathMissMessage?: string;
+  pathHintMessage?: string;
+  pathHints: readonly string[];
+}): string {
+  const lines = [result.pathMissMessage ?? pathMissMessage(result.sourcePath ?? '')];
+  if (result.pathHintMessage && result.pathHints.length > 0) {
+    lines.push(result.pathHintMessage);
+    lines.push(pathHintsTryText(result.pathHints));
+  }
+  return lines.join('\n');
+}
+
 export function renderStatusOperationResult(
   result: StatusOperationResult,
   mode: 'aggregate' | 'own' | 'subtree',
@@ -23,35 +39,17 @@ export function renderStatusOperationResult(
   }
 
   // Fallback for not-found results (no node, no inspection).
-  const lines = [`Source: ${result.sourcePath}`];
-  if (result.cognitionPath) {
-    lines.push(`Cognition: ${result.cognitionPath}`);
-  }
-
-  if (mode === 'subtree') {
-    lines.push(`Status: ${renderObservedStatus(result.status)}`);
-    lines.push(`Own issues: ${result.ownIssueCount}`);
-    lines.push(`Descendant issues: ${result.descendantIssueCount}`);
-    appendOperationIssues(lines, '\nIssues:', result.issues);
-    appendSuggestedActions(lines, result.suggestedActions);
-    return lines.join('\n');
-  }
-
-  lines.push(`Status: ${renderObservedStatus(mode === 'own' ? result.ownStatus : result.status)}`);
-  lines.push(`Own status: ${renderObservedStatus(result.ownStatus)}`);
-  lines.push(`Descendant status: ${renderObservedStatus(result.descendantStatus)}`);
-  lines.push(`Issues: ${mode === 'own' ? result.ownIssueCount : result.issueCount}`);
-  appendOperationIssues(lines, undefined, mode === 'own'
-    ? result.issues.filter((issue) => issue.relativePath === result.sourcePath)
-    : result.issues);
-  appendSuggestedActions(lines, result.suggestedActions);
-  return lines.join('\n');
+  return renderPathMissText(result);
 }
 
 export function renderSnapshotOperationResult(
   result: SnapshotOperationResult,
   options: SnapshotTreeTextOptions,
 ): string {
+  if (!result.found) {
+    return renderPathMissText(result);
+  }
+
   if (result.node) {
     return renderNodeSnapshotTreeText(result.node, withCliDefaultScope(options));
   }
@@ -73,6 +71,9 @@ export function renderSnapshotOperationResult(
 
 export function renderAddOperationResult(result: AddOperationResult): string {
   if (!result.success) {
+    if (result.error?.code === 'path-not-found') {
+      return renderPathMissText(result);
+    }
     return result.error?.message ?? 'Add operation failed.';
   }
 
@@ -82,6 +83,9 @@ export function renderAddOperationResult(result: AddOperationResult): string {
 
 export function renderReviewUnchangedOperationResult(result: ReviewUnchangedOperationResult): string {
   if (!result.success) {
+    if (result.error?.code === 'path-not-found') {
+      return renderPathMissText(result);
+    }
     return [
       `Review unchanged failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
       `Next: verify current status with ${result.verify.tool} for ${result.verify.sourcePath}.`,
@@ -96,41 +100,6 @@ export function renderReviewUnchangedOperationResult(result: ReviewUnchangedOper
     `Verification time: ${formatTimestamp(result.verificationTimeMs, 'none')}`,
     `Next: verify current status with ${result.verify.tool} for ${result.verify.sourcePath}.`,
   ].join('\n');
-}
-
-function appendOperationIssues(
-  lines: string[],
-  heading: string | undefined,
-  issues: StatusOperationResult['issues'],
-): void {
-  if (issues.length === 0) {
-    return;
-  }
-
-  if (heading) {
-    lines.push(heading);
-  }
-  for (const issue of issues) {
-    lines.push(`- ${issue.relativePath}: [${issue.severity}] ${issue.message}`);
-  }
-}
-
-function appendSuggestedActions(
-  lines: string[],
-  actions: StatusOperationResult['suggestedActions'],
-): void {
-  if (actions.length === 0) {
-    return;
-  }
-
-  lines.push('\nSuggested actions:');
-  for (const action of actions) {
-    lines.push(`- ${action.label}`);
-  }
-}
-
-function renderObservedStatus(status: StatusOperationResult['status']): string {
-  return describeObservedStatus(status ?? undefined)?.toLowerCase() ?? 'none';
 }
 
 function hasSnapshotTreeOptions(options: SnapshotTreeTextOptions): boolean {

@@ -2,7 +2,7 @@ import type { CoggitProject } from '../core/interfaces';
 import { statusOperation } from '../core';
 import { renderStatusSectionsText } from '../render';
 import { renderStatusOperationResult } from './operationDto';
-import { resolveProjectNode } from './util';
+import { sourcePathCandidates } from './util';
 
 export type StatusMode = 'aggregate' | 'own' | 'subtree';
 
@@ -19,12 +19,12 @@ export async function runStatus(
     return runProjectRootStatus(projects, mode);
   }
 
-  const resolved = await resolveProjectNode(projects, sourcePath);
-  if (!resolved) {
-    throw new UserFacingError(`Path not found in CogGit project: ${sourcePath}`);
+  const result = await statusOperation(projects, sourcePath, {
+    sourcePathCandidates,
+  });
+  if (!result.found) {
+    throw new UserFacingError(renderStatusOperationResult(result, mode));
   }
-
-  const result = await statusOperation(projects, resolved.node.relativePath);
   return renderStatusOperationResult(result, mode);
 }
 

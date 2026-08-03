@@ -1,6 +1,7 @@
 import type { CognitionRoutesEntry, RoutesProjectionNode } from './types.js';
 import type { UriComponents } from './interfaces.js';
 import { normalizeSourcePathInput } from './mapping.js';
+import { suggestPathHints } from './pathHints.js';
 import { applyTreeDepth } from './projection.js';
 
 export const DEFAULT_ROUTES_DEPTH = 2;
@@ -98,21 +99,10 @@ function suggestHintsFromNormalizedPath(
   tree: readonly RoutesProjectionNode[],
   normalizedPath: string,
 ): string[] {
-  if (normalizedPath === '' || normalizedPath === '.') {
-    return [];
-  }
-
-  const hints = new Set<string>();
-  for (const node of flattenRouteNodes(tree)) {
-    if (routePathMatchesHint(node.path, normalizedPath)) {
-      hints.add(node.path);
-      if (hints.size >= 4) {
-        break;
-      }
-    }
-  }
-
-  return [...hints].slice(0, 5);
+  return suggestPathHints(
+    flattenRouteNodes(tree).map((node) => node.path),
+    normalizedPath,
+  );
 }
 
 export function applyRoutesFilters(
@@ -228,24 +218,6 @@ function flattenRouteNodes(nodes: readonly RoutesProjectionNode[]): RoutesProjec
     node,
     ...(node.children ? flattenRouteNodes(node.children) : []),
   ]);
-}
-
-function routePathMatchesHint(routePath: string, sourcePath: string): boolean {
-  if (routePath === sourcePath) {
-    return false;
-  }
-
-  const routeSegments = routePath.split('/').filter(Boolean);
-  const sourceSegments = sourcePath.split('/').filter(Boolean);
-  if (sourceSegments.length === 0) {
-    return false;
-  }
-
-  if (routePath.endsWith(`/${sourcePath}`)) {
-    return true;
-  }
-
-  return routeSegments.slice(-sourceSegments.length).join('/') === sourcePath;
 }
 
 // ─── Presentation assembly ─────────────────────────────────────────────────

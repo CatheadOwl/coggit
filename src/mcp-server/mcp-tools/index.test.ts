@@ -110,6 +110,7 @@ function createFakeProject(onEnsureFresh: () => void): CoggitProject {
       content: '',
     }),
     getNode: async () => undefined,
+    resolveSourcePath: async (sourcePath) => ({ node: undefined, normalizedPath: sourcePath }),
     listUntracked: async () => [],
     listOrphanedCognition: async () => [],
     listMisplacedCognition: async () => [],

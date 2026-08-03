@@ -1,7 +1,7 @@
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { statusOperation } from '../../core/index.js';
+import { pathHintsTryText, pathMissMessage, statusOperation } from '../../core/index.js';
 import type { StatusOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { nodeClipboardStatusText } from '../../format/nodePresentation.js';
@@ -57,7 +57,12 @@ export function registerStatusTool(
 
 function statusText(result: StatusOperationResult): string {
   if (!result.found || !result.node) {
-    return `File not found in any CogGit project: ${result.sourcePath}`;
+    const lines = [result.pathMissMessage ?? pathMissMessage(result.sourcePath)];
+    if (result.pathHintMessage && result.pathHints.length > 0) {
+      lines.push(result.pathHintMessage);
+      lines.push(pathHintsTryText(result.pathHints));
+    }
+    return lines.join('\n');
   }
   return joinMcpSections(
     result.project ? formatProjectContext([result.project]) : '',
