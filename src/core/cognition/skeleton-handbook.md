@@ -21,6 +21,18 @@ Keep less stable knowledge elsewhere: current file inventory belongs in
 source-file design cognition belongs in a leaf; historical notes belong in
 `KNOWLEDGE.md`.
 
+## Design Source Rule
+
+When the agent is already working from an external single source of truth
+(SSOT) that governs the folder or layer, keep the skeleton as its local
+projection.
+
+Reference the source from `## Pointers`, or inline it under the invariant it
+constrains. Do not summarize the source.
+
+If a layer-wide collision appears, record the local resolution under the
+relevant invariant.
+
 ## Update Rules
 
 Update the skeleton when the folder's layer-level meaning changes:

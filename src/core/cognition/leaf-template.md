@@ -18,7 +18,7 @@ metadata:
 
 <The choice this module makes.>
 
-- **Source**: ADR-003 (Registry-as-core-module), if this decision traces to a design source.
+- **Source**: ADR-003 (Registry-as-core-module; local implication), if working from an external SSOT.
 - **Why**: <Why this choice exists.>
 - **Rejected**: <Alternative rejected, if useful.>
 - **Note**: <Non-obvious invariant, edge case, or design source collision, if useful.>
