@@ -24,6 +24,10 @@ The costly step is not reading one design document. The costly step is repeatedl
 
 CogGit makes that local interpretation durable. A cognition file can reference a broader ADR without copying it, then record what that ADR means for the nearby implementation boundary.
 
+## A Lightweight Design Harness
+
+CogGit acts as a lightweight design harness for coding agents: a maintained local context surface that helps them align with design intent and notice drift or conflict before changing code.
+
 ## Why Comments Are Not Enough
 
 Code comments usually explain nearby mechanics: an edge case, a non-obvious line, or a small implementation decision.

@@ -2,9 +2,9 @@
 
 CogGit is a VS Code extension for tracking source-linked Markdown cognition files and their freshness against your codebase.
 
-It helps agents and humans see the current architectural context without rebuilding it from scratch. Each cognition file records the current intent, contracts, and boundaries for a source file or folder. Think of these files as small materialized views over your architecture: easy to read, review, and update when the code changes.
+It helps agents and humans see local design intent without rebuilding it from scratch. Each cognition file records the current intent, contracts, and boundaries for a source file or folder. Think of these files as small "materialized views" over your codebase architecture: easy to read, review, and update when the code changes.
 
-When source changes without a matching cognition update, CogGit marks the pair as stale and surfaces the evidence an agent can use to review or update it.
+When source changes without a matching cognition update, CogGit marks the pair as stale and shows the evidence an agent can use to review or update it.
 
 ## Highlights
 
