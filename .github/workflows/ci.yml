@@ -37,12 +37,7 @@ jobs:
       - name: Production package build
         run: pnpm run package
 
-      - name: Install X11 dependencies for vscode-test
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb libnss3 libatk1.0-0 libatk-bridge2.0-0 \
-            libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
-            libxfixes3 libxrandr2 libgbm1 libasound2 libatspi2.0-0 libsecret-1-0
-
       - name: Extension integration tests (xvfb)
-        run: xvfb-run -a pnpm exec vscode-test
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: pnpm exec vscode-test
