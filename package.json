@@ -33,14 +33,7 @@
     "code-intelligence"
   ],
   "activationEvents": [
-    "workspaceContains:**/.coggit/config.yaml",
-    "onView:coggit.ghostExplorer",
-    "onView:coggit.orphanExplorer",
-    "onView:coggit.misplacedExplorer",
-    "onCommand:coggit.refresh",
-    "onCommand:coggit.initProject",
-    "onCommand:coggit.initProjectWithPicker",
-    "onCommand:coggit.configureMcp"
+    "workspaceContains:**/.coggit/config.yaml"
   ],
   "main": "./dist/extension.js",
   "bin": {
