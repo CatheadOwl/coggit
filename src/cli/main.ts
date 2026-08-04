@@ -5,6 +5,7 @@ import { discoverCoggitProjects, type AddCognitionKind, type CognitionKind } fro
 import type { SnapshotScope } from '../render';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
+import { runOrphans } from './orphans';
 import { runResolveReviewedUnchanged } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
@@ -89,6 +90,16 @@ function createProgram(
     });
 
   program
+    .command('orphans')
+    .description('List registry-tracked cognition files whose paired source path no longer exists.')
+    .option('-j, --json', 'output structured orphaned cognition JSON instead of text')
+    .action(async (options: OrphansOptions) => {
+      await runWithProjects((projects) => runOrphans(projects, {
+        json: options.json,
+      }));
+    });
+
+  program
     .command('add')
     .argument('<path>')
     .option('--kind <kind>', 'cognition kind: auto, leaf, skeleton', parseAddCognitionKind, 'auto')
@@ -134,6 +145,10 @@ interface SnapshotOptions {
 interface RoutesOptions {
   depth?: number;
   format?: RoutesFormat;
+  json?: boolean;
+}
+
+interface OrphansOptions {
   json?: boolean;
 }
 
