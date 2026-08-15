@@ -120,7 +120,7 @@ function createFakeProject(onEnsureFresh: () => void): CoggitProject {
     recordSourceChange: async () => false,
     recordDirectoryEntryChange: async () => false,
     recordCognitionChange: async () => false,
-    markReviewedUnchanged: async () => ({
+    markResolved: async () => ({
       sourceKey: 'tracked.ts',
     }),
     refreshNode: async () => undefined,

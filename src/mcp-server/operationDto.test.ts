@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type {
   AddOperationResult,
   CoggitProjectContext,
-  ReviewUnchangedOperationResult,
+  ResolveOperationResult,
   RoutesOperationResult,
   SnapshotOperationResult,
   StatusOperationResult,
@@ -170,8 +170,8 @@ suite('mcp operation DTO adapter', () => {
     );
   });
 
-  test('resolve structured content conforms to reviewed unchanged output schema', () => {
-    const result: ReviewUnchangedOperationResult = {
+  test('resolve structured content conforms to the resolve output schema', () => {
+    const result: ResolveOperationResult = {
       success: true,
       sourcePath: 'src/app',
       cognitionPath: 'src/app/README.md',
@@ -189,7 +189,6 @@ suite('mcp operation DTO adapter', () => {
       z.object(resolveOperationOutputSchema).parse(structuredContent),
       structuredContent,
     );
-    assert.strictEqual(structuredContent.resolution, 'reviewed_unchanged');
     assert.deepStrictEqual(structuredContent.project, {
       label: 'fixture',
       projectRoot: '/workspace',

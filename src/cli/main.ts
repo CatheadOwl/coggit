@@ -6,7 +6,7 @@ import type { SnapshotScope } from '../render';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
 import { runOrphans } from './orphans';
-import { runResolveReviewedUnchanged } from './resolve';
+import { runResolve } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
 import { runStatus, type StatusMode, UserFacingError } from './status';
@@ -116,9 +116,8 @@ function createProgram(
   program
     .command('resolve')
     .argument('<path>')
-    .requiredOption('--reviewed-unchanged', 'mark current source/cognition relationship as reviewed without editing cognition')
     .action(async (sourcePath: string) => {
-      await runWithProjects((projects) => runResolveReviewedUnchanged(projects, sourcePath));
+      await runWithProjects((projects) => runResolve(projects, sourcePath));
     });
 
   program

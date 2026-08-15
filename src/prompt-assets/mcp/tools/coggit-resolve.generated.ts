@@ -2,7 +2,7 @@
 
 const toolSurface = {
   "title": "CogGit Resolve",
-  "description": "Resolve an eligible stale CogGit source/cognition state through an explicit resolution mode. Use resolution=\"reviewed_unchanged\" only after you have inspected the current source fact and paired cognition and confirm the cognition still covers the source without text edits. This writes reviewed evidence to the registry; it is not a passive status check or automatic verification."
+  "description": "Resolve a stale CogGit source/cognition state by accepting the current pair as reviewed. Call after inspecting the current source and paired cognition and confirming the cognition correctly covers the source — whether it already did, or you edited it to align. Re-records the accepted pair to the current contents. This is an explicit review declaration, not an automatic check."
 } as const;
 
 export default toolSurface;

@@ -1,18 +1,15 @@
 import { z } from 'zod';
 
-import { REVIEW_UNCHANGED_ERROR_CODES } from '../../core/operations.js';
-import type { ReviewUnchangedOperationResult } from '../../core/index.js';
+import { RESOLVE_ERROR_CODES } from '../../core/operations.js';
+import type { ResolveOperationResult } from '../../core/index.js';
 import {
   mcpMaintenanceNextActionSchema,
   projectContextSchema,
   toMcpProjectContext,
 } from './shared.js';
 
-export const RESOLVE_REVIEWED_UNCHANGED = 'reviewed_unchanged' as const;
-
 export const resolveOperationOutputSchema = {
   success: z.boolean(),
-  resolution: z.literal(RESOLVE_REVIEWED_UNCHANGED),
   sourcePath: z.string(),
   cognitionPath: z.string().nullable(),
   sourceKey: z.string().nullable(),
@@ -23,27 +20,25 @@ export const resolveOperationOutputSchema = {
   }),
   project: projectContextSchema.nullable(),
   error: z.object({
-    code: z.enum(REVIEW_UNCHANGED_ERROR_CODES),
+    code: z.enum(RESOLVE_ERROR_CODES),
     message: z.string(),
   }).nullable(),
   nextActions: z.array(mcpMaintenanceNextActionSchema),
 };
 
-export function resolveStructuredContent(result: ReviewUnchangedOperationResult): {
+export function resolveStructuredContent(result: ResolveOperationResult): {
   success: boolean;
-  resolution: typeof RESOLVE_REVIEWED_UNCHANGED;
   sourcePath: string;
   cognitionPath: string | null;
   sourceKey: string | null;
   verificationTimeMs: number | null;
-  verify: ReviewUnchangedOperationResult['verify'];
+  verify: ResolveOperationResult['verify'];
   project: z.infer<typeof projectContextSchema> | null;
-  error: ReviewUnchangedOperationResult['error'];
+  error: ResolveOperationResult['error'];
   nextActions: [];
 } {
   return {
     success: result.success,
-    resolution: RESOLVE_REVIEWED_UNCHANGED,
     sourcePath: result.sourcePath,
     cognitionPath: result.cognitionPath,
     sourceKey: result.sourceKey,

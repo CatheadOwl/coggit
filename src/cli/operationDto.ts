@@ -1,7 +1,7 @@
 import {
   renderPathMissText,
   type AddOperationResult,
-  type ReviewUnchangedOperationResult,
+  type ResolveOperationResult,
   type SnapshotOperationResult,
   type StatusOperationResult,
 } from '../core';
@@ -67,19 +67,19 @@ export function renderAddOperationResult(result: AddOperationResult): string {
   return `${action} ${result.kind} cognition: ${result.cognitionPath}`;
 }
 
-export function renderReviewUnchangedOperationResult(result: ReviewUnchangedOperationResult): string {
+export function renderResolveOperationResult(result: ResolveOperationResult): string {
   if (!result.success) {
     if (result.error?.code === 'path-not-found') {
       return renderPathMissText(result);
     }
     return [
-      `Review unchanged failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
+      `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
       `Next: verify current status with ${result.verify.tool} for ${result.verify.sourcePath}.`,
     ].join('\n');
   }
 
   return [
-    'Reviewed unchanged: yes',
+    'Resolved: yes',
     `Source path: ${result.sourcePath}`,
     `Cognition path: ${result.cognitionPath ?? 'none'}`,
     `Registry key: ${result.sourceKey ?? 'none'}`,

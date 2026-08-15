@@ -100,7 +100,7 @@ function makeProject(
 		recordSourceChange: async () => false,
 		recordDirectoryEntryChange,
 		recordCognitionChange: async () => false,
-		markReviewedUnchanged: async () => ({ sourceKey: 'src/example.ts', verificationTimeMs: 1234 }),
+		markResolved: async () => ({ sourceKey: 'src/example.ts', verificationTimeMs: 1234 }),
 		refreshNode: async (): Promise<CoggitTreeNode | undefined> => undefined,
 		flush: async (): Promise<void> => {},
 	};

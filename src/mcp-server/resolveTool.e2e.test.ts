@@ -26,7 +26,6 @@ interface AcceptedPairContent {
 
 interface ResolveContent {
   readonly success: boolean;
-  readonly resolution: string;
   readonly sourceKey: string | null;
   readonly verificationTimeMs: number | null;
 }
@@ -81,7 +80,6 @@ suite('MCP resolve E2E — real filesystem registry persistence', function () {
       name: 'coggit_resolve',
       arguments: {
         sourcePath: 'tracked.ts',
-        resolution: 'reviewed_unchanged',
       },
     });
     assert.notStrictEqual(resolveResult.isError, true);
@@ -89,7 +87,6 @@ suite('MCP resolve E2E — real filesystem registry persistence', function () {
     const resolved = resolveResult.structuredContent as ResolveContent | undefined;
     assert.ok(resolved, 'resolve should return structured content');
     assert.strictEqual(resolved.success, true);
-    assert.strictEqual(resolved.resolution, 'reviewed_unchanged');
     assert.strictEqual(resolved.sourceKey, 'tracked.ts');
     assert.ok(resolved.verificationTimeMs !== null);
 

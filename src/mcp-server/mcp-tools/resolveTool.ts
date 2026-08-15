@@ -1,12 +1,11 @@
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { reviewUnchangedOperation } from '../../core/index.js';
-import type { ReviewUnchangedOperationResult } from '../../core/index.js';
+import { resolveOperation } from '../../core/index.js';
+import type { ResolveOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
-  RESOLVE_REVIEWED_UNCHANGED,
   resolveOperationOutputSchema,
   resolveStructuredContent,
 } from '../operationDto/index.js';
@@ -26,9 +25,6 @@ export function registerResolveTool(
         sourcePath: z
           .string()
           .describe('Source-root-relative path for the stale source/cognition node to resolve. Do not pass an absolute filesystem path.'),
-        resolution: z
-          .literal(RESOLVE_REVIEWED_UNCHANGED)
-          .describe('Resolution mode. Use reviewed_unchanged only after reviewing source and cognition and confirming no cognition text edit is needed.'),
       },
       outputSchema: resolveOperationOutputSchema,
       annotations: {
@@ -39,7 +35,7 @@ export function registerResolveTool(
       },
     },
     async ({ sourcePath }) => {
-      const result = await reviewUnchangedOperation(await getProjects(), sourcePath);
+      const result = await resolveOperation(await getProjects(), sourcePath);
       const content: ToolContent[] = [
         {
           type: 'text' as const,
@@ -55,13 +51,13 @@ export function registerResolveTool(
   );
 }
 
-function resolveText(result: ReviewUnchangedOperationResult): string {
+function resolveText(result: ResolveOperationResult): string {
   if (!result.success) {
     return `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`;
   }
 
   return [
-    'Resolved: reviewed unchanged',
+    'Resolved',
     `Source path: ${result.sourcePath}`,
     `Cognition path: ${result.cognitionPath ?? '(none)'}`,
     `Source key: ${result.sourceKey ?? '(none)'}`,

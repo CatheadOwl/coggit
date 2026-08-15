@@ -95,7 +95,7 @@ export interface FreshnessEvidenceStore {
   recordExplicitVerification(rootId: string, sourceKey: string): void;
 }
 
-export interface ReviewUnchangedResult {
+export interface ResolveResult {
   sourceKey: string;
   accepted?: AcceptedPair;
   /** @deprecated v4 output field; no longer persisted or used for freshness. */
@@ -196,7 +196,7 @@ export interface CoggitProject {
    * passively accepts the current source/cognition pair.
    */
   recordCognitionChange(uri: UriComponents, generation?: number): Promise<boolean>;
-  markReviewedUnchanged(sourcePath: string): Promise<ReviewUnchangedResult>;
+  markResolved(sourcePath: string): Promise<ResolveResult>;
   refreshNode(sourcePath: string): Promise<CoggitTreeNode | undefined>;
   flush(): Promise<void>;
 }

@@ -135,7 +135,7 @@ export interface AddOperationResult {
   pathHintMessage?: string;
 }
 
-export const REVIEW_UNCHANGED_ERROR_CODES = [
+export const RESOLVE_ERROR_CODES = [
   'no-projects',
   'path-not-found',
   'registry-unavailable',
@@ -144,14 +144,14 @@ export const REVIEW_UNCHANGED_ERROR_CODES = [
   'unknown',
 ] as const;
 
-export type ReviewUnchangedErrorCode = typeof REVIEW_UNCHANGED_ERROR_CODES[number];
+export type ResolveErrorCode = typeof RESOLVE_ERROR_CODES[number];
 
-export interface ReviewUnchangedOperationError {
-  code: ReviewUnchangedErrorCode;
+export interface ResolveOperationError {
+  code: ResolveErrorCode;
   message: string;
 }
 
-export interface ReviewUnchangedOperationResult {
+export interface ResolveOperationResult {
   success: boolean;
   sourcePath: string;
   cognitionPath: string | null;
@@ -159,7 +159,7 @@ export interface ReviewUnchangedOperationResult {
   sourceKey: string | null;
   verificationTimeMs: number | null;
   verify: { tool: 'coggit_status'; sourcePath: string };
-  error: ReviewUnchangedOperationError | null;
+  error: ResolveOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
   /** Present only when the source path matched no node. */
@@ -463,14 +463,14 @@ export async function addOperation(
   }
 }
 
-export async function reviewUnchangedOperation(
+export async function resolveOperation(
   projects: readonly CoggitProject[],
   sourcePath: string,
   options: { sourcePathCandidates?: SourcePathCandidatesExpander } = {},
-): Promise<ReviewUnchangedOperationResult> {
+): Promise<ResolveOperationResult> {
   const verify = { tool: 'coggit_status' as const, sourcePath };
   if (projects.length === 0) {
-    return reviewUnchangedFailure(sourcePath, null, null, verify, 'no-projects', 'No CogGit project found.');
+    return resolveFailure(sourcePath, null, null, verify, 'no-projects', 'No CogGit project found.');
   }
 
   const expandCandidates = options.sourcePathCandidates ?? identitySourcePathCandidates;
@@ -481,7 +481,7 @@ export async function reviewUnchangedOperation(
         // Do not call getNode before the acceptance operation: building a
         // snapshot can bootstrap an unaccepted cognition pair, which would
         // leave a partial acceptance if the final reread then fails.
-        const result = await candidate.markReviewedUnchanged(candidatePath);
+        const result = await candidate.markResolved(candidatePath);
         const node = await candidate.getNode(candidatePath);
         const matchedSourcePath = node?.relativePath ?? candidatePath;
         const matchedVerify = { tool: 'coggit_status' as const, sourcePath: matchedSourcePath };
@@ -504,12 +504,12 @@ export async function reviewUnchangedOperation(
         }
         const code = message.includes('Registry not available')
           ? 'registry-unavailable'
-          : message.includes('Registry changed during reviewed-unchanged')
+          : message.includes('Registry changed during resolve')
             ? 'registry-changed'
-            : message.includes('changed during reviewed-unchanged')
+            : message.includes('changed during resolve')
               ? 'content-changed'
               : 'unknown';
-        return reviewUnchangedFailure(
+        return resolveFailure(
           sourcePath,
           null,
           projectContext(candidate),
@@ -523,7 +523,7 @@ export async function reviewUnchangedOperation(
   }
 
   const { pathHints } = await resolveSourcePathWithHits(projects, sourcePath, expandCandidates);
-  return reviewUnchangedFailure(
+  return resolveFailure(
     sourcePath,
     null,
     null,
@@ -727,19 +727,19 @@ function addFailure(
   };
 }
 
-function reviewUnchangedFailure(
+function resolveFailure(
   sourcePath: string,
   cognitionPath: string | null,
   project: CoggitProjectContext | null,
   verify: { tool: 'coggit_status'; sourcePath: string },
-  code: ReviewUnchangedErrorCode,
+  code: ResolveErrorCode,
   message: string,
   miss?: {
     pathHints: string[];
     pathMissMessage?: string;
     pathHintMessage?: string;
   },
-): ReviewUnchangedOperationResult {
+): ResolveOperationResult {
   return {
     success: false,
     sourcePath,

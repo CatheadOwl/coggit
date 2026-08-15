@@ -1,4 +1,4 @@
-import type { AcceptanceStore, CoggitProject, CoggitServices, ReviewUnchangedResult, SourcePathResolution, UriComponents } from './interfaces';
+import type { AcceptanceStore, CoggitProject, CoggitServices, ResolveResult, SourcePathResolution, UriComponents } from './interfaces';
 import type { CoggitLogger } from './logger';
 import { warnLog } from './logger';
 import type { AcceptedPair, CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, PathKeyRecord } from './types';
@@ -588,7 +588,7 @@ export async function openCoggitProject(
         },
       );
     },
-    markReviewedUnchanged: async (sourcePath) => {
+    markResolved: async (sourcePath) => {
       if (!services.registry) {
         throw new Error('Registry not available');
       }
@@ -596,7 +596,7 @@ export async function openCoggitProject(
       return withProjectWriteLock(
         services,
         root,
-        'project.review-unchanged',
+        'project.resolve',
         async () => {
           try {
             runtime = await reconcileProjectRuntimeInLock(
@@ -618,7 +618,7 @@ export async function openCoggitProject(
               runtime = recovered;
             }
             throw new Error(
-              'Registry changed during reviewed-unchanged acceptance; the acceptance was not committed. Review the current contents and retry.',
+              'Registry changed during resolve acceptance; the acceptance was not committed. Review the current contents and retry.',
               { cause: error },
             );
           }
@@ -643,7 +643,7 @@ export async function openCoggitProject(
             || before.accepted.source !== after.accepted.source
             || before.accepted.cognition !== after.accepted.cognition) {
             throw new Error(
-              'Source or cognition changed during reviewed-unchanged acceptance; review the current contents and retry.',
+              'Source or cognition changed during resolve acceptance; review the current contents and retry.',
             );
           }
 
@@ -665,7 +665,7 @@ export async function openCoggitProject(
               runtime = recovered;
             }
             throw new Error(
-              'Registry changed during reviewed-unchanged acceptance; the acceptance was not committed. Review the current contents and retry.',
+              'Registry changed during resolve acceptance; the acceptance was not committed. Review the current contents and retry.',
               { cause: error },
             );
           }

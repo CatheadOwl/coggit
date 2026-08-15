@@ -12,7 +12,7 @@ import { openCoggitProject } from './project';
 import {
   addOperation,
   handbookCatalog,
-  reviewUnchangedOperation,
+  resolveOperation,
   snapshotOperation,
   statusOperation,
 } from './operations';
@@ -381,7 +381,7 @@ suite('core operations', () => {
       1000);
     const project = await makeProject(fs, registry);
 
-    const review = await reviewUnchangedOperation([project], 'tracked.ts');
+    const review = await resolveOperation([project], 'tracked.ts');
     assert.strictEqual(review.success, true);
     assert.strictEqual(review.sourceKey, 'tracked.ts');
     assert.ok(review.verificationTimeMs !== null);
@@ -423,7 +423,7 @@ suite('core operations', () => {
       }
     });
 
-    const review = await reviewUnchangedOperation([project], 'tracked.ts');
+    const review = await resolveOperation([project], 'tracked.ts');
     assert.strictEqual(review.success, false);
     assert.strictEqual(review.error?.code, 'content-changed');
     assert.strictEqual(registry.current()?.entries['tracked.ts']?.accepted, null);
@@ -458,7 +458,7 @@ suite('core operations', () => {
       },
     }));
 
-    const review = await reviewUnchangedOperation([project], 'tracked.ts');
+    const review = await resolveOperation([project], 'tracked.ts');
 
     assert.strictEqual(review.success, false);
     assert.strictEqual(review.error?.code, 'registry-changed');

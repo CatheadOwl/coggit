@@ -1,10 +1,10 @@
 import type { CoggitProject } from '../core/interfaces';
-import { reviewUnchangedOperation } from '../core';
-import { renderReviewUnchangedOperationResult } from './operationDto';
+import { resolveOperation } from '../core';
+import { renderResolveOperationResult } from './operationDto';
 import { UserFacingError } from './status';
 import { sourcePathCandidates } from './util';
 
-export async function runResolveReviewedUnchanged(
+export async function runResolve(
   projects: readonly CoggitProject[],
   sourcePath: string,
 ): Promise<string> {
@@ -12,12 +12,12 @@ export async function runResolveReviewedUnchanged(
     throw new UserFacingError('No CogGit project found.');
   }
 
-  const result = await reviewUnchangedOperation(projects, sourcePath, {
+  const result = await resolveOperation(projects, sourcePath, {
     sourcePathCandidates,
   });
   if (!result.success) {
-    throw new UserFacingError(renderReviewUnchangedOperationResult(result));
+    throw new UserFacingError(renderResolveOperationResult(result));
   }
 
-  return renderReviewUnchangedOperationResult(result);
+  return renderResolveOperationResult(result);
 }

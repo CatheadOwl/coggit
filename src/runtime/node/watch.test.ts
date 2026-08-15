@@ -39,7 +39,7 @@ suite('node file watch observer', () => {
 
       const [project] = await discoverCoggitProjects(services);
       assert.ok(project);
-      const reviewed = await project.markReviewedUnchanged('tracked.ts');
+      const reviewed = await project.markResolved('tracked.ts');
       assert.ok(reviewed.accepted);
       assert.strictEqual((await statusOperation([project], 'tracked.ts')).status, 'fresh');
 
