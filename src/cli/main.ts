@@ -5,6 +5,7 @@ import { discoverCoggitProjects, type AddCognitionKind, type CognitionKind } fro
 import type { SnapshotScope } from '../render';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
+import { runInit, type InitOptions } from './init';
 import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
@@ -59,6 +60,21 @@ function createProgram(
     .addOption(new Option('--subtree', 'show subtree issue details').conflicts('own'))
     .action(async (sourcePath: string | undefined, options: StatusOptions) => {
       await runWithProjects((projects) => runStatus(projects, sourcePath, statusMode(options)));
+    });
+
+  program
+    .command('init')
+    .description('Initialise a new CogGit project at the given path.')
+    .argument('[path]', 'project root (defaults to the current directory)')
+    .option('--source-root <dir>', 'source root directory (default: src)')
+    .option('--cognition-root <dir>', 'cognition root directory (default: <source-root>_cognition)')
+    .action(async (targetPath: string | undefined, options: InitOptions) => {
+      const services = createNodeCoggitServices();
+      const output = await runInit(services.fs, targetPath ?? '.', {
+        sourceRoot: options.sourceRoot,
+        cognitionRoot: options.cognitionRoot,
+      });
+      console.log(output);
     });
 
   program
