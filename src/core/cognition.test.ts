@@ -14,7 +14,7 @@ suite('cognition V3 prompt assets', () => {
   test('keeps V3 source tracing fields in the leaf template', () => {
     const template = getCognitionTemplate('leaf').content;
 
-    assert.match(template, /\*\*Source\*\*: ADR-003 \(Registry-as-core-module\)/u);
+    assert.match(template, /\*\*Source\*\*: ADR-003 \(Registry-as-core-module; local implication\)/u);
     assert.match(template, /design source collision/u);
     assert.match(template, /Optional\. Only include boundaries/u);
   });
