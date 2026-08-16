@@ -243,6 +243,35 @@ suite('node watch leases', () => {
     await nodeFs.rm(projectPath, { recursive: true, force: true });
   });
 
+  test('returns null when stale reclaim loses the race', async () => {
+    const projectPath = await tempProject();
+    const projectRoot = pathToUriComponents(projectPath);
+    const lockPath = watchLeaseLockPath(projectRoot);
+    const leases = new NodeWatchLeaseManager({ staleAfterMs: 1 });
+
+    await nodeFs.mkdir(path.dirname(lockPath), { recursive: true });
+    await nodeFs.mkdir(`${lockPath}.reclaim`);
+    await nodeFs.writeFile(lockPath, JSON.stringify({
+      token: 'stale-watch-token',
+      pid: 99999999,
+      hostname: os.hostname(),
+      acquiredAt: '2000-01-01T00:00:00.000Z',
+      context: { owner: 'mcp', operation: 'stale.watch.race' },
+    }), 'utf8');
+
+    const lease = await leases.tryAcquireWatchLease(
+      projectRoot,
+      { owner: 'cli', operation: 'test.watch.reclaim-race' },
+    );
+
+    assert.strictEqual(lease, null);
+    const raw = await nodeFs.readFile(lockPath, 'utf8');
+    const lock = JSON.parse(raw) as { token: string };
+    assert.strictEqual(lock.token, 'stale-watch-token');
+
+    await nodeFs.rm(projectPath, { recursive: true, force: true });
+  });
+
   test('does not reclaim cross-host stale watch leases', async () => {
     const projectPath = await tempProject();
     const projectRoot = pathToUriComponents(projectPath);
