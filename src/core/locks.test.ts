@@ -1,6 +1,11 @@
 import * as assert from 'node:assert';
 import { createCoggitServices, openCoggitProject } from './project';
-import { noOpProjectLockManager, ProjectLockError } from './locks';
+import {
+  noOpProjectLockManager,
+  noOpWatchLeaseManager,
+  ProjectLockError,
+  WatchLeaseError,
+} from './locks';
 import type { ProjectLockContext, ProjectLockManager } from './locks';
 import type {
   ConfigProvider,
@@ -173,5 +178,39 @@ suite('project write locks', () => {
     assert.strictEqual(calls[0].owner, 'core');
     assert.strictEqual(calls[0].operation, 'project.open.reconcile');
     assert.strictEqual(calls[0].projectLabel, 'root');
+  });
+});
+
+suite('watch lease', () => {
+  test('no-op watch lease manager returns null', async () => {
+    const context: ProjectLockContext = {
+      owner: 'cli',
+      operation: 'watch.try-acquire',
+      projectLabel: 'test project',
+    };
+
+    const lease = await noOpWatchLeaseManager.tryAcquireWatchLease(
+      uri('/workspace'),
+      context,
+    );
+
+    assert.strictEqual(lease, null);
+  });
+
+  test('watch lease errors carry stable code and context', () => {
+    const context: ProjectLockContext = {
+      owner: 'cli',
+      operation: 'watch.renew',
+    };
+    const error = new WatchLeaseError(
+      'reclaimed',
+      'COGGIT_WATCH_LEASE_RECLAIMED',
+      context,
+    );
+
+    assert.strictEqual(error.name, 'WatchLeaseError');
+    assert.strictEqual(error.code, 'COGGIT_WATCH_LEASE_RECLAIMED');
+    assert.strictEqual(error.context, context);
+    assert.ok(error instanceof ProjectLockError);
   });
 });

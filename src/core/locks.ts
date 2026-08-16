@@ -37,3 +37,43 @@ export const noOpProjectLockManager: ProjectLockManager = {
     return fn();
   },
 };
+
+/** A held watch lease. Renew keeps the lease from going stale; release ends it. */
+export interface WatchLeaseHandle {
+  renew(): Promise<void>; // throws WatchLeaseError('reclaimed') if the lease was taken over
+  release(): Promise<void>;
+}
+
+/**
+ * Host-neutral coordinator for single-writer watcher leases.
+ *
+ * Unlike `ProjectLockManager`, acquisition never blocks: a caller either
+ * becomes the sole holder immediately or backs off to reconcile-on-read.
+ */
+export interface WatchLeaseManager {
+  /**
+   * Non-blocking try-acquire. Returns null when a live holder exists (the
+   * caller declines watching and falls back to reconcile-on-read). Never waits.
+   */
+  tryAcquireWatchLease(
+    projectRoot: UriComponents,
+    context: ProjectLockContext,
+  ): Promise<WatchLeaseHandle | null>;
+}
+
+export class WatchLeaseError extends ProjectLockError {
+  constructor(
+    message: string,
+    code: string,
+    context?: ProjectLockContext,
+  ) {
+    super(message, code, context);
+    this.name = 'WatchLeaseError';
+  }
+}
+
+export const noOpWatchLeaseManager: WatchLeaseManager = {
+  async tryAcquireWatchLease(_projectRoot, _context) {
+    return null;
+  },
+};

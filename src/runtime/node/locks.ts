@@ -74,6 +74,7 @@ export class NodeProjectLockManager implements ProjectLockManager {
     while (true) {
       try {
         await nodeFs.mkdir(path.dirname(lockPath), { recursive: true });
+        // 'wx' (O_EXCL) is racy on NFS; accepted limitation, see ADR 0014.
         const handle = await nodeFs.open(lockPath, 'wx');
         try {
           await handle.writeFile(JSON.stringify(lock, null, 2), 'utf8');
