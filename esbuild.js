@@ -58,6 +58,10 @@ async function main() {
 			banner: {
 				js: '#!/usr/bin/env node',
 			},
+			// @parcel/watcher resolves its native platform binary through a
+			// dynamic require, so it must stay external (ADR 0014 distribution
+			// model). It is a runtime dependency, not bundled into the CLI.
+			external: ['@parcel/watcher'],
 		}),
 		esbuild.context({
 			...shared,

@@ -11,6 +11,7 @@ import { runResolve } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
 import { runStatus, type StatusMode, UserFacingError } from './status';
+import { startWatchSession } from './watch';
 
 void main(process.argv);
 
@@ -143,6 +144,24 @@ function createProgram(
       console.log(runHandbook(kind));
     });
 
+  program
+    .command('watch')
+    .description('Watch source, cognition, and config changes and emit observations.')
+    .option('-j, --json', 'emit JSON Lines (one observation result per line)')
+    .action(async (options: WatchOptions) => {
+      const services = createNodeCoggitServices();
+      const projects = await discoverCoggitProjects(services);
+      const session = startWatchSession(projects, { json: options.json }, (line) => console.log(line));
+      await new Promise<void>((resolve) => {
+        const shutdown = () => {
+          session.dispose();
+          resolve();
+        };
+        process.once('SIGINT', shutdown);
+        process.once('SIGTERM', shutdown);
+      });
+    });
+
   return program;
 }
 
@@ -164,6 +183,10 @@ interface RoutesOptions {
 }
 
 interface OrphansOptions {
+  json?: boolean;
+}
+
+interface WatchOptions {
   json?: boolean;
 }
 
