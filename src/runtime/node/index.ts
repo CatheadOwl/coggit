@@ -35,8 +35,11 @@ export { NodeFileSystem } from './fs';
 export { NodeConfigProvider } from './config';
 export {
   NodeProjectLockManager,
+  NodeWatchLeaseManager,
   projectWriteLockPath,
+  watchLeaseLockPath,
   type NodeProjectLockManagerOptions,
+  type NodeWatchLeaseManagerOptions,
 } from './locks';
 export { NodeRegistryProviderFactory, NodeRegistryProvider } from './registry';
 export { pathToUriComponents, uriComponentsToPath } from './uri';
