@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '../../../core/interfaces';
+import { generatedSourceStructureGlobExclude } from '../../../core/sourceStructureIgnore';
 import { toComponents } from './uri';
 
 export class VscodeConfigProvider implements ConfigProvider {
@@ -12,7 +13,7 @@ export class VscodeConfigProvider implements ConfigProvider {
   }
 
   async findFiles(pattern: string): Promise<UriComponents[]> {
-    const uris = await vscode.workspace.findFiles(pattern);
+    const uris = await vscode.workspace.findFiles(pattern, generatedSourceStructureGlobExclude());
     return uris.map(toComponents);
   }
 }
