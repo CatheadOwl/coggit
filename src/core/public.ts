@@ -1,3 +1,13 @@
+/**
+ * Public SDK surface for `coggit/core`.
+ *
+ * This is the curated barrel exposed through the package `./core` export. It
+ * intentionally omits the watch family (`calculateAffected`, `applyWatchEventToProjects`,
+ * `createWatchHost`, watch types) — v1 is reconcile-on-read and watch authority
+ * remains adapter-only — and adds the port contracts runtime adapters must
+ * implement against. `src/core/index.ts` stays the full internal barrel.
+ */
+
 export { initProject } from './init';
 export { findProjectRoot } from './discover';
 export {
@@ -12,34 +22,6 @@ export {
   noOpProjectLockManager,
   ProjectLockError,
 } from './locks';
-export { calculateAffected } from './affected';
-export {
-  applyWatchEventToProjects,
-  planWatchRefresh,
-  selectWatchRefreshMode,
-} from './watchPipeline';
-export {
-  createWatchHost,
-} from './watchHost';
-export type {
-  NormalizedWatchEvent,
-  WatchBatchRefreshMode,
-  WatchRefreshRoute,
-  WatcherEventApplyResult,
-  WatchEventDomain,
-  WatchFileChangeKind,
-  WatchRefreshMode,
-} from './watchPipeline';
-export type {
-  WatchHost,
-  WatchHostObservationResult,
-  WatchHostOptions,
-  WatchHostRefreshIntent,
-  WatchObservation,
-  WatchObservationHandler,
-  WatchObserver,
-  WatchObserverSubscription,
-} from './watchHost';
 export {
   ADD_OPERATION_ERROR_CODES,
   addOperation,
@@ -132,9 +114,6 @@ export {
   renderPathMissText,
   suggestPathHints,
 } from './pathHints';
-export type {
-  SourcePathResolution,
-} from './interfaces';
 export {
   externalPathFromString,
   uriRelativePath,
@@ -178,3 +157,28 @@ export type {
 } from './types';
 export { discoverWorkspaceRoots, readWorkspaceRoot } from './workspace';
 export { buildSnapshot } from './buildSnapshot';
+
+// Port contracts runtime adapters implement against `coggit/core`.
+export type {
+  UriComponents,
+  UriKey,
+  FileSystem,
+  FileStat,
+  WorkspaceFolderInfo,
+  ConfigProvider,
+  RegistryProviderFactory,
+  AcceptanceStore,
+  ResolveResult,
+  CoggitServices,
+  CoggitProject,
+  SourcePathResolution,
+} from './interfaces';
+
+// Registry + routes DTOs referenced by the ports and facade above.
+export type {
+  RegistryProvider,
+  RegistryFile,
+  AcceptedPair,
+  CognitionRoutes,
+} from './types';
+export type { BuildCognitionRoutesOptions } from './cognitionRoutes';

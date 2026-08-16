@@ -67,6 +67,19 @@ async function main() {
 				js: '#!/usr/bin/env node',
 			},
 		}),
+		// SDK library entries — the public `coggit/core` and `coggit/runtime-node`
+		// surfaces. Node built-ins (`node:fs`, `node:path`, `node:crypto`) stay
+		// external; everything else bundles into a self-contained CJS file.
+		esbuild.context({
+			...shared,
+			entryPoints: ['src/core/public.ts'],
+			outfile: 'dist/core.js',
+		}),
+		esbuild.context({
+			...shared,
+			entryPoints: ['src/runtime/node/index.ts'],
+			outfile: 'dist/runtime-node.js',
+		}),
 	]);
 	if (watch) {
 		await Promise.all(contexts.map((ctx) => ctx.watch()));

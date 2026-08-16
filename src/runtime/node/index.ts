@@ -1,14 +1,18 @@
+/**
+ * Public SDK surface for `coggit/runtime-node`.
+ *
+ * Exposes the reusable Node primitives (fs, config, locks, registry, URI) and
+ * the service composition root so non-VS Code runtimes can build on the local
+ * filesystem adapters. The watcher observer is adapter-only and stays a deep
+ * import (`runtime/node/watch`), outside the v1 reconcile-on-read surface.
+ */
 import type { CoggitServices } from '../../core/interfaces';
-import { createCoggitServices, createEnvCoggitLogger } from '../../core';
+import { createCoggitServices } from '../../core/project';
+import { createEnvCoggitLogger } from '../../core/logger';
 import { NodeConfigProvider } from './config';
 import { NodeFileSystem } from './fs';
 import { NodeProjectLockManager } from './locks';
 import { NodeRegistryProviderFactory } from './registry';
-
-export {
-  createNodeFileWatchObserver,
-  type NodeFileWatchObserverOptions,
-} from './watch';
 
 export interface CreateNodeServicesOptions {
   workspacePath?: string;
@@ -26,3 +30,13 @@ export function createNodeCoggitServices(
     locks: new NodeProjectLockManager(),
   });
 }
+
+export { NodeFileSystem } from './fs';
+export { NodeConfigProvider } from './config';
+export {
+  NodeProjectLockManager,
+  projectWriteLockPath,
+  type NodeProjectLockManagerOptions,
+} from './locks';
+export { NodeRegistryProviderFactory, NodeRegistryProvider } from './registry';
+export { pathToUriComponents, uriComponentsToPath } from './uri';

@@ -36,6 +36,21 @@
     "workspaceContains:**/.coggit/config.yaml"
   ],
   "main": "./dist/extension.js",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/extension.js",
+    "./core": {
+      "types": "./dist/core/public.d.ts",
+      "default": "./dist/core.js"
+    },
+    "./runtime-node": {
+      "types": "./dist/runtime/node/index.d.ts",
+      "default": "./dist/runtime-node.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "coggit": "./dist/cli.js",
     "coggit-mcp": "./dist/mcp-stdio.js"
@@ -246,11 +261,12 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "compile": "pnpm run check-types && pnpm run lint && pnpm run build:types && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "package": "pnpm run check-types && pnpm run lint && pnpm run build:types && node esbuild.js --production",
+    "build:types": "tsc -p tsconfig.build.json",
     "test:compile": "tsc -p . --outDir out && node scripts/copy-test-assets.js",
     "test:watch": "tsc -p . -w --outDir out",
     "pretest": "pnpm run test:compile && pnpm run compile && pnpm run lint",
