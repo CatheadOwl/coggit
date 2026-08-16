@@ -1,8 +1,8 @@
 import * as assert from 'node:assert';
-import type { FSWatcher } from 'node:fs';
 import * as nodeFs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import type ParcelWatcher = require('@parcel/watcher');
 
 import {
   buildSnapshotFromProjects,
@@ -19,11 +19,12 @@ import { createNodeFileWatchObserver } from './watch';
 
 suite('node file watch observer', () => {
   test('feeds real source and cognition file changes through the native host', async function () {
-    this.timeout(10000);
+    this.timeout(20000);
 
     const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
     const sourcePath = path.join(tempRoot, 'src', 'tracked.ts');
     const cognitionPath = path.join(tempRoot, 'cognition', 'tracked.ts.md');
+    const configPath = path.join(tempRoot, '.coggit', 'config.yaml');
     const errors: Error[] = [];
     const results: WatchHostObservationResult[] = [];
 
@@ -45,7 +46,6 @@ suite('node file watch observer', () => {
 
       const observer = createNodeFileWatchObserver({
         roots: [project.root],
-        persistent: false,
         onError: (error) => errors.push(error),
       });
       const host = createWatchHost({
@@ -59,17 +59,22 @@ suite('node file watch observer', () => {
       });
 
       try {
-        await sleep(250);
+        // Prime the native watcher: the first native subscription arms
+        // asynchronously, so repeatedly touch config.yaml until it observably
+        // fires, then start the real writes instead of sleeping.
+        await probeWatcherUntilArmed(configPath, () => results.length > 0);
+        results.length = 0;
+
         await nodeFs.writeFile(sourcePath, 'export const value = "B";\n', 'utf8');
         await waitFor(() => results.some((result) =>
           result.observation.domain === 'source'
-          && result.applyResult?.sourceObservationCount === 1,
+          && (result.applyResult?.sourceObservationCount ?? 0) >= 1,
         ));
 
         await nodeFs.writeFile(cognitionPath, maintainedCognition('source value B relationship'), 'utf8');
         await waitFor(() => results.some((result) =>
           result.observation.domain === 'cognition'
-          && result.applyResult?.passiveAcceptanceCount === 1,
+          && (result.applyResult?.passiveAcceptanceCount ?? 0) >= 1,
         ));
       } finally {
         subscription.dispose();
@@ -83,9 +88,10 @@ suite('node file watch observer', () => {
   });
 
   test('reports config file changes as config observations', async function () {
-    this.timeout(10000);
+    this.timeout(20000);
 
     const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
+    const configPath = path.join(tempRoot, '.coggit', 'config.yaml');
     const observations: WatchObservation[] = [];
     const errors: Error[] = [];
 
@@ -100,7 +106,6 @@ suite('node file watch observer', () => {
 
       const observer = createNodeFileWatchObserver({
         roots: [project.root],
-        persistent: false,
         onError: (error) => errors.push(error),
       });
       const host = createWatchHost({
@@ -113,8 +118,10 @@ suite('node file watch observer', () => {
       });
 
       try {
-        await sleep(250);
-        await nodeFs.appendFile(path.join(tempRoot, '.coggit', 'config.yaml'), '# watched\n', 'utf8');
+        await probeWatcherUntilArmed(configPath, () => observations.length > 0);
+        observations.length = 0;
+
+        await nodeFs.appendFile(configPath, '# watched\n', 'utf8');
         await waitFor(() => observations.some((observation) =>
           observation.domain === 'config'
           && observation.kind === 'change',
@@ -129,12 +136,12 @@ suite('node file watch observer', () => {
     }
   });
 
-  test('maps config events without filenames to config.yaml', async function () {
+  test('allowlists config.yaml and maps parcel event types to watch kinds', async function () {
     this.timeout(10000);
 
     const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
+    const callbacks = new Map<string, ParcelWatcher.SubscribeCallback>();
     const observations: WatchObservation[] = [];
-    const fakeWatch = new FakeWatchDirectory();
 
     try {
       const services = createNodeCoggitServices({ workspacePath: tempRoot });
@@ -147,77 +154,42 @@ suite('node file watch observer', () => {
 
       const observer = createNodeFileWatchObserver({
         roots: [project.root],
-        persistent: false,
-        watchDirectory: fakeWatch.watchDirectory,
+        subscribe: async (dir, callback) => {
+          callbacks.set(path.resolve(dir), callback);
+          return {
+            unsubscribe: async () => {
+              callbacks.delete(path.resolve(dir));
+            },
+          };
+        },
+      });
+      const host = createWatchHost({
+        projects: [project],
+        snapshotProvider: () => buildSnapshotFromProjects([project]),
       });
       const subscription = observer.subscribe(async (observation: WatchObservation) => {
         observations.push(observation);
-        return createWatchHost({
-          projects: [project],
-          snapshotProvider: () => buildSnapshotFromProjects([project]),
-        }).observe(observation);
+        return host.observe(observation);
       });
 
       try {
         const configDirectory = path.join(tempRoot, '.coggit');
-        await waitFor(() => fakeWatch.hasWatcher(configDirectory));
-        fakeWatch.emit(configDirectory, 'change', null);
+        await waitFor(() => callbacks.has(configDirectory));
+        const emitConfig = callbacks.get(configDirectory)!;
 
-        await waitFor(() => observations.some((observation) =>
-          observation.domain === 'config'
-          && observation.kind === 'change'
-          && observation.uri.path.endsWith('/.coggit/config.yaml'),
-        ));
-      } finally {
-        subscription.dispose();
-      }
-    } finally {
-      await nodeFs.rm(tempRoot, { recursive: true, force: true });
-    }
-  });
-
-  test('allowlists known config file events under the config directory', async function () {
-    this.timeout(10000);
-
-    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
-    const observations: WatchObservation[] = [];
-    const fakeWatch = new FakeWatchDirectory();
-
-    try {
-      const services = createNodeCoggitServices({ workspacePath: tempRoot });
-      await initProject(services.fs, pathToUriComponents(tempRoot), {
-        sourceRoot: 'src',
-        cognitionRoot: 'cognition',
-      });
-      const [project] = await discoverCoggitProjects(services);
-      assert.ok(project);
-
-      const observer = createNodeFileWatchObserver({
-        roots: [project.root],
-        persistent: false,
-        watchDirectory: fakeWatch.watchDirectory,
-      });
-      const subscription = observer.subscribe(async (observation: WatchObservation) => {
-        observations.push(observation);
-        return createWatchHost({
-          projects: [project],
-          snapshotProvider: () => buildSnapshotFromProjects([project]),
-        }).observe(observation);
-      });
-
-      try {
-        const configDirectory = path.join(tempRoot, '.coggit');
-        await waitFor(() => fakeWatch.hasWatcher(configDirectory));
-        fakeWatch.emit(configDirectory, 'change', 'registry.json');
+        emitConfig(null, [{ type: 'update', path: path.join(configDirectory, 'registry.json') }]);
         await sleep(100);
-
         assert.strictEqual(observations.length, 0);
 
-        fakeWatch.emit(configDirectory, 'change', 'config.yaml');
-        await waitFor(() => observations.length === 1);
+        emitConfig(null, [{ type: 'update', path: path.join(configDirectory, 'config.yaml') }]);
+        emitConfig(null, [{ type: 'create', path: path.join(configDirectory, 'config.yaml') }]);
+        emitConfig(null, [{ type: 'delete', path: path.join(configDirectory, 'config.yaml') }]);
+        await waitFor(() => observations.length === 3);
+
         assert.strictEqual(observations[0].domain, 'config');
         assert.strictEqual(observations[0].kind, 'change');
-        assert.ok(observations[0].uri.path.endsWith('/.coggit/config.yaml'));
+        assert.strictEqual(observations[1].kind, 'create');
+        assert.strictEqual(observations[2].kind, 'delete');
       } finally {
         subscription.dispose();
       }
@@ -226,11 +198,11 @@ suite('node file watch observer', () => {
     }
   });
 
-  test('replaces stale subtree watchers when a watched directory is recreated quickly', async function () {
+  test('unsubscribes a stale subscription when dispose is followed by resubscribe', async function () {
     this.timeout(10000);
 
     const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
-    const fakeWatch = new FakeWatchDirectory();
+    const controlled = new ControlledSubscribe();
 
     try {
       const services = createNodeCoggitServices({ workspacePath: tempRoot });
@@ -238,36 +210,87 @@ suite('node file watch observer', () => {
         sourceRoot: 'src',
         cognitionRoot: 'cognition',
       });
-      const nestedDirectory = path.join(tempRoot, 'src', 'nested');
-      await nodeFs.mkdir(nestedDirectory, { recursive: true });
-
+      await nodeFs.mkdir(path.join(tempRoot, 'src'), { recursive: true });
       const [project] = await discoverCoggitProjects(services);
       assert.ok(project);
 
       const observer = createNodeFileWatchObserver({
         roots: [project.root],
-        persistent: false,
-        watchDirectory: fakeWatch.watchDirectory,
+        subscribe: controlled.subscribe,
+      });
+      const host = createWatchHost({
+        projects: [project],
+        snapshotProvider: () => buildSnapshotFromProjects([project]),
+      });
+      const handler = async (observation: WatchObservation) => host.observe(observation);
+
+      const first = observer.subscribe(handler);
+      await waitFor(() => controlled.calls.length === 3);
+      first.dispose();
+
+      const second = observer.subscribe(handler);
+      await waitFor(() => controlled.calls.length === 6);
+
+      const staleSubscriptions = controlled.resolveRange(0, 3);
+      const liveSubscriptions = controlled.resolveRange(3, 6);
+
+      // The first generation's in-flight subscriptions resolve after a dispose
+      // and resubscribe; they must be unsubscribed, not leaked, while the
+      // second generation's subscriptions stay live.
+      await waitFor(() => staleSubscriptions.every((subscription) => subscription.unsubscribed));
+      assert.ok(liveSubscriptions.every((subscription) => !subscription.unsubscribed));
+
+      second.dispose();
+      await waitFor(() => liveSubscriptions.every((subscription) => subscription.unsubscribed));
+    } finally {
+      await nodeFs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('isolates a failed subscription to onError without dropping other targets', async function () {
+    this.timeout(10000);
+
+    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-watch-'));
+    const errors: Error[] = [];
+    const subscribed: string[] = [];
+
+    try {
+      const services = createNodeCoggitServices({ workspacePath: tempRoot });
+      await initProject(services.fs, pathToUriComponents(tempRoot), {
+        sourceRoot: 'src',
+        cognitionRoot: 'cognition',
+      });
+      await nodeFs.mkdir(path.join(tempRoot, 'src'), { recursive: true });
+      const [project] = await discoverCoggitProjects(services);
+      assert.ok(project);
+
+      const sourceDir = path.resolve(path.join(tempRoot, 'src'));
+      const cognitionDir = path.resolve(path.join(tempRoot, 'cognition'));
+      const configDir = path.resolve(path.join(tempRoot, '.coggit'));
+
+      const observer = createNodeFileWatchObserver({
+        roots: [project.root],
+        onError: (error) => errors.push(error),
+        subscribe: async (dir, _callback) => {
+          if (path.resolve(dir) === sourceDir) {
+            throw new Error('source subscribe failed');
+          }
+          subscribed.push(path.resolve(dir));
+          return { unsubscribe: async () => undefined };
+        },
+      });
+      const host = createWatchHost({
+        projects: [project],
+        snapshotProvider: () => buildSnapshotFromProjects([project]),
       });
       const subscription = observer.subscribe(async (observation: WatchObservation) =>
-        createWatchHost({
-          projects: [project],
-          snapshotProvider: () => buildSnapshotFromProjects([project]),
-        }).observe(observation));
+        host.observe(observation));
 
       try {
-        const sourceDirectory = path.join(tempRoot, 'src');
-        await waitFor(() => fakeWatch.hasWatcher(sourceDirectory));
-        await waitFor(() => fakeWatch.hasWatcher(nestedDirectory));
-
-        const originalNestedWatcher = fakeWatch.currentWatcher(nestedDirectory);
-        fakeWatch.emit(sourceDirectory, 'rename', 'nested');
-
-        await waitFor(() => {
-          const replacementNestedWatcher = fakeWatch.currentWatcher(nestedDirectory);
-          return originalNestedWatcher.closed
-            && replacementNestedWatcher !== originalNestedWatcher;
-        });
+        await waitFor(() => errors.length === 1);
+        assert.match(errors[0].message, /source subscribe failed/);
+        assert.ok(subscribed.includes(cognitionDir));
+        assert.ok(subscribed.includes(configDir));
       } finally {
         subscription.dispose();
       }
@@ -301,65 +324,57 @@ async function waitFor(predicate: () => boolean, timeoutMs = 5000): Promise<void
   assert.fail('Timed out waiting for expected node watcher observation.');
 }
 
+// The native watcher arms asynchronously after subscribe; a write issued before
+// it is armed is silently lost. Touch the config file until the watcher visibly
+// delivers a config observation, which proves the subscription is live.
+async function probeWatcherUntilArmed(
+  configPath: string,
+  hasObservation: () => boolean,
+  timeoutMs = 10000,
+): Promise<void> {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    await nodeFs.appendFile(configPath, '# watcher arm probe\n', 'utf8');
+    await sleep(100);
+    if (hasObservation()) {
+      return;
+    }
+  }
+  assert.fail('Timed out waiting for the native watcher to arm.');
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-type FakeWatchListener = (
-  eventType: string,
-  filename: string | Buffer | null,
-) => void;
+class ControlledSubscribe {
+  readonly calls: Array<{
+    dir: string;
+    resolve: (subscription: ParcelWatcher.AsyncSubscription) => void;
+  }> = [];
 
-class FakeWatchDirectory {
-  private readonly watchers = new Map<string, FakeFsWatcher[]>();
+  readonly subscribe = (dir: string, _callback: ParcelWatcher.SubscribeCallback) =>
+    new Promise<ParcelWatcher.AsyncSubscription>((resolve) => {
+      this.calls.push({ dir, resolve });
+    });
 
-  readonly watchDirectory = (
-    directoryPath: string,
-    _options: { persistent: boolean },
-    listener: FakeWatchListener,
-  ): FSWatcher => {
-    const watcher = new FakeFsWatcher(listener);
-    const key = path.resolve(directoryPath);
-    const watchers = this.watchers.get(key) ?? [];
-    watchers.push(watcher);
-    this.watchers.set(key, watchers);
-    return watcher as unknown as FSWatcher;
-  };
-
-  hasWatcher(directoryPath: string): boolean {
-    return this.liveWatchers(directoryPath).length > 0;
-  }
-
-  currentWatcher(directoryPath: string): FakeFsWatcher {
-    const [watcher] = this.liveWatchers(directoryPath).slice(-1);
-    assert.ok(watcher, `Expected watcher for ${directoryPath}`);
-    return watcher;
-  }
-
-  emit(directoryPath: string, eventType: string, filename: string | Buffer | null): void {
-    this.currentWatcher(directoryPath).emit(eventType, filename);
-  }
-
-  private liveWatchers(directoryPath: string): FakeFsWatcher[] {
-    return (this.watchers.get(path.resolve(directoryPath)) ?? [])
-      .filter((watcher) => !watcher.closed);
+  resolveRange(start: number, end: number): TrackedSubscription[] {
+    const subscriptions: TrackedSubscription[] = [];
+    for (let i = start; i < end; i++) {
+      const subscription = new TrackedSubscription(this.calls[i].dir);
+      subscriptions.push(subscription);
+      this.calls[i].resolve(subscription);
+    }
+    return subscriptions;
   }
 }
 
-class FakeFsWatcher {
-  closed = false;
+class TrackedSubscription implements ParcelWatcher.AsyncSubscription {
+  unsubscribed = false;
 
-  constructor(private readonly listener: FakeWatchListener) {}
+  constructor(readonly dir: string) {}
 
-  on(_event: string, _listener: (error: Error) => void): this {
-    return this;
-  }
-
-  close(): void {
-    this.closed = true;
-  }
-
-  emit(eventType: string, filename: string | Buffer | null): void {
-    this.listener(eventType, filename);
+  async unsubscribe(): Promise<void> {
+    this.unsubscribed = true;
   }
 }

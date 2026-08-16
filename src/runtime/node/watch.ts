@@ -1,38 +1,41 @@
-import { Dirent, Stats, watch, type FSWatcher } from 'node:fs';
 import * as nodeFs from 'node:fs/promises';
 import * as path from 'node:path';
+import ParcelWatcher = require('@parcel/watcher');
 
-import type { CoggitWorkspaceRoot, WatchObservation, WatchObservationHandler, WatchObserver, WatchObserverSubscription } from '../../core';
+import type {
+  CoggitWorkspaceRoot,
+  WatchObservation,
+  WatchObservationHandler,
+  WatchObserver,
+  WatchObserverSubscription,
+} from '../../core';
 import type { WatchEventDomain, WatchFileChangeKind } from '../../core';
 import type { UriComponents } from '../../core/interfaces';
 import { pathToUriComponents, uriComponentsToPath } from './uri';
 
 interface WatchTarget {
   readonly domain: WatchEventDomain;
-  readonly rootId: string;
   readonly rootPath: string;
 }
 
-interface WatchedDirectory {
-  readonly target: WatchTarget;
-  readonly directoryPath: string;
-  readonly watcher: FSWatcher;
-}
-
-type NodeWatchDirectory = (
-  directoryPath: string,
-  options: { persistent: boolean },
-  listener: (eventType: string, filename: string | Buffer | null) => void,
-) => FSWatcher;
+type ParcelSubscribe = typeof ParcelWatcher.subscribe;
 
 export interface NodeFileWatchObserverOptions {
   readonly roots: readonly CoggitWorkspaceRoot[];
-  readonly persistent?: boolean;
   readonly now?: () => number;
   readonly onError?: (error: Error) => void;
-  readonly watchDirectory?: NodeWatchDirectory;
+  readonly subscribe?: ParcelSubscribe;
 }
 
+/**
+ * @parcel/watcher-backed `WatchObserver` for the Node runtime.
+ *
+ * This adapter feeds the same `WatchObservation` stream into the CogGit-owned
+ * watch host as any other `WatchObserver`; only the underlying filesystem
+ * subscription differs. `@parcel/watcher` is a native recursive watcher, so the
+ * previous hand-rolled `node:fs.watch` directory recursion (and its rename /
+ * subtree re-watch bookkeeping) is no longer needed.
+ */
 export function createNodeFileWatchObserver(
   options: NodeFileWatchObserverOptions,
 ): WatchObserver {
@@ -40,175 +43,109 @@ export function createNodeFileWatchObserver(
 }
 
 class NodeFileWatchObserver implements WatchObserver {
-  private readonly watchers = new Map<string, WatchedDirectory>();
+  private readonly subscriptions: ParcelWatcher.AsyncSubscription[] = [];
   private delivery = Promise.resolve();
-  private disposed = false;
+  private generation = 0;
+  private readonly subscribeFn: ParcelSubscribe;
 
-  constructor(private readonly options: NodeFileWatchObserverOptions) {}
+  constructor(private readonly options: NodeFileWatchObserverOptions) {
+    this.subscribeFn = options.subscribe ?? ParcelWatcher.subscribe;
+  }
 
   subscribe(handler: WatchObservationHandler): WatchObserverSubscription {
-    this.disposed = false;
-    void this.start(handler).catch((error: unknown) => this.reportError(error));
+    const generation = ++this.generation;
+    void this.start(generation, handler).catch((error: unknown) => this.reportError(error));
 
     return {
       dispose: () => {
-        this.disposed = true;
-        for (const watched of this.watchers.values()) {
-          watched.watcher.close();
-        }
-        this.watchers.clear();
+        // Invalidate any in-flight starts so a subscription that resolves after
+        // dispose (or after a later subscribe) is unsubscribed, not leaked.
+        this.generation += 1;
+        const subscriptions = this.subscriptions.splice(0);
+        void Promise.all(subscriptions.map((subscription) =>
+          subscription.unsubscribe(),
+        )).catch((error: unknown) => this.reportError(error));
       },
     };
   }
 
-  private async start(handler: WatchObservationHandler): Promise<void> {
+  private async start(generation: number, handler: WatchObservationHandler): Promise<void> {
     const targets = this.watchTargets();
     await Promise.all(targets.map((target) =>
-      this.watchDirectoryTree(target.rootPath, target, handler),
+      this.subscribeTarget(generation, target, handler),
     ));
   }
 
-  private watchTargets(): WatchTarget[] {
-    const targets: WatchTarget[] = [];
-    for (const root of this.options.roots) {
-      targets.push({
-        domain: 'source',
-        rootId: root.id,
-        rootPath: path.resolve(uriPath(root.sourceRootUri)),
-      });
-      targets.push({
-        domain: 'cognition',
-        rootId: root.id,
-        rootPath: path.resolve(uriPath(root.cognitionRootUri)),
-      });
-      targets.push({
-        domain: 'config',
-        rootId: root.id,
-        rootPath: path.dirname(path.resolve(uriPath(root.configUri))),
-      });
-    }
-    return targets;
-  }
-
-  private async watchDirectoryTree(
-    directoryPath: string,
+  private async subscribeTarget(
+    generation: number,
     target: WatchTarget,
     handler: WatchObservationHandler,
   ): Promise<void> {
-    if (this.disposed) {
+    if (generation !== this.generation) {
+      return;
+    }
+    // @parcel/watcher rejects on a missing directory, unlike `node:fs.watch`.
+    // Skip non-existent roots so one missing target cannot drop the others.
+    // Note: a root missing at subscribe time is never watched until the next
+    // subscribe; there is no parent-dir watcher to catch a later `mkdir`.
+    if (!(await isDirectory(target.rootPath))) {
       return;
     }
 
-    const stat = await safeStat(directoryPath);
-    if (!stat?.isDirectory()) {
-      return;
-    }
-
-    this.watchDirectory(directoryPath, target, handler);
-
-    const entries = await safeReadDirectory(directoryPath);
-    await Promise.all(entries
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => this.watchDirectoryTree(
-        path.join(directoryPath, entry.name),
-        target,
-        handler,
-      )));
-  }
-
-  private watchDirectory(
-    directoryPath: string,
-    target: WatchTarget,
-    handler: WatchObservationHandler,
-  ): void {
-    const normalizedDirectoryPath = path.resolve(directoryPath);
-    const watchKey = watchKeyFor(target, normalizedDirectoryPath);
-    if (this.watchers.has(watchKey) || this.disposed) {
-      return;
-    }
-
-    let watcher: FSWatcher;
+    let subscription: ParcelWatcher.AsyncSubscription;
     try {
-      const watchDirectory = this.options.watchDirectory ?? watch;
-      watcher = watchDirectory(directoryPath, {
-        persistent: this.options.persistent ?? false,
-      }, (eventType, filename) => {
-        const observedAtMs = this.options.now?.() ?? Date.now();
-        const changedPath = resolveChangedPath(target, directoryPath, filename);
-        this.delivery = this.delivery
-          .then(() => this.deliver(target, changedPath, eventType, observedAtMs, handler))
-          .catch((error: unknown) => this.reportError(error));
-      });
+      subscription = await this.subscribeFn(
+        target.rootPath,
+        (error, events) => {
+          if (error) {
+            this.reportError(error);
+            return;
+          }
+          const observedAtMs = this.options.now?.() ?? Date.now();
+          for (const event of events) {
+            this.delivery = this.delivery
+              .then(() => this.deliver(generation, target, event, observedAtMs, handler))
+              .catch((deliveryError: unknown) => this.reportError(deliveryError));
+          }
+        },
+      );
     } catch (error) {
       this.reportError(error);
       return;
     }
 
-    watcher.on('error', (error) => this.reportError(error));
-    this.watchers.set(watchKey, {
-      target,
-      directoryPath: normalizedDirectoryPath,
-      watcher,
-    });
+    if (generation !== this.generation) {
+      await subscription.unsubscribe().catch(() => undefined);
+      return;
+    }
+    this.subscriptions.push(subscription);
   }
 
   private async deliver(
+    generation: number,
     target: WatchTarget,
-    changedPath: string,
-    eventType: string,
+    event: ParcelWatcher.Event,
     observedAtMs: number,
     handler: WatchObservationHandler,
   ): Promise<void> {
-    if (this.disposed) {
+    if (generation !== this.generation) {
       return;
     }
-
-    const normalizedChangedPath = path.resolve(changedPath);
-    const stat = await safeStat(normalizedChangedPath);
-    if (target.domain === 'source' || target.domain === 'cognition') {
-      if (eventType === 'rename' && this.hasWatchedDirectoryTree(target, normalizedChangedPath)) {
-        this.unwatchDirectoryTree(target, normalizedChangedPath);
-      }
-
-      if (stat?.isDirectory()) {
-        await this.watchDirectoryTree(normalizedChangedPath, target, handler);
-      } else if (!stat) {
-        this.unwatchDirectoryTree(target, normalizedChangedPath);
-      }
-    }
-
-    const observation = toObservation(target, normalizedChangedPath, eventType, stat, observedAtMs);
+    const observation = toObservation(target, event.path, event.type, observedAtMs);
     if (!observation) {
       return;
     }
     await handler(observation);
   }
 
-  private hasWatchedDirectoryTree(target: WatchTarget, directoryPath: string): boolean {
-    const normalizedDirectoryPath = path.resolve(directoryPath);
-    for (const watched of this.watchers.values()) {
-      if (
-        watched.target.rootId === target.rootId
-        && watched.target.domain === target.domain
-        && isEqualOrChildPath(normalizedDirectoryPath, watched.directoryPath)
-      ) {
-        return true;
-      }
+  private watchTargets(): WatchTarget[] {
+    const targets: WatchTarget[] = [];
+    for (const root of this.options.roots) {
+      targets.push({ domain: 'source', rootPath: uriPath(root.sourceRootUri) });
+      targets.push({ domain: 'cognition', rootPath: uriPath(root.cognitionRootUri) });
+      targets.push({ domain: 'config', rootPath: path.dirname(uriPath(root.configUri)) });
     }
-    return false;
-  }
-
-  private unwatchDirectoryTree(target: WatchTarget, deletedPath: string): void {
-    for (const [watchKey, watched] of this.watchers.entries()) {
-      if (
-        watched.target.rootId === target.rootId
-        && watched.target.domain === target.domain
-        && isEqualOrChildPath(deletedPath, watched.directoryPath)
-      ) {
-        watched.watcher.close();
-        this.watchers.delete(watchKey);
-      }
-    }
+    return targets;
   }
 
   private reportError(error: unknown): void {
@@ -220,8 +157,7 @@ class NodeFileWatchObserver implements WatchObserver {
 function toObservation(
   target: WatchTarget,
   changedPath: string,
-  eventType: string,
-  stat: Stats | undefined,
+  eventType: ParcelWatcher.EventType,
   observedAtMs: number,
 ): WatchObservation | undefined {
   if (target.domain === 'config' && path.basename(changedPath) !== 'config.yaml') {
@@ -231,65 +167,30 @@ function toObservation(
   return {
     domain: target.domain,
     uri: pathToUriComponents(changedPath),
-    kind: changeKind(eventType, stat),
+    kind: changeKind(eventType),
     observedAtMs,
   };
 }
 
-function changeKind(eventType: string, stat: Stats | undefined): WatchFileChangeKind {
-  if (eventType === 'rename') {
-    return stat ? 'create' : 'delete';
-  }
-  return stat ? 'change' : 'delete';
-}
-
-function resolveChangedPath(target: WatchTarget, directoryPath: string, filename: string | Buffer | null): string {
-  if (!filename) {
-    if (target.domain === 'config') {
-      return path.join(directoryPath, 'config.yaml');
-    }
-    return directoryPath;
-  }
-  return path.resolve(directoryPath, filename.toString());
-}
-
-function watchKeyFor(target: WatchTarget, directoryPath: string): string {
-  return `${target.rootId}:${target.domain}:${pathIdentity(directoryPath)}`;
-}
-
-function isEqualOrChildPath(parentPath: string, candidatePath: string): boolean {
-  const relative = path.relative(parentPath, candidatePath);
-  return relative === '' || (
-    relative.length > 0
-    && !relative.startsWith('..')
-    && !path.isAbsolute(relative)
-  );
-}
-
-function pathIdentity(filePath: string): string {
-  const normalized = path.normalize(filePath);
-  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-async function safeStat(filePath: string): Promise<Stats | undefined> {
-  try {
-    return await nodeFs.stat(filePath);
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      return undefined;
-    }
-    throw error;
-  }
-}
-
-async function safeReadDirectory(directoryPath: string): Promise<Dirent[]> {
-  try {
-    return await nodeFs.readdir(directoryPath, { withFileTypes: true });
-  } catch {
-    return [];
+function changeKind(eventType: ParcelWatcher.EventType): WatchFileChangeKind {
+  switch (eventType) {
+    case 'create':
+      return 'create';
+    case 'delete':
+      return 'delete';
+    default:
+      return 'change';
   }
 }
 
 function uriPath(uri: UriComponents): string {
   return uriComponentsToPath(uri);
+}
+
+async function isDirectory(filePath: string): Promise<boolean> {
+  try {
+    return (await nodeFs.stat(filePath)).isDirectory();
+  } catch {
+    return false;
+  }
 }
