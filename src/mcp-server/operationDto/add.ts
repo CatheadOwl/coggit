@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ADD_OPERATION_ERROR_CODES } from '../../core/index.js';
 import type { AddOperationResult, CognitionKind } from '../../core/index.js';
 import {
+  MCP_TOOL_NAMES,
   createHandbookMaintenanceAction,
   handbookUri,
   mcpMaintenanceNextActionSchema,
@@ -50,7 +51,7 @@ export function addStructuredContent(result: AddOperationResult): {
   sourcePath: string;
   cognitionPath: string | null;
   handbookUri: string | null;
-  verify: AddOperationResult['verify'];
+  verify: z.infer<typeof addOperationOutputSchema['verify']>;
   project: z.infer<typeof projectContextSchema> | null;
   error: AddOperationResult['error'];
   nextActions: ReturnType<typeof createHandbookMaintenanceAction>[];
@@ -65,7 +66,10 @@ export function addStructuredContent(result: AddOperationResult): {
     sourcePath: result.sourcePath,
     cognitionPath: result.cognitionPath,
     handbookUri: result.handbookId ? handbookUri(result.handbookId) : null,
-    verify: result.verify,
+    verify: {
+      tool: MCP_TOOL_NAMES[result.verify.operation],
+      sourcePath: result.verify.sourcePath,
+    },
     project: result.project ? toMcpProjectContext(result.project) : null,
     error: result.error,
     nextActions: addNextActions(result),

@@ -6,6 +6,7 @@ import type { AddOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
+  MCP_TOOL_NAMES,
   addOperationOutputSchema,
   addStructuredContent,
   handbookResourceLink,
@@ -82,7 +83,7 @@ function addText(result: AddOperationResult): string {
     `Source path: ${result.sourcePath}`,
     `Cognition path: ${result.cognitionPath}`,
     handbook
-      ? `Next: read ${handbook}, update only the paired cognition document with design intent/contracts/boundaries rather than implementation summaries, then verify with ${result.verify.tool} for ${result.verify.sourcePath}.`
-      : `Next: verify with ${result.verify.tool} for ${result.verify.sourcePath}.`,
+      ? `Next: read ${handbook}, update only the paired cognition document with design intent/contracts/boundaries rather than implementation summaries, then verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`
+      : `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
   ].join('\n');
 }

@@ -214,7 +214,7 @@ function issueActionsToOperationActions(issues: readonly LocatedStatusIssue[]): 
 function uniqueOperationActions(actions: readonly CoggitOperationAction[]): CoggitOperationAction[] {
 	const seen = new Set<string>();
 	return actions.filter((action) => {
-		const key = `${action.code}:${action.tool ?? ''}:${action.sourcePath ?? ''}`;
+		const key = `${action.code}:${action.operation ?? ''}:${action.sourcePath ?? ''}`;
 		if (seen.has(key)) {
 			return false;
 		}
@@ -248,7 +248,7 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 		suggestedActions,
 		handbookId: input.handbookId,
 		verify: subtreeIssues.totalIssues > 0
-			? { tool: 'coggit_status', sourcePath: input.sourcePath }
+			? { operation: 'status', sourcePath: input.sourcePath }
 			: null,
 	};
 }

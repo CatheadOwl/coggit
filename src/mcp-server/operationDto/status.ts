@@ -5,6 +5,7 @@ import type { LocatedStatusIssue, ObservedStatus } from '../../core/types.js';
 import { toRelativeUriPath } from '../../core/index.js';
 import type { UriComponents } from '../../core/interfaces.js';
 import {
+  MCP_TOOL_NAMES,
   createHandbookMaintenanceAction,
   handbookUri,
   mcpMaintenanceNextActionSchema,
@@ -107,7 +108,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
       ownIssues: [],
       descendantIssues: [],
       handbookUri: null,
-      verify: result.verify ? { tool: 'coggit_status' } : null,
+      verify: result.verify ? { tool: MCP_TOOL_NAMES[result.verify.operation] } : null,
       nextActions: statusNextActions({ handbookUri: null }),
       pathHints: result.pathHints,
       ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
@@ -136,7 +137,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
     ownIssues: inspection.subtreeIssues.own.map(mapIssue),
     descendantIssues: inspection.subtreeIssues.descendant.map(mapIssue),
     handbookUri: resolvedHandbookUri,
-    verify: inspection.verify ? { tool: 'coggit_status' } : null,
+    verify: inspection.verify ? { tool: MCP_TOOL_NAMES[inspection.verify.operation] } : null,
     nextActions: statusNextActions({ handbookUri: resolvedHandbookUri }),
     pathHints: result.pathHints,
   };

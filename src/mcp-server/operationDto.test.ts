@@ -95,7 +95,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { tool: 'coggit_status', sourcePath: 'missing.ts' },
+      verify: { operation: 'status', sourcePath: 'missing.ts' },
       error: {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
@@ -117,7 +117,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { tool: 'coggit_status', sourcePath: 'missing.ts' },
+      verify: { operation: 'status', sourcePath: 'missing.ts' },
       error: {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
@@ -146,7 +146,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { tool: 'coggit_status', sourcePath: 'registry' },
+      verify: { operation: 'status', sourcePath: 'registry' },
       error: {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
@@ -178,7 +178,7 @@ suite('mcp operation DTO adapter', () => {
       project,
       sourceKey: 'src/app/',
       verificationTimeMs: 1710000000000,
-      verify: { tool: 'coggit_status', sourcePath: 'src/app' },
+      verify: { operation: 'status', sourcePath: 'src/app' },
       error: null,
       pathHints: [],
     };
@@ -213,7 +213,7 @@ suite('mcp operation DTO adapter', () => {
       suggestedActions: [{
         code: 'diagnose-source-path',
         label: 'Diagnose this source path before explaining or editing it.',
-        tool: 'coggit_status',
+        operation: 'status',
         sourcePath: 'src',
       }],
       projects: [],
@@ -268,7 +268,7 @@ suite('mcp operation DTO adapter', () => {
       suggestedActions: [{
         code: 'inspect-untracked',
         label: 'Inspect source paths missing paired cognition.',
-        tool: 'coggit_snapshot',
+        operation: 'snapshot',
         sourcePath: 'src',
         scope: 'untracked',
         maxDepth: 1,
@@ -318,7 +318,14 @@ suite('mcp operation DTO adapter', () => {
       sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
     }]);
     assert.deepStrictEqual(structuredContent.nextScopes, ['untracked']);
-    assert.deepStrictEqual(structuredContent.suggestedActions, result.suggestedActions);
+    assert.deepStrictEqual(structuredContent.suggestedActions, [{
+      code: 'inspect-untracked',
+      label: 'Inspect source paths missing paired cognition.',
+      tool: 'coggit_snapshot',
+      sourcePath: 'src',
+      scope: 'untracked',
+      maxDepth: 1,
+    }]);
     assert.strictEqual('configUri' in structuredContent.projects[0], false);
   });
 
@@ -344,18 +351,18 @@ suite('mcp operation DTO adapter', () => {
         actions: [{
           code: 'add-cognition',
           label: 'Create paired cognition for this source path.',
-          tool: 'coggit_add',
+          operation: 'add',
           sourcePath: 'src/main.ts',
         }],
       }],
       suggestedActions: [{
         code: 'add-cognition',
         label: 'Create paired cognition for this source path.',
-        tool: 'coggit_add',
+        operation: 'add',
         sourcePath: 'src/main.ts',
       }],
       handbookId: 'leaf',
-      verify: { tool: 'coggit_status', sourcePath: 'src/main.ts' },
+      verify: { operation: 'status', sourcePath: 'src/main.ts' },
       node: null,
       pathHints: [],
       inspection: {
@@ -386,11 +393,11 @@ suite('mcp operation DTO adapter', () => {
         suggestedActions: [{
           code: 'add-cognition',
           label: 'Create paired cognition for this source path.',
-          tool: 'coggit_add',
+          operation: 'add',
           sourcePath: 'src/main.ts',
         }],
         handbookId: 'leaf',
-        verify: { tool: 'coggit_status', sourcePath: 'src/main.ts' },
+        verify: { operation: 'status', sourcePath: 'src/main.ts' },
       },
     };
 
@@ -438,7 +445,7 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: 'skeleton',
-      verify: { tool: 'coggit_status', sourcePath: 'src/app' },
+      verify: { operation: 'status', sourcePath: 'src/app' },
       node: null,
       pathHints: [],
       inspection: {
@@ -483,7 +490,7 @@ suite('mcp operation DTO adapter', () => {
         },
         suggestedActions: [],
         handbookId: 'skeleton',
-        verify: { tool: 'coggit_status', sourcePath: 'src/app' },
+        verify: { operation: 'status', sourcePath: 'src/app' },
       },
     };
 
@@ -523,7 +530,7 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: null,
-      verify: { tool: 'coggit_status', sourcePath: 'src/core/watchPipeline.ts' },
+      verify: { operation: 'status', sourcePath: 'src/core/watchPipeline.ts' },
       node: null,
       pathHints: ['coggit/src/core/watchPipeline.ts'],
       pathMissMessage: 'Path not found in any CogGit project: src/core/watchPipeline.ts',
@@ -550,7 +557,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: 'src/main.ts.md',
       project,
       handbookId: 'leaf',
-      verify: { tool: 'coggit_status', sourcePath: 'src/main.ts' },
+      verify: { operation: 'status', sourcePath: 'src/main.ts' },
       error: null,
       pathHints: [],
     };
@@ -660,7 +667,7 @@ suite('mcp operation DTO adapter', () => {
         suggestedActions: [{
           code: 'diagnose-source-path',
           label: 'Diagnose this source path before explaining or editing it.',
-          tool: 'coggit_status',
+          operation: 'status',
           sourcePath: 'src/main.ts',
         }],
       }, {

@@ -271,7 +271,7 @@ function suggestedActionsForEntry(
   return [{
     code: 'diagnose-source-path',
     label: 'Diagnose this source path before explaining or editing it.',
-    tool: 'coggit_status' as const,
+    operation: 'status' as const,
     sourcePath: toolSourcePath,
   }];
 }

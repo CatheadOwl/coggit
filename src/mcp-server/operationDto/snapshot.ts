@@ -4,7 +4,7 @@ import type {
   SnapshotOperationResult,
 } from '../../core/index.js';
 import type { TreeProjectionNode } from '../../core/types.js';
-import { projectContextSchema, operationActionSchema, toMcpProjectContext } from './shared.js';
+import { projectContextSchema, operationActionSchema, toMcpOperationAction, toMcpProjectContext } from './shared.js';
 
 export const leanSnapshotNodeSchema: z.ZodType<ReturnType<typeof toLeanSnapshotNode>> = z.lazy(() => z.object({
   path: z.string(),
@@ -68,7 +68,7 @@ export interface SnapshotMcpView {
   };
   projects: Array<z.infer<typeof projectContextSchema>>;
   nextScopes: SnapshotOperationResult['nextScopes'];
-  suggestedActions: SnapshotOperationResult['suggestedActions'];
+  suggestedActions: Array<z.infer<typeof operationActionSchema>>;
   pathHints: string[];
   pathMissMessage?: string;
   pathHintMessage?: string;
@@ -91,7 +91,7 @@ export function snapshotMcpView(result: SnapshotOperationResult, options: { tree
     },
     projects: result.projects.map(toMcpProjectContext),
     nextScopes: result.nextScopes,
-    suggestedActions: result.suggestedActions,
+    suggestedActions: result.suggestedActions.map(toMcpOperationAction),
     pathHints: result.pathHints,
     ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
     ...(result.pathHintMessage ? { pathHintMessage: result.pathHintMessage } : {}),

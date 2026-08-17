@@ -30,6 +30,8 @@ export type {
 	SnapshotOperationScope,
 	CoggitProjectContext,
 	CoggitOperationAction,
+	CoggitOperationVerifyHint,
+	CoreOperationId,
 } from './operationTypes';
 
 export type {

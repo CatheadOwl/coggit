@@ -201,9 +201,9 @@ suite('core operations', () => {
     assert.strictEqual(result.untrackedCount, 2);
     assert.ok(result.issueCount >= 1);
     assert.ok(result.nextScopes.includes('untracked'));
-    assert.ok(result.suggestedActions.some((action) => action.tool === 'coggit_snapshot' && action.scope === 'untracked'));
-    assert.ok(result.suggestedActions.some((action) => action.tool === 'coggit_snapshot' && action.scope === 'issues'));
-    assert.ok(result.suggestedActions.some((action) => action.tool === 'coggit_status' && action.sourcePath === '.'));
+    assert.ok(result.suggestedActions.some((action) => action.operation === 'snapshot' && action.scope === 'untracked'));
+    assert.ok(result.suggestedActions.some((action) => action.operation === 'snapshot' && action.scope === 'issues'));
+    assert.ok(result.suggestedActions.some((action) => action.operation === 'status' && action.sourcePath === '.'));
   });
 
   test('snapshot reports effective max depth and omitted children', async () => {
@@ -217,7 +217,7 @@ suite('core operations', () => {
     assert.strictEqual(result.maxDepth, 1);
     assert.strictEqual(result.truncated, true);
     assert.strictEqual(result.omittedChildrenCount, 1);
-    assert.ok(result.suggestedActions.some((action) => action.tool === 'coggit_snapshot' && action.maxDepth === 1));
+    assert.ok(result.suggestedActions.some((action) => action.operation === 'snapshot' && action.maxDepth === 1));
   });
 
   test('source-scoped snapshot suggests status diagnosis for the matched source path', async () => {
@@ -232,7 +232,7 @@ suite('core operations', () => {
     assert.strictEqual(result.maxDepth, 0);
     assert.strictEqual(result.truncated, true);
     assert.ok(result.suggestedActions.some((action) => (
-      action.tool === 'coggit_status'
+      action.operation === 'status'
       && action.sourcePath === 'feature'
     )));
   });
@@ -261,7 +261,7 @@ suite('core operations', () => {
 
     assert.strictEqual(result.success, false);
     assert.strictEqual(result.error?.code, 'invalid-kind');
-    assert.strictEqual(result.verify.tool, 'coggit_status');
+    assert.strictEqual(result.verify.operation, 'status');
   });
 
   test('add returns source-root and cognition-root relative paths', async () => {
@@ -275,7 +275,7 @@ suite('core operations', () => {
     assert.strictEqual(result.sourcePath, 'missing.ts');
     assert.strictEqual(result.cognitionPath, 'missing.ts.md');
     assert.deepStrictEqual(result.verify, {
-      tool: 'coggit_status',
+      operation: 'status',
       sourcePath: 'missing.ts',
     });
   });

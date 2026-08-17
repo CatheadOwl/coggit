@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RESOLVE_ERROR_CODES } from '../../core/operations.js';
 import type { ResolveOperationResult } from '../../core/index.js';
 import {
+  MCP_TOOL_NAMES,
   mcpMaintenanceNextActionSchema,
   projectContextSchema,
   toMcpProjectContext,
@@ -32,7 +33,7 @@ export function resolveStructuredContent(result: ResolveOperationResult): {
   cognitionPath: string | null;
   sourceKey: string | null;
   verificationTimeMs: number | null;
-  verify: ResolveOperationResult['verify'];
+  verify: z.infer<typeof resolveOperationOutputSchema['verify']>;
   project: z.infer<typeof projectContextSchema> | null;
   error: ResolveOperationResult['error'];
   nextActions: [];
@@ -43,7 +44,10 @@ export function resolveStructuredContent(result: ResolveOperationResult): {
     cognitionPath: result.cognitionPath,
     sourceKey: result.sourceKey,
     verificationTimeMs: result.verificationTimeMs,
-    verify: result.verify,
+    verify: {
+      tool: MCP_TOOL_NAMES[result.verify.operation],
+      sourcePath: result.verify.sourcePath,
+    },
     project: result.project ? toMcpProjectContext(result.project) : null,
     error: result.error,
     nextActions: [],

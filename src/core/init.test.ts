@@ -52,10 +52,11 @@ suite('project init', () => {
 		const readme = await fs.readFile(uri('/workspace/project/src_cognition/README.md'));
 		assert.match(readme, /^# CogGit Cognition/);
 		assert.match(readme, /does not yet contain reliable project knowledge/);
-		assert.match(readme, /coggit_snapshot/);
-		assert.match(readme, /coggit_add/);
-		assert.match(readme, /handbook resource/);
-		assert.match(readme, /coggit_status/);
+		assert.match(readme, /snapshot operation/);
+		assert.match(readme, /add operation/);
+		assert.match(readme, /handbook returned/);
+		assert.match(readme, /status operation/);
+		assert.doesNotMatch(readme, /coggit_\w+/);
 	});
 
 	test('does not overwrite an existing cognition README', async () => {

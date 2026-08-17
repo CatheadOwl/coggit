@@ -6,6 +6,7 @@ import type { ResolveOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
+  MCP_TOOL_NAMES,
   resolveOperationOutputSchema,
   resolveStructuredContent,
 } from '../operationDto/index.js';
@@ -62,6 +63,6 @@ function resolveText(result: ResolveOperationResult): string {
     `Cognition path: ${result.cognitionPath ?? '(none)'}`,
     `Source key: ${result.sourceKey ?? '(none)'}`,
     `Verification time: ${formatTimestamp(result.verificationTimeMs, '(none)')}`,
-    `Next: verify with ${result.verify.tool} for ${result.verify.sourcePath}.`,
+    `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
   ].join('\n');
 }

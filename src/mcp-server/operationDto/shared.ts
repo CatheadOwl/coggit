@@ -1,18 +1,43 @@
 import { z } from 'zod';
 
 import { externalPathFromString, type CognitionKind } from '../../core/index.js';
+import type { CoggitOperationAction, CoreOperationId } from '../../core/index.js';
 import type { UriComponents } from '../../core/interfaces.js';
 
 export const observedStatusSchema = z.enum(['fresh', 'stale', 'conflict']).nullable();
 
+/**
+ * MCP owns its model-facing tool names; core hints only carry surface-neutral
+ * operation ids. This map is the single place where the MCP surface derives
+ * its tool names from core operation ids.
+ */
+export const MCP_TOOL_NAMES = {
+  snapshot: 'coggit_snapshot',
+  status: 'coggit_status',
+  add: 'coggit_add',
+  resolve: 'coggit_resolve',
+  routes: 'coggit_routes',
+} as const satisfies Record<CoreOperationId, string>;
+
 export const operationActionSchema = z.object({
   code: z.string(),
   label: z.string(),
-  tool: z.enum(['coggit_snapshot', 'coggit_status', 'coggit_add', 'coggit_routes']).optional(),
+  tool: z.enum(['coggit_snapshot', 'coggit_status', 'coggit_add', 'coggit_resolve', 'coggit_routes']).optional(),
   sourcePath: z.string().optional(),
   scope: z.enum(['tracked', 'untracked', 'issues', 'all']).optional(),
   maxDepth: z.number().int().nonnegative().optional(),
 });
+
+/** Maps a surface-neutral core action to MCP tool-name addressing. */
+export function toMcpOperationAction(
+  action: CoggitOperationAction,
+): z.infer<typeof operationActionSchema> {
+  const { operation, ...rest } = action;
+  return {
+    ...rest,
+    ...(operation ? { tool: MCP_TOOL_NAMES[operation] } : {}),
+  };
+}
 
 export const projectContextSchema = z.object({
   label: z.string(),

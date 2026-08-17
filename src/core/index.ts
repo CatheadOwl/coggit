@@ -42,6 +42,7 @@ export type {
 } from './watchHost';
 export {
   ADD_OPERATION_ERROR_CODES,
+  CORE_OPERATION_IDS,
   addOperation,
   resolveOperation,
   routesOperation,
@@ -64,7 +65,9 @@ export type {
   CoggitHandbookCatalogEntry,
   CoggitOperationAction,
   CoggitOperationIssue,
+  CoggitOperationVerifyHint,
   CoggitProjectContext,
+  CoreOperationId,
   RoutesOperationResult,
   SnapshotOperationResult,
   SnapshotOperationOptions,

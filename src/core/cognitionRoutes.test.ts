@@ -178,7 +178,7 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
     assert.deepStrictEqual(entry.document.headings.map((heading) => heading.text), ['Status', 'Evidence']);
     assert.strictEqual(entry.document.headingCount, 3);
     assert.ok(entry.suggestedActions.some((action) =>
-      action.tool === 'coggit_status' && action.sourcePath === 'core/status.ts'
+      action.operation === 'status' && action.sourcePath === 'core/status.ts'
     ));
   });
 

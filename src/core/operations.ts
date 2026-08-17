@@ -5,6 +5,7 @@ import type {
   CoggitTreeNode,
   CoggitNodeKind,
   CoggitOperationAction,
+  CoggitOperationVerifyHint,
   CoggitProjectContext,
   LocatedStatusIssue,
   NodeStatusInspection,
@@ -29,9 +30,13 @@ import { projectContext as projectContextFromProject } from './projectContext';
 
 export type {
   CoggitOperationAction,
+  CoggitOperationVerifyHint,
   CoggitProjectContext,
+  CoreOperationId,
   SnapshotOperationScope,
 } from './types';
+
+export { CORE_OPERATION_IDS } from './operationTypes';
 
 export interface CoggitHandbookCatalogEntry {
   id: 'all' | CognitionKind;
@@ -88,7 +93,7 @@ export interface StatusOperationResult {
   issues: CoggitOperationIssue[];
   suggestedActions: CoggitOperationAction[];
   handbookId: 'leaf' | 'skeleton' | null;
-  verify: { tool: 'coggit_status'; sourcePath: string } | null;
+  verify: CoggitOperationVerifyHint | null;
   node: CoggitTreeNode | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -125,7 +130,7 @@ export interface AddOperationResult {
   cognitionPath: string | null;
   project: CoggitProjectContext | null;
   handbookId: 'leaf' | 'skeleton' | null;
-  verify: { tool: 'coggit_status'; sourcePath: string };
+  verify: CoggitOperationVerifyHint;
   error: AddOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -158,7 +163,7 @@ export interface ResolveOperationResult {
   project: CoggitProjectContext | null;
   sourceKey: string | null;
   verificationTimeMs: number | null;
-  verify: { tool: 'coggit_status'; sourcePath: string };
+  verify: CoggitOperationVerifyHint;
   error: ResolveOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -364,7 +369,7 @@ export async function statusOperation(
       }],
       suggestedActions: [],
       handbookId: null,
-      verify: { tool: 'coggit_status', sourcePath },
+      verify: { operation: 'status', sourcePath },
       node: null,
       pathHints,
       pathMissMessage: pathMissMessage(sourcePath),
@@ -415,7 +420,7 @@ export async function addOperation(
   sourcePath: string,
   options: { kind?: AddCognitionKind; overwrite?: boolean; sourcePathCandidates?: SourcePathCandidatesExpander } = {},
 ): Promise<AddOperationResult> {
-  const verify = { tool: 'coggit_status' as const, sourcePath };
+  const verify = { operation: 'status' as const, sourcePath };
   if (projects.length === 0) {
     return addFailure(sourcePath, null, verify, 'no-projects', 'No CogGit project found.');
   }
@@ -440,7 +445,7 @@ export async function addOperation(
     });
     const sourcePath = match.node.relativePath;
     const cognitionPath = toRelativeUriPath(match.project.root.cognitionRootUri, result.cognitionUri);
-    const verifyResult = { tool: 'coggit_status' as const, sourcePath };
+    const verifyResult = { operation: 'status' as const, sourcePath };
     return {
       success: true,
       created: result.created,
@@ -457,7 +462,7 @@ export async function addOperation(
     const message = error instanceof Error ? error.message : String(error);
     const code = classifyAddError(message);
     return addFailure(match.node.relativePath, projectContext(match.project), {
-      tool: 'coggit_status',
+      operation: 'status',
       sourcePath: match.node.relativePath,
     }, code, message);
   }
@@ -468,7 +473,7 @@ export async function resolveOperation(
   sourcePath: string,
   options: { sourcePathCandidates?: SourcePathCandidatesExpander } = {},
 ): Promise<ResolveOperationResult> {
-  const verify = { tool: 'coggit_status' as const, sourcePath };
+  const verify = { operation: 'status' as const, sourcePath };
   if (projects.length === 0) {
     return resolveFailure(sourcePath, null, null, verify, 'no-projects', 'No CogGit project found.');
   }
@@ -484,7 +489,7 @@ export async function resolveOperation(
         const result = await candidate.markResolved(candidatePath);
         const node = await candidate.getNode(candidatePath);
         const matchedSourcePath = node?.relativePath ?? candidatePath;
-        const matchedVerify = { tool: 'coggit_status' as const, sourcePath: matchedSourcePath };
+        const matchedVerify = { operation: 'status' as const, sourcePath: matchedSourcePath };
         return {
           success: true,
           sourcePath: matchedSourcePath,
@@ -632,7 +637,7 @@ function suggestedActionsForSnapshot(
 ): CoggitOperationAction[] {
   const actions: CoggitOperationAction[] = [];
   const snapshotActionBase = {
-    tool: 'coggit_snapshot' as const,
+    operation: 'snapshot' as const,
     sourcePath: context.sourcePath ?? undefined,
     maxDepth: context.maxDepth ?? undefined,
   };
@@ -659,7 +664,7 @@ function suggestedActionsForSnapshot(
     actions.push({
       code: 'diagnose-source-path',
       label: 'Diagnose this source path before explaining or editing it.',
-      tool: 'coggit_status',
+      operation: 'status',
       sourcePath: context.foundSourcePath,
     });
   }
@@ -684,7 +689,7 @@ export function operationIssue(located: LocatedStatusIssue): CoggitOperationIssu
 function uniqueActions(actions: readonly CoggitOperationAction[]): CoggitOperationAction[] {
   const seen = new Set<string>();
   return actions.filter((action) => {
-    const key = `${action.code}:${action.tool ?? ''}:${action.sourcePath ?? ''}:${action.scope ?? ''}:${action.maxDepth ?? ''}`;
+    const key = `${action.code}:${action.operation ?? ''}:${action.sourcePath ?? ''}:${action.scope ?? ''}:${action.maxDepth ?? ''}`;
     if (seen.has(key)) {
       return false;
     }
@@ -702,7 +707,7 @@ function cognitionRelativePath(node: CoggitTreeNode): string | null {
 function addFailure(
   sourcePath: string,
   project: CoggitProjectContext | null,
-  verify: { tool: 'coggit_status'; sourcePath: string },
+  verify: CoggitOperationVerifyHint,
   code: AddOperationErrorCode,
   message: string,
   miss?: {
@@ -731,7 +736,7 @@ function resolveFailure(
   sourcePath: string,
   cognitionPath: string | null,
   project: CoggitProjectContext | null,
-  verify: { tool: 'coggit_status'; sourcePath: string },
+  verify: CoggitOperationVerifyHint,
   code: ResolveErrorCode,
   message: string,
   miss?: {

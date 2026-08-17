@@ -1,6 +1,7 @@
 import {
   renderPathMissText,
   type AddOperationResult,
+  type CoggitOperationVerifyHint,
   type ResolveOperationResult,
   type SnapshotOperationResult,
   type StatusOperationResult,
@@ -74,7 +75,7 @@ export function renderResolveOperationResult(result: ResolveOperationResult): st
     }
     return [
       `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
-      `Next: verify current status with ${result.verify.tool} for ${result.verify.sourcePath}.`,
+      `Next: verify current status with ${verifyCommandText(result.verify)}.`,
     ].join('\n');
   }
 
@@ -84,8 +85,13 @@ export function renderResolveOperationResult(result: ResolveOperationResult): st
     `Cognition path: ${result.cognitionPath ?? 'none'}`,
     `Registry key: ${result.sourceKey ?? 'none'}`,
     `Verification time: ${formatTimestamp(result.verificationTimeMs, 'none')}`,
-    `Next: verify current status with ${result.verify.tool} for ${result.verify.sourcePath}.`,
+    `Next: verify current status with ${verifyCommandText(result.verify)}.`,
   ].join('\n');
+}
+
+/** CLI surface addressing for a core verify hint: `coggit <operation> <sourcePath>`. */
+function verifyCommandText(verify: CoggitOperationVerifyHint): string {
+  return `coggit ${verify.operation} ${verify.sourcePath}`;
 }
 
 function hasSnapshotTreeOptions(options: SnapshotTreeTextOptions): boolean {

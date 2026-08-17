@@ -1,5 +1,5 @@
 import type { UriComponents } from './interfaces';
-import type { CoggitOperationAction } from './operationTypes';
+import type { CoggitOperationAction, CoggitOperationVerifyHint } from './operationTypes';
 import type { CoggitNodeKind } from './snapshotTypes';
 import type { AcceptedPair } from './registryTypes';
 
@@ -170,10 +170,7 @@ export interface NodeStatusInspection {
 	};
 	suggestedActions: CoggitOperationAction[];
 	handbookId: 'leaf' | 'skeleton' | null;
-	verify: {
-		tool: 'coggit_status';
-		sourcePath: string;
-	} | null;
+	verify: CoggitOperationVerifyHint | null;
 }
 
 export interface SourceFileInfo {
