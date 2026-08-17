@@ -638,8 +638,8 @@ function suggestedActionsForSnapshot(
   const actions: CoggitOperationAction[] = [];
   const snapshotActionBase = {
     operation: 'snapshot' as const,
-    sourcePath: context.sourcePath ?? undefined,
-    maxDepth: context.maxDepth ?? undefined,
+    ...(context.sourcePath !== null ? { sourcePath: context.sourcePath } : {}),
+    ...(context.maxDepth !== null ? { maxDepth: context.maxDepth } : {}),
   };
 
   if (counts.untrackedCount > 0) {

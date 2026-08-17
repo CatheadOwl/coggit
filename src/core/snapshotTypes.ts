@@ -103,6 +103,10 @@ export interface CoggitSnapshot {
 	mappingIndex?: MappingIndex;
 }
 
+/**
+ * Plain-data projection node. Absent optional fields are omitted keys,
+ * never own properties with `undefined` values.
+ */
 export interface TreeProjectionNode {
 	path: string;
 	label: string;

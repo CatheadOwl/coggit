@@ -253,7 +253,7 @@ suite('projectSnapshotTree', () => {
   test('skips description when absent', () => {
     const node = makeNode({ relativePath: 'src/core', kind: 'folder' });
     const result = projectTreeFromSnapshot(node, { scope: 'all' });
-    assert.strictEqual(result[0].description, undefined);
+    assert.ok(!('description' in result[0]));
   });
 
   test('projected node omits children when empty even after scope filtering', () => {
@@ -402,7 +402,7 @@ suite('projected node shape', () => {
     assert.strictEqual(projected.observedStatus, 'fresh');
     assert.strictEqual(projected.ownObservedStatus, 'fresh');
     assert.strictEqual(projected.tracked, true);
-    assert.strictEqual(projected.children, undefined);
+    assert.ok(!('children' in projected));
   });
 
   test('includes only path/label/kind for an untracked node with no extras', () => {
@@ -413,9 +413,9 @@ suite('projected node shape', () => {
     assert.strictEqual(projected.path, 'src/unknown.ts');
     assert.strictEqual(projected.label, 'unknown.ts');
     assert.strictEqual(projected.kind, 'file');
-    // Optional fields should be undefined when not provided
-    assert.strictEqual(projected.cognition, undefined);
-    assert.strictEqual(projected.description, undefined);
+    // Optional fields should be omitted keys when not provided
+    assert.ok(!('cognition' in projected));
+    assert.ok(!('description' in projected));
     assert.strictEqual(projected.tracked, false);
     assert.strictEqual(projected.observedStatus, null);
     assert.strictEqual(projected.ownObservedStatus, null);
