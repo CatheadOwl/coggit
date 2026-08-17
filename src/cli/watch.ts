@@ -6,16 +6,33 @@ import {
   type WatchObserver,
 } from '../core';
 import type { CoggitProject } from '../core/interfaces';
+import {
+  WatchLeaseError,
+  type WatchLeaseHandle,
+  type WatchLeaseManager,
+} from '../core/locks';
+import { NodeWatchLeaseManager } from '../runtime/node';
 import { createNodeFileWatchObserver } from '../runtime/node/watch';
 import { uriComponentsToPath } from '../runtime/node/uri';
 import { UserFacingError } from './status';
 
 export interface WatchCliOptions {
   readonly json?: boolean;
+  readonly leaseHeartbeatMs?: number;
+  readonly leaseManager?: WatchLeaseManager;
+  readonly warn?: (line: string) => void;
 }
 
 export interface WatchSession {
-  dispose(): void;
+  dispose(): Promise<void>;
+}
+
+const DEFAULT_WATCH_LEASE_HEARTBEAT_MS = 60000;
+
+interface ActiveProjectWatch {
+  readonly subscription: { dispose(): void };
+  readonly lease: WatchLeaseHandle;
+  readonly heartbeat: NodeJS.Timeout;
 }
 
 /**
@@ -27,36 +44,103 @@ export interface WatchSession {
  * caller. Each project gets its own observer + host pair so a single project
  * cannot drop the others.
  */
-export function startWatchSession(
+export async function startWatchSession(
   projects: readonly CoggitProject[],
   options: WatchCliOptions = {},
   emit: (line: string) => void = (line) => console.log(line),
   createObserver: (project: CoggitProject) => WatchObserver = defaultCreateObserver,
-): WatchSession {
+): Promise<WatchSession> {
   if (projects.length === 0) {
     throw new UserFacingError('No CogGit project found.');
   }
 
-  const subscriptions = projects.map((project) => {
-    const observer = createObserver(project);
-    const host = createWatchHost({
-      projects: [project],
-      snapshotProvider: () => buildSnapshotFromProjects([project]),
-    });
-    return observer.subscribe(async (observation: WatchObservation) => {
-      const result = await host.observe(observation);
-      emit(renderResult(result, options.json ?? false));
-      return result;
-    });
-  });
+  const leaseManager = options.leaseManager ?? new NodeWatchLeaseManager();
+  const heartbeatMs = Math.max(1, options.leaseHeartbeatMs ?? DEFAULT_WATCH_LEASE_HEARTBEAT_MS);
+  const warn = options.warn ?? ((line: string) => console.error(line));
+  const active = new Set<ActiveProjectWatch>();
+
+  const disposeActive = async (entry: ActiveProjectWatch): Promise<void> => {
+    if (!active.delete(entry)) {
+      return;
+    }
+    clearInterval(entry.heartbeat);
+    try {
+      entry.subscription.dispose();
+    } finally {
+      await entry.lease.release();
+    }
+  };
+
+  try {
+    for (const project of projects) {
+      const lease = await leaseManager.tryAcquireWatchLease(
+        project.root.projectRootUri,
+        {
+          owner: 'cli',
+          operation: 'watch',
+          projectLabel: project.root.label,
+        },
+      );
+      if (!lease) {
+        warn(`No active watch lease for ${project.root.label}; skipping watcher.`);
+        continue;
+      }
+
+      try {
+        const observer = createObserver(project);
+        const host = createWatchHost({
+          projects: [project],
+          snapshotProvider: () => buildSnapshotFromProjects([project]),
+        });
+        let entry: ActiveProjectWatch;
+        const subscription = observer.subscribe(async (observation: WatchObservation) => {
+          const result = await host.observe(observation);
+          emit(renderResult(result, options.json ?? false));
+          return result;
+        });
+
+        entry = {
+          subscription,
+          lease,
+          heartbeat: setInterval(() => {
+            void lease.renew().catch((error: unknown) => {
+              if (isWatchLeaseReclaimed(error) && entry) {
+                void disposeActive(entry);
+                return;
+              }
+              warn(formatWatchLeaseRenewalWarning(project, error));
+            });
+          }, heartbeatMs),
+        };
+        active.add(entry);
+      } catch (error) {
+        await lease.release().catch(() => undefined);
+        throw error;
+      }
+    }
+
+    if (active.size === 0) {
+      throw new UserFacingError('No active watch lease available for any discovered project.');
+    }
+  } catch (error) {
+    await Promise.allSettled(Array.from(active, (entry) => disposeActive(entry)));
+    throw error;
+  }
 
   return {
-    dispose() {
-      for (const subscription of subscriptions) {
-        subscription.dispose();
-      }
+    async dispose() {
+      await Promise.all(Array.from(active, (entry) => disposeActive(entry)));
     },
   };
+}
+
+function isWatchLeaseReclaimed(error: unknown): boolean {
+  if (error instanceof WatchLeaseError) {
+    return error.code === 'COGGIT_WATCH_LEASE_RECLAIMED';
+  }
+  return error instanceof Error
+    && 'code' in error
+    && error.code === 'COGGIT_WATCH_LEASE_RECLAIMED';
 }
 
 function defaultCreateObserver(project: CoggitProject): WatchObserver {
@@ -72,4 +156,9 @@ function renderResult(result: WatchHostObservationResult, json: boolean): string
   }
   const path = uriComponentsToPath(result.observation.uri);
   return `${result.observation.domain} ${result.observation.kind} ${path}`;
+}
+
+function formatWatchLeaseRenewalWarning(project: CoggitProject, error: unknown): string {
+  const reason = error instanceof Error ? error.message : String(error);
+  return `Watch lease renewal warning for ${project.root.label}: ${reason}`;
 }

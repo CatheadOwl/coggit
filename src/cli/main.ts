@@ -151,11 +151,10 @@ function createProgram(
     .action(async (options: WatchOptions) => {
       const services = createNodeCoggitServices();
       const projects = await discoverCoggitProjects(services);
-      const session = startWatchSession(projects, { json: options.json }, (line) => console.log(line));
-      await new Promise<void>((resolve) => {
+      const session = await startWatchSession(projects, { json: options.json }, (line) => console.log(line));
+      await new Promise<void>((resolve, reject) => {
         const shutdown = () => {
-          session.dispose();
-          resolve();
+          void session.dispose().then(resolve, reject);
         };
         process.once('SIGINT', shutdown);
         process.once('SIGTERM', shutdown);
