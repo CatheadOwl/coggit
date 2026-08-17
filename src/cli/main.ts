@@ -11,7 +11,7 @@ import { runResolve } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
 import { runStatus, type StatusMode, UserFacingError } from './status';
-import { startWatchSession } from './watch';
+import { openStrictWatchProject, startWatchSession } from './watch';
 
 void main(process.argv);
 
@@ -147,17 +147,27 @@ function createProgram(
   program
     .command('watch')
     .description('Watch source, cognition, and config changes and emit observations.')
+    .argument('[path]', 'initialized project root (defaults to the current directory)')
     .option('-j, --json', 'emit JSON Lines (one observation result per line)')
-    .action(async (options: WatchOptions) => {
+    .action(async (targetPath: string | undefined, options: WatchOptions) => {
       const services = createNodeCoggitServices();
-      const projects = await discoverCoggitProjects(services);
+      const projects = [await openStrictWatchProject(services, targetPath ?? '.')];
       const session = await startWatchSession(projects, { json: options.json }, (line) => console.log(line));
       await new Promise<void>((resolve, reject) => {
-        const shutdown = () => {
-          void session.dispose().then(resolve, reject);
+        let cleanup = () => undefined;
+        const finish = (fn: () => Promise<void>) => {
+          cleanup();
+          void fn().then(resolve, reject);
+        };
+        const shutdown = () => finish(() => session.dispose());
+        const complete = () => finish(async () => undefined);
+        cleanup = () => {
+          process.off('SIGINT', shutdown);
+          process.off('SIGTERM', shutdown);
         };
         process.once('SIGINT', shutdown);
         process.once('SIGTERM', shutdown);
+        void session.done.then(complete, reject);
       });
     });
 

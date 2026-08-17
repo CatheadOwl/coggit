@@ -1,11 +1,15 @@
+import * as path from 'node:path';
+
 import {
   buildSnapshotFromProjects,
   createWatchHost,
+  openCoggitProject,
+  readWorkspaceRoot,
   type WatchHostObservationResult,
   type WatchObservation,
   type WatchObserver,
 } from '../core';
-import type { CoggitProject } from '../core/interfaces';
+import type { CoggitProject, CoggitServices } from '../core/interfaces';
 import {
   WatchLeaseError,
   type WatchLeaseHandle,
@@ -13,7 +17,7 @@ import {
 } from '../core/locks';
 import { NodeWatchLeaseManager } from '../runtime/node';
 import { createNodeFileWatchObserver } from '../runtime/node/watch';
-import { uriComponentsToPath } from '../runtime/node/uri';
+import { pathToUriComponents, uriComponentsToPath } from '../runtime/node/uri';
 import { UserFacingError } from './status';
 
 export interface WatchCliOptions {
@@ -24,6 +28,7 @@ export interface WatchCliOptions {
 }
 
 export interface WatchSession {
+  readonly done: Promise<void>;
   dispose(): Promise<void>;
 }
 
@@ -33,6 +38,37 @@ interface ActiveProjectWatch {
   readonly subscription: { dispose(): void };
   readonly lease: WatchLeaseHandle;
   readonly heartbeat: NodeJS.Timeout;
+}
+
+export async function openStrictWatchProject(
+  services: CoggitServices,
+  targetPath: string = '.',
+): Promise<CoggitProject> {
+  const resolvedTargetPath = path.resolve(targetPath);
+  const projectRootUri = pathToUriComponents(resolvedTargetPath);
+  const configUri = pathToUriComponents(path.join(resolvedTargetPath, '.coggit', 'config.yaml'));
+
+  if (!await services.fs.stat(configUri)) {
+    throw new UserFacingError(
+      `CogGit project is not initialized at ${resolvedTargetPath}. Run "coggit init" first or pass an initialized project root.`,
+    );
+  }
+
+  const root = await readWorkspaceRoot(
+    services.fs,
+    {
+      uri: projectRootUri,
+      name: path.basename(resolvedTargetPath),
+      index: 0,
+    },
+    configUri,
+    services.logger,
+  );
+  if (!root) {
+    throw new UserFacingError(`CogGit config is invalid at ${resolvedTargetPath}.`);
+  }
+
+  return openCoggitProject(services, root);
 }
 
 /**
@@ -58,6 +94,10 @@ export async function startWatchSession(
   const heartbeatMs = Math.max(1, options.leaseHeartbeatMs ?? DEFAULT_WATCH_LEASE_HEARTBEAT_MS);
   const warn = options.warn ?? ((line: string) => console.error(line));
   const active = new Set<ActiveProjectWatch>();
+  let resolveDone!: () => void;
+  const done = new Promise<void>((resolve) => {
+    resolveDone = resolve;
+  });
 
   const disposeActive = async (entry: ActiveProjectWatch): Promise<void> => {
     if (!active.delete(entry)) {
@@ -68,6 +108,9 @@ export async function startWatchSession(
       entry.subscription.dispose();
     } finally {
       await entry.lease.release();
+    }
+    if (active.size === 0) {
+      resolveDone();
     }
   };
 
@@ -128,8 +171,12 @@ export async function startWatchSession(
   }
 
   return {
+    done,
     async dispose() {
       await Promise.all(Array.from(active, (entry) => disposeActive(entry)));
+      if (active.size === 0) {
+        resolveDone();
+      }
     },
   };
 }

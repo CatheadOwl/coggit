@@ -18,7 +18,7 @@ import {
 import type { UriComponents } from '../core/interfaces';
 import { createNodeCoggitServices, watchLeaseLockPath } from '../runtime/node';
 import { pathToUriComponents, uriComponentsToPath } from '../runtime/node/uri';
-import { startWatchSession } from './watch';
+import { openStrictWatchProject, startWatchSession } from './watch';
 
 class FakeWatchLeaseHandle implements WatchLeaseHandle {
   renewCalls = 0;
@@ -55,6 +55,42 @@ class FakeWatchLeaseManager implements WatchLeaseManager {
 }
 
 suite('coggit watch session', () => {
+  test('opens only the exact initialized project root', async () => {
+    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-cli-watch-'));
+    try {
+      const services = createNodeCoggitServices({ workspacePath: tempRoot });
+      await initProject(services.fs, pathToUriComponents(tempRoot), {
+        sourceRoot: 'src',
+        cognitionRoot: 'cognition',
+      });
+
+      const project = await openStrictWatchProject(services, tempRoot);
+
+      assert.strictEqual(uriComponentsToPath(project.root.projectRootUri), tempRoot);
+    } finally {
+      await nodeFs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('does not search upward from a child directory for watch', async () => {
+    const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-cli-watch-'));
+    try {
+      const services = createNodeCoggitServices({ workspacePath: tempRoot });
+      await initProject(services.fs, pathToUriComponents(tempRoot), {
+        sourceRoot: 'src',
+        cognitionRoot: 'cognition',
+      });
+      const childPath = path.join(tempRoot, 'src');
+
+      await assert.rejects(
+        openStrictWatchProject(services, childPath),
+        /CogGit project is not initialized/,
+      );
+    } finally {
+      await nodeFs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   test('emits a text line per observation and disposes the subscription', async () => {
     const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-cli-watch-'));
     try {
@@ -334,6 +370,7 @@ suite('coggit watch session', () => {
       );
 
       await withTimeout(watcherDisposed, 100, 'watcher was not disposed after lease reclaim');
+      await withTimeout(session.done, 500, 'watch session did not finish after lease reclaim');
       assert.ok(lease.renewCalls >= 1);
       assert.strictEqual(lease.releaseCalls, 1);
 
