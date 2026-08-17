@@ -35,6 +35,8 @@ interface LockFile {
 const DEFAULT_WAIT_TIMEOUT_MS = 5000;
 const DEFAULT_POLL_INTERVAL_MS = 50;
 const DEFAULT_STALE_AFTER_MS = 120000;
+const WATCH_LEASE_MUTATION_POLL_INTERVAL_MS = 5;
+const WATCH_LEASE_MUTATION_STALE_AFTER_MS = 30000;
 
 class NodeLockFileStore {
   constructor(
@@ -224,26 +226,36 @@ export class NodeWatchLeaseManager implements WatchLeaseManager {
     const lock = this.lockStore.createLock(token, context);
     let mayRetryAfterReclaim = true;
 
-    while (true) {
-      if (await this.lockStore.tryCreate(lockPath, lock)) {
-        return {
-          renew: async () => this.lockStore.renew(lockPath, token, context),
-          release: async () => this.lockStore.release(lockPath, token),
-        };
-      }
+    return await withWatchLeaseMutation(lockPath, false, async () => {
+      while (true) {
+        if (await this.lockStore.tryCreate(lockPath, lock)) {
+          return {
+            renew: async () => {
+              await withWatchLeaseMutation(lockPath, true, async () => {
+                await this.lockStore.renew(lockPath, token, context);
+              });
+            },
+            release: async () => {
+              await withWatchLeaseMutation(lockPath, true, async () => {
+                await this.lockStore.release(lockPath, token);
+              });
+            },
+          };
+        }
 
-      const holder = await this.lockStore.inspectExistingLock(lockPath);
-      if (
-        mayRetryAfterReclaim
-        && holder.stale
-        && await this.lockStore.reclaimStaleLock(lockPath)
-      ) {
-        mayRetryAfterReclaim = false;
-        continue;
-      }
+        const holder = await this.lockStore.inspectExistingLock(lockPath);
+        if (
+          mayRetryAfterReclaim
+          && holder.stale
+          && await this.lockStore.reclaimStaleLock(lockPath)
+        ) {
+          mayRetryAfterReclaim = false;
+          continue;
+        }
 
-      return null;
-    }
+        return null;
+      }
+    });
   }
 }
 
@@ -328,6 +340,50 @@ async function tryCreateDirectory(dirPath: string): Promise<boolean> {
     }
     throw error;
   }
+}
+
+async function withWatchLeaseMutation<T>(
+  lockPath: string,
+  wait: boolean,
+  fn: () => Promise<T>,
+): Promise<T | null> {
+  const mutationPath = `${lockPath}.mutation`;
+  const acquired = wait
+    ? await acquireDirectoryLock(mutationPath)
+    : await tryCreateDirectoryLock(mutationPath);
+  if (!acquired) {
+    return null;
+  }
+
+  try {
+    return await fn();
+  } finally {
+    await removeDirectoryIfExists(mutationPath);
+  }
+}
+
+async function acquireDirectoryLock(dirPath: string): Promise<boolean> {
+  while (true) {
+    if (await tryCreateDirectoryLock(dirPath)) {
+      return true;
+    }
+    await sleep(WATCH_LEASE_MUTATION_POLL_INTERVAL_MS);
+  }
+}
+
+async function tryCreateDirectoryLock(dirPath: string): Promise<boolean> {
+  await nodeFs.mkdir(path.dirname(dirPath), { recursive: true });
+  if (await tryCreateDirectory(dirPath)) {
+    return true;
+  }
+
+  const stat = await nodeFs.stat(dirPath).catch(() => null);
+  if (!stat || Date.now() - stat.mtimeMs < WATCH_LEASE_MUTATION_STALE_AFTER_MS) {
+    return false;
+  }
+
+  await removeDirectoryIfExists(dirPath);
+  return await tryCreateDirectory(dirPath);
 }
 
 async function removeDirectoryIfExists(dirPath: string): Promise<void> {

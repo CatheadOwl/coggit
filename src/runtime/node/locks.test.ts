@@ -16,6 +16,18 @@ async function tempProject(): Promise<string> {
   return nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-lock-'));
 }
 
+async function promiseState(
+  promise: Promise<unknown>,
+  pendingMs = 25,
+): Promise<'pending' | 'settled'> {
+  return await Promise.race([
+    promise.then(() => 'settled' as const, () => 'settled' as const),
+    new Promise<'pending'>((resolve) => {
+      setTimeout(() => resolve('pending'), pendingMs);
+    }),
+  ]);
+}
+
 suite('node project write locks', () => {
   test('creates and releases the project write lock file', async () => {
     const projectPath = await tempProject();
@@ -210,6 +222,30 @@ suite('node watch leases', () => {
     await nodeFs.rm(projectPath, { recursive: true, force: true });
   });
 
+  test('try-acquire returns null without waiting when mutation gate is busy', async () => {
+    const projectPath = await tempProject();
+    const projectRoot = pathToUriComponents(projectPath);
+    const lockPath = watchLeaseLockPath(projectRoot);
+    const mutationPath = `${lockPath}.mutation`;
+    const leases = new NodeWatchLeaseManager();
+
+    await nodeFs.mkdir(path.dirname(lockPath), { recursive: true });
+    await nodeFs.mkdir(mutationPath);
+
+    const startedAt = Date.now();
+    const lease = await leases.tryAcquireWatchLease(
+      projectRoot,
+      { owner: 'cli', operation: 'test.watch.mutation-busy' },
+    );
+
+    assert.strictEqual(lease, null);
+    assert.ok(Date.now() - startedAt < 100);
+    await assert.rejects(nodeFs.stat(lockPath), { code: 'ENOENT' });
+    await nodeFs.stat(mutationPath);
+
+    await nodeFs.rm(projectPath, { recursive: true, force: true });
+  });
+
   test('reclaims stale same-host dead-pid watch leases', async () => {
     const projectPath = await tempProject();
     const projectRoot = pathToUriComponents(projectPath);
@@ -365,6 +401,53 @@ suite('node watch leases', () => {
     await nodeFs.rm(projectPath, { recursive: true, force: true });
   });
 
+  test('stale renew waits for mutation gate and does not overwrite a successor lease', async () => {
+    const projectPath = await tempProject();
+    const projectRoot = pathToUriComponents(projectPath);
+    const lockPath = watchLeaseLockPath(projectRoot);
+    const mutationPath = `${lockPath}.mutation`;
+    const leases = new NodeWatchLeaseManager();
+    const lease = await leases.tryAcquireWatchLease(
+      projectRoot,
+      { owner: 'cli', operation: 'test.watch.renew-race.first' },
+    );
+    assert.ok(lease);
+
+    const raw = await nodeFs.readFile(lockPath, 'utf8');
+    const lock = JSON.parse(raw) as Record<string, unknown>;
+
+    await nodeFs.mkdir(mutationPath);
+    const renew = lease.renew();
+    try {
+      assert.strictEqual(await promiseState(renew), 'pending');
+      await nodeFs.writeFile(lockPath, JSON.stringify({
+        ...lock,
+        token: 'successor-watch-token',
+        context: { owner: 'mcp', operation: 'test.watch.renew-race.successor' },
+      }), 'utf8');
+    } finally {
+      await nodeFs.rmdir(mutationPath);
+    }
+
+    await assert.rejects(
+      renew,
+      (error: unknown) => {
+        assert.ok(error instanceof WatchLeaseError);
+        assert.strictEqual(error.code, 'COGGIT_WATCH_LEASE_RECLAIMED');
+        return true;
+      },
+    );
+    const afterRenewRaw = await nodeFs.readFile(lockPath, 'utf8');
+    const afterRenew = JSON.parse(afterRenewRaw) as {
+      token: string;
+      context: { operation: string };
+    };
+    assert.strictEqual(afterRenew.token, 'successor-watch-token');
+    assert.strictEqual(afterRenew.context.operation, 'test.watch.renew-race.successor');
+
+    await nodeFs.rm(projectPath, { recursive: true, force: true });
+  });
+
   test('release with stale token does not unlink another holder lease', async () => {
     const projectPath = await tempProject();
     const projectRoot = pathToUriComponents(projectPath);
@@ -388,6 +471,50 @@ suite('node watch leases', () => {
     const afterReleaseRaw = await nodeFs.readFile(lockPath, 'utf8');
     const afterRelease = JSON.parse(afterReleaseRaw) as { token: string };
     assert.strictEqual(afterRelease.token, 'replacement-watch-token');
+
+    await nodeFs.rm(projectPath, { recursive: true, force: true });
+  });
+
+  test('stale release waits for mutation gate and does not unlink a successor lease', async () => {
+    const projectPath = await tempProject();
+    const projectRoot = pathToUriComponents(projectPath);
+    const lockPath = watchLeaseLockPath(projectRoot);
+    const mutationPath = `${lockPath}.mutation`;
+    const leases = new NodeWatchLeaseManager();
+    const lease = await leases.tryAcquireWatchLease(
+      projectRoot,
+      { owner: 'cli', operation: 'test.watch.release-race.first' },
+    );
+    assert.ok(lease);
+
+    const raw = await nodeFs.readFile(lockPath, 'utf8');
+    const lock = JSON.parse(raw) as Record<string, unknown>;
+
+    await nodeFs.mkdir(mutationPath);
+    const release = lease.release();
+    try {
+      assert.strictEqual(await promiseState(release), 'pending');
+      const whilePendingRaw = await nodeFs.readFile(lockPath, 'utf8');
+      const whilePending = JSON.parse(whilePendingRaw) as { token: string };
+      assert.strictEqual(whilePending.token, lock.token);
+
+      await nodeFs.writeFile(lockPath, JSON.stringify({
+        ...lock,
+        token: 'successor-watch-token',
+        context: { owner: 'mcp', operation: 'test.watch.release-race.successor' },
+      }), 'utf8');
+    } finally {
+      await nodeFs.rmdir(mutationPath);
+    }
+
+    await release;
+    const afterReleaseRaw = await nodeFs.readFile(lockPath, 'utf8');
+    const afterRelease = JSON.parse(afterReleaseRaw) as {
+      token: string;
+      context: { operation: string };
+    };
+    assert.strictEqual(afterRelease.token, 'successor-watch-token');
+    assert.strictEqual(afterRelease.context.operation, 'test.watch.release-race.successor');
 
     await nodeFs.rm(projectPath, { recursive: true, force: true });
   });
