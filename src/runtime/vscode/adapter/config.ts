@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '../../../core/interfaces';
-import { generatedSourceStructureGlobExclude } from '../../../core/sourceStructureIgnore';
+import { generatedSourceStructureGlobExcludePatterns } from '../../../core/sourceStructureIgnore';
 import { toComponents } from './uri';
+
+type FilesExcludeConfig = Record<string, boolean | undefined>;
 
 export class VscodeConfigProvider implements ConfigProvider {
   getWorkspaceFolders(): WorkspaceFolderInfo[] {
@@ -13,7 +15,25 @@ export class VscodeConfigProvider implements ConfigProvider {
   }
 
   async findFiles(pattern: string): Promise<UriComponents[]> {
-    const uris = await vscode.workspace.findFiles(pattern, generatedSourceStructureGlobExclude());
+    const filesExclude = vscode.workspace.getConfiguration('files')
+      .get<FilesExcludeConfig>('exclude');
+    const uris = await vscode.workspace.findFiles(pattern, buildConfigDiscoveryExclude(filesExclude));
     return uris.map(toComponents);
   }
+}
+
+export function buildConfigDiscoveryExclude(filesExclude: FilesExcludeConfig | undefined): string {
+  return combineGlobPatterns([
+    ...Object.entries(filesExclude ?? {})
+      .filter(([pattern, enabled]) => pattern.length > 0 && enabled === true)
+      .map(([pattern]) => pattern),
+    ...generatedSourceStructureGlobExcludePatterns(),
+  ]);
+}
+
+function combineGlobPatterns(patterns: readonly string[]): string {
+  const uniquePatterns = [...new Set(patterns)];
+  return uniquePatterns.length === 1
+    ? uniquePatterns[0]
+    : `{${uniquePatterns.join(',')}}`;
 }

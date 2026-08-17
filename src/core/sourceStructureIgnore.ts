@@ -29,7 +29,11 @@ export function isIgnoredSourceStructureEntry(name: string, isDirectory: boolean
 	return isDirectory && GENERATED_DIRECTORY_NAMES.has(name);
 }
 
+export function generatedSourceStructureGlobExcludePatterns(): string[] {
+	return GENERATED_SOURCE_STRUCTURE_DIRECTORY_NAMES.map((name) => `**/${name}/**`);
+}
+
 export function generatedSourceStructureGlobExclude(): string {
-	const patterns = GENERATED_SOURCE_STRUCTURE_DIRECTORY_NAMES.map((name) => `**/${name}/**`);
+	const patterns = generatedSourceStructureGlobExcludePatterns();
 	return `{${patterns.join(',')}}`;
 }
