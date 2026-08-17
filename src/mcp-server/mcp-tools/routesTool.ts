@@ -52,7 +52,12 @@ export function registerRoutesTool(
       const content = assembleRoutesContent(
         {
           entries: result?.entries ?? [],
-          project: result?.project ?? { sourceRoot: '', cognitionRoot: '' },
+          project: result?.project
+            ? {
+                sourceRoot: result.project.sourceRoot,
+                cognitionRoot: result.project.cognitionRoot,
+              }
+            : { sourceRoot: '', cognitionRoot: '' },
         },
         {
           sourcePath,
