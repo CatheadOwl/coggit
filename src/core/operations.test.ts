@@ -248,8 +248,16 @@ suite('core operations', () => {
     assert.strictEqual(result.sourcePath, 'missing.ts');
     assert.strictEqual(result.project?.sourceRootUri, 'test:///workspace/src');
     assert.strictEqual(result.handbookId, 'leaf');
-    assert.strictEqual(result.issueCount, 0);
-    assert.strictEqual(result.suggestedActions.length, 0);
+    assert.strictEqual(result.issueCount, 1);
+    assert.strictEqual(result.ownIssueCount, 1);
+    assert.strictEqual(result.descendantIssueCount, 0);
+    assert.deepStrictEqual(result.issues.map((issue) => issue.code), ['missing-cognition']);
+    assert.deepStrictEqual(result.suggestedActions, [{
+      code: 'create-cognition-file',
+      label: 'Create cognition file',
+      sourcePath: 'missing.ts',
+    }]);
+    assert.deepStrictEqual(result.verify, { operation: 'status', sourcePath: 'missing.ts' });
   });
 
   test('add returns typed expected failure for invalid kind', async () => {

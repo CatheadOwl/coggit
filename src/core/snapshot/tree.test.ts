@@ -161,6 +161,8 @@ suite('folder node freshness fallback', () => {
 		const node = await buildFileNode(parent, fileUri, sourceRootUri, fs);
 
 		assert.strictEqual(node.status?.observedStatus, undefined);
+		assert.deepStrictEqual(node.status?.issues?.map((issue) => issue.diagnostic.code), ['missing-cognition']);
+		assert.deepStrictEqual(node.status?.issues?.[0]?.actions.map((action) => action.label), ['Create cognition file']);
 		assert.strictEqual(node.status?.coverage?.ownCognition, 'missing');
 		assert.strictEqual(node.status?.coverage?.isMaterializable, true);
 		assert.strictEqual(node.status?.coverage?.missingMaterializableCount, 1);

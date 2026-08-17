@@ -4,6 +4,7 @@ import type {
 	CoggitWorkspaceRoot,
 	NodeStatusResult,
 	SourceFactKind,
+	StatusIssue,
 } from '../types';
 import type { AcceptanceStore, FileSystem, FreshnessEvidenceStore, UriComponents } from '../interfaces';
 import type { AcceptedPair } from '../registryTypes';
@@ -385,12 +386,24 @@ function legacySourceMtime(
 		: options.freshnessEvidence?.getFreshnessTimes('', sourceKey).sourceFactMtimeMs ?? fallback;
 }
 
+function missingCognitionIssue(): StatusIssue {
+	return {
+		diagnostic: {
+			code: 'missing-cognition',
+			severity: 'info',
+			message: 'Source file has no paired cognition file.',
+		},
+		actions: [{ label: 'Create cognition file' }],
+	};
+}
+
 async function computeNodeStatus(input: ComputeNodeStatusInput): Promise<NodeStatusResult> {
 	const ownObservedStatus = input.cognitionMtimeMs === undefined ? undefined : 'stale';
 	let ownStatus: NodeStatusResult = ownObservedStatus === undefined
 		? {
 			observedStatus: undefined,
 			ownObservedStatus: undefined,
+			issues: [missingCognitionIssue()],
 			coverage: { ownCognition: 'missing', isMaterializable: true, missingMaterializableCount: 1, coveredCount: 0 },
 		}
 		: {
