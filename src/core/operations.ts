@@ -298,12 +298,8 @@ export async function snapshotOperation(
       snapshot: null,
       node,
       pathHints,
-      pathMissMessage: match
-        ? undefined
-        : pathMissMessage(sourcePath),
-      pathHintMessage: !match && pathHints.length > 0
-        ? PATH_HINT_MESSAGE
-        : undefined,
+      ...(match ? {} : { pathMissMessage: pathMissMessage(sourcePath) }),
+      ...(!match && pathHints.length > 0 ? { pathHintMessage: PATH_HINT_MESSAGE } : {}),
     };
   }
 
@@ -373,9 +369,7 @@ export async function statusOperation(
       node: null,
       pathHints,
       pathMissMessage: pathMissMessage(sourcePath),
-      pathHintMessage: pathHints.length > 0
-        ? PATH_HINT_MESSAGE
-        : undefined,
+      ...(pathHints.length > 0 ? { pathHintMessage: PATH_HINT_MESSAGE } : {}),
     };
   }
 

@@ -479,6 +479,22 @@ suite('core operations', () => {
     const result = await snapshotOperation([project], { sourcePath: 'src/missing.ts' });
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.sourcePath, 'src/missing.ts');
+    // Matched path: miss diagnostics are omitted keys, never undefined values
+    assert.ok(!('pathMissMessage' in result));
+    assert.ok(!('pathHintMessage' in result));
+  });
+
+  test('snapshot miss without fuzzy hints omits hint diagnostics as keys', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/other/main.ts', 'export const o = 1;');
+    const project = await makeProject(fs);
+
+    const result = await snapshotOperation([project], { sourcePath: 'src/never-exists.ts' });
+
+    assert.strictEqual(result.found, false);
+    assert.deepStrictEqual(result.pathHints, []);
+    assert.strictEqual(result.pathMissMessage, 'Path not found in any CogGit project: src/never-exists.ts');
+    assert.ok(!('pathHintMessage' in result));
   });
 
   test('status returns fuzzy path hints when the source path misses', async () => {
@@ -503,8 +519,8 @@ suite('core operations', () => {
 
     assert.strictEqual(result.found, true);
     assert.deepStrictEqual(result.pathHints, []);
-    assert.strictEqual(result.pathMissMessage, undefined);
-    assert.strictEqual(result.pathHintMessage, undefined);
+    assert.ok(!('pathMissMessage' in result));
+    assert.ok(!('pathHintMessage' in result));
   });
 
   test('status miss without fuzzy hints omits the hint lead-in', async () => {
@@ -517,7 +533,7 @@ suite('core operations', () => {
     assert.strictEqual(result.found, false);
     assert.deepStrictEqual(result.pathHints, []);
     assert.strictEqual(result.pathMissMessage, 'Path not found in any CogGit project: src/core/watchPipeline.ts');
-    assert.strictEqual(result.pathHintMessage, undefined);
+    assert.ok(!('pathHintMessage' in result));
   });
 
   test('snapshot returns fuzzy path hints when the source path misses', async () => {
