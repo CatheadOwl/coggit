@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 
 import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '../../core/interfaces';
+import { isIgnoredSourceStructureEntry } from '../../core/sourceStructureIgnore';
 import { pathToUriComponents } from './uri';
 
 const CONFIG_PATTERN = '**/.coggit/config.yaml';
@@ -105,7 +106,7 @@ async function collectDescendantConfigs(rootPath: string, results: Set<string>):
 }
 
 function shouldSkipDirectory(name: string): boolean {
-  return name === '.git' || name === 'node_modules' || name === 'dist' || name === 'out';
+  return isIgnoredSourceStructureEntry(name, true);
 }
 
 async function exists(filePath: string): Promise<boolean> {
