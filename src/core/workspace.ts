@@ -43,17 +43,18 @@ async function discoverConfigUris(
   fs: FileSystem,
   config: ConfigProvider,
 ): Promise<UriComponents[]> {
-  const discovered = await config.findFiles('**/.coggit/config.yaml');
-  const byKey = new Map(discovered.map((uri) => [uriKey(uri), uri]));
-
-  for (const workspaceFolder of config.getWorkspaceFolders()) {
+  const workspaceFolders = config.getWorkspaceFolders();
+  const byKey = new Map<string, UriComponents>();
+  for (const workspaceFolder of workspaceFolders) {
     const directConfigUri = joinUriPath(workspaceFolder.uri, '.coggit', 'config.yaml');
-    if (byKey.has(uriKey(directConfigUri))) {
-      continue;
-    }
     if (await fs.stat(directConfigUri)) {
       byKey.set(uriKey(directConfigUri), directConfigUri);
     }
+  }
+
+  const discovered = await config.findFiles('**/.coggit/config.yaml');
+  for (const uri of discovered) {
+    byKey.set(uriKey(uri), uri);
   }
 
   return Array.from(byKey.values());

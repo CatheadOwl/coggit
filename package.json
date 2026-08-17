@@ -36,9 +36,6 @@
     "workspaceContains:**/.coggit/config.yaml"
   ],
   "main": "./dist/extension.js",
-  "files": [
-    "dist"
-  ],
   "exports": {
     ".": "./dist/extension.js",
     "./core": {

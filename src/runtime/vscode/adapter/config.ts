@@ -4,6 +4,7 @@ import { generatedSourceStructureGlobExcludePatterns } from '../../../core/sourc
 import { toComponents } from './uri';
 
 type FilesExcludeConfig = Record<string, boolean | undefined>;
+const CONFIG_DISCOVERY_TIMEOUT_MS = 2000;
 
 export class VscodeConfigProvider implements ConfigProvider {
   getWorkspaceFolders(): WorkspaceFolderInfo[] {
@@ -17,8 +18,27 @@ export class VscodeConfigProvider implements ConfigProvider {
   async findFiles(pattern: string): Promise<UriComponents[]> {
     const filesExclude = vscode.workspace.getConfiguration('files')
       .get<FilesExcludeConfig>('exclude');
-    const uris = await vscode.workspace.findFiles(pattern, buildConfigDiscoveryExclude(filesExclude));
+    const uris = await findFilesWithTimeout(pattern, buildConfigDiscoveryExclude(filesExclude));
     return uris.map(toComponents);
+  }
+}
+
+async function findFilesWithTimeout(pattern: string, exclude: string): Promise<vscode.Uri[]> {
+  const cancellation = new vscode.CancellationTokenSource();
+  const timeout = setTimeout(() => {
+    cancellation.cancel();
+  }, CONFIG_DISCOVERY_TIMEOUT_MS);
+
+  try {
+    return await vscode.workspace.findFiles(pattern, exclude, undefined, cancellation.token);
+  } catch (error) {
+    if (cancellation.token.isCancellationRequested) {
+      return [];
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    cancellation.dispose();
   }
 }
 

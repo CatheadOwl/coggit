@@ -105,6 +105,24 @@ suite('discoverWorkspaceRoots', () => {
 		assert.strictEqual(roots[0].projectRootUri.path, '/workspace');
 	});
 
+	test('keeps descendant configs when workspace root also has a direct config', async () => {
+		const fs = new MockFs();
+		fs.setConfig('/workspace/.coggit/config.yaml', CONFIG_YAML);
+		fs.setConfig('/workspace/project/.coggit/config.yaml', CONFIG_YAML);
+
+		const config = new MockConfig();
+		config.setFolders([{ uri: uri('/workspace'), name: 'workspace', index: 0 }]);
+		config.setConfigUris([
+			uri('/workspace/.coggit/config.yaml'),
+			uri('/workspace/project/.coggit/config.yaml'),
+		]);
+
+		const roots = await discoverWorkspaceRoots(fs, config);
+		assert.strictEqual(roots.length, 2);
+		assert.ok(roots.some((root) => root.projectRootUri.path === '/workspace'));
+		assert.ok(roots.some((root) => root.projectRootUri.path === '/workspace/project'));
+	});
+
 	test('matches config URI to the containing workspace folder', async () => {
 		const fs = new MockFs();
 		fs.setConfig('/workspace-a/project/.coggit/config.yaml', CONFIG_YAML);
