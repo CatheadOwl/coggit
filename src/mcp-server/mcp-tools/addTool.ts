@@ -90,3 +90,7 @@ function addText(result: AddOperationResult): string {
       : 'Next: complete the paired cognition document.',
   ].join('\n');
 }
+
+export const __testing__ = {
+  addText,
+};

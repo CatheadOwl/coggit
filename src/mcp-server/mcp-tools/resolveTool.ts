@@ -71,3 +71,7 @@ function resolveText(result: ResolveOperationResult): string {
     `Verification time: ${formatTimestamp(result.verificationTimeMs, '(none)')}`,
   ].join('\n');
 }
+
+export const __testing__ = {
+  resolveText,
+};
