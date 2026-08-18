@@ -260,6 +260,7 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 	return {
 		sourcePath: input.sourcePath,
 		cognitionPath: input.cognitionPath,
+		cognitionPresence: input.node.ownStatus?.coverage?.ownCognition ?? 'not-applicable',
 		nodeKind: input.node.kind,
 		status: input.node.status?.observedStatus ?? null,
 		ownStatus: input.node.status?.ownObservedStatus ?? null,

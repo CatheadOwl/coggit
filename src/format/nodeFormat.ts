@@ -128,7 +128,9 @@ function formatInspectionText(
   } else {
     text += `${bu('Source')}: ${inspection.sourcePath}`;
   }
-  if (inspection.cognitionPath !== null) {
+  if (inspection.cognitionPresence === 'missing') {
+    text += `${lineSep}${bu('Cognition')}: Not created (add on demand)`;
+  } else if (inspection.cognitionPath !== null && inspection.cognitionPresence !== 'not-applicable') {
     text += `${lineSep}${bu('Cognition')}: ${inspection.cognitionPath}`;
   }
 

@@ -729,5 +729,41 @@ suite('CogGit Ghost Tree', () => {
 				assert.doesNotMatch(text, /\nSuggested actions:\n/);
 			});
 
+			test('status presentation labels an expected but uncreated cognition path', () => {
+				const node = mkStatusNode('runs', 'coggit_prompt/evals/runs', {
+					coverage: { ownCognition: 'missing', isMaterializable: true, missingMaterializableCount: 1, coveredCount: 0 },
+				});
+				node.cognitionUri = mkTestUri('/workspace/cog/coggit_prompt/evals/runs/README.md');
+				const inspection = statusTesting.inspectNodeStatus({
+					node,
+					sourcePath: node.relativePath,
+					cognitionPath: 'coggit_prompt/evals/runs/README.md',
+					handbookId: 'skeleton',
+				});
+
+				const cliText = renderNodeStatusInspectionText(inspection, 'aggregate');
+				const tooltip = nodeTooltip(node);
+				const clipboard = nodeClipboardStatusText(node);
+
+				assert.match(cliText, /^Source: coggit_prompt\/evals\/runs\nCognition: Not created \(add on demand\)/);
+				assert.doesNotMatch(cliText, /Cognition: coggit_prompt\/evals\/runs\/README\.md/);
+				assert.match(tooltip, /\*\*Cognition\*\*: Not created \(add on demand\)/);
+				assert.match(clipboard, /Cognition: Not created \(add on demand\)/);
+			});
+
+			test('status presentation omits cognition when coverage is not applicable', () => {
+				const node = mkStatusNode('error', 'broken', {
+					coverage: { ownCognition: 'not-applicable', isMaterializable: false, missingMaterializableCount: 0, coveredCount: 0 },
+				});
+				const inspection = statusTesting.inspectNodeStatus({
+					node,
+					sourcePath: node.relativePath,
+					cognitionPath: 'broken/README.md',
+					handbookId: 'skeleton',
+				});
+
+				assert.doesNotMatch(renderNodeStatusInspectionText(inspection, 'aggregate'), /^Cognition:/m);
+			});
+
 
 });

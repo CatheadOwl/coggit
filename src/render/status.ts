@@ -15,7 +15,9 @@ export function renderNodeStatusInspectionText(
   mode: 'aggregate' | 'own' | 'subtree',
 ): string {
   const lines = [`Source: ${inspection.sourcePath}`];
-  if (inspection.cognitionPath) {
+  if (inspection.cognitionPresence === 'missing') {
+    lines.push('Cognition: Not created (add on demand)');
+  } else if (inspection.cognitionPath && inspection.cognitionPresence !== 'not-applicable') {
     lines.push(`Cognition: ${inspection.cognitionPath}`);
   }
 

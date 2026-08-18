@@ -158,6 +158,7 @@ export interface StatusResult {
 export interface NodeStatusInspection {
 	sourcePath: string;
 	cognitionPath: string | null;
+	cognitionPresence?: CognitionCoveragePresence;
 	nodeKind: CoggitNodeKind;
 	status: ObservedStatus | null;
 	ownStatus: ObservedStatus | null;
