@@ -39,7 +39,6 @@ function inspection(): NodeStatusInspection {
     },
     suggestedActions: [],
     handbookId: 'skeleton',
-    verify: { operation: 'status', sourcePath: 'src/app' },
   };
 }
 

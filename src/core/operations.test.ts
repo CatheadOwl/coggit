@@ -261,7 +261,6 @@ suite('core operations', () => {
       operation: 'add',
       sourcePath: 'missing.ts',
     }]);
-    assert.deepStrictEqual(result.verify, null);
   });
 
   test('status all-issue projection includes missing cognition diagnostics for internal diagnosis', async () => {
@@ -283,7 +282,6 @@ suite('core operations', () => {
       operation: 'add',
       sourcePath: 'missing.ts',
     }]);
-    assert.deepStrictEqual(result.verify, null);
   });
 
   test('status all-issue projection keeps a descendant missing-cognition label-only action', async () => {
@@ -408,7 +406,12 @@ suite('core operations', () => {
 
     assert.strictEqual(result.success, false);
     assert.strictEqual(result.error?.code, 'invalid-kind');
-    assert.strictEqual(result.verify.operation, 'status');
+    assert.deepStrictEqual(result.suggestedActions, [{
+      code: 'recheck-status',
+      label: 'Re-check the current status of this source path.',
+      operation: 'status',
+      sourcePath: 'file.ts',
+    }]);
   });
 
   test('add returns source-root and cognition-root relative paths', async () => {
@@ -421,10 +424,7 @@ suite('core operations', () => {
     assert.strictEqual(result.success, true);
     assert.strictEqual(result.sourcePath, 'missing.ts');
     assert.strictEqual(result.cognitionPath, 'missing.ts.md');
-    assert.deepStrictEqual(result.verify, {
-      operation: 'status',
-      sourcePath: 'missing.ts',
-    });
+    assert.deepStrictEqual(result.suggestedActions, []);
   });
 
   test('add resolves a candidate form through sourcePathCandidates', async () => {

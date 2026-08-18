@@ -90,9 +90,6 @@ function statusGuidanceText(result: ReturnType<typeof statusMcpView>): string {
       if (action.kind === 'read-cognition' && action.cognitionPath) {
         return `- Read cognition ${action.cognitionPath}: ${action.label}`;
       }
-      if (action.kind === 'verify-status' && action.tool && action.sourcePath) {
-        return `- Verify with ${action.tool} for ${action.sourcePath}: ${action.label}`;
-      }
       return `- ${action.label}`;
     }),
   ].join('\n');

@@ -6,12 +6,11 @@ import type { ResolveOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
-  MCP_TOOL_NAMES,
   resolveOperationOutputSchema,
   resolveStructuredContent,
 } from '../operationDto/index.js';
 import { formatTimestamp } from '../../core/time.js';
-import type { ToolContent } from './toolShared.js';
+import { recheckNextStepText, type ToolContent } from './toolShared.js';
 
 export function registerResolveTool(
   server: McpServer,
@@ -59,8 +58,8 @@ function resolveText(result: ResolveOperationResult): string {
     }
     return [
       `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
-      `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
-    ].join('\n');
+      recheckNextStepText(result.suggestedActions),
+    ].filter(Boolean).join('\n');
   }
 
   return [

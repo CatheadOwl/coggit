@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { RESOLVE_ERROR_CODES } from '../../core/operations.js';
 import type { ResolveOperationResult } from '../../core/index.js';
 import {
-  MCP_TOOL_NAMES,
   mcpMaintenanceNextActionSchema,
+  operationActionSchema,
   projectContextSchema,
+  toMcpOperationAction,
   toMcpProjectContext,
 } from './shared.js';
 
@@ -15,16 +16,13 @@ export const resolveOperationOutputSchema = {
   cognitionPath: z.string().nullable(),
   sourceKey: z.string().nullable(),
   verificationTimeMs: z.number().nullable(),
-  verify: z.object({
-    tool: z.literal('coggit_status'),
-    sourcePath: z.string(),
-  }),
   project: projectContextSchema.nullable(),
   error: z.object({
     code: z.enum(RESOLVE_ERROR_CODES),
     message: z.string(),
   }).nullable(),
   nextActions: z.array(mcpMaintenanceNextActionSchema),
+  suggestedActions: z.array(operationActionSchema),
 };
 
 export function resolveStructuredContent(result: ResolveOperationResult): {
@@ -33,10 +31,10 @@ export function resolveStructuredContent(result: ResolveOperationResult): {
   cognitionPath: string | null;
   sourceKey: string | null;
   verificationTimeMs: number | null;
-  verify: z.infer<typeof resolveOperationOutputSchema['verify']>;
   project: z.infer<typeof projectContextSchema> | null;
   error: ResolveOperationResult['error'];
   nextActions: [];
+  suggestedActions: Array<z.infer<typeof operationActionSchema>>;
 } {
   return {
     success: result.success,
@@ -44,12 +42,9 @@ export function resolveStructuredContent(result: ResolveOperationResult): {
     cognitionPath: result.cognitionPath,
     sourceKey: result.sourceKey,
     verificationTimeMs: result.verificationTimeMs,
-    verify: {
-      tool: MCP_TOOL_NAMES[result.verify.operation],
-      sourcePath: result.verify.sourcePath,
-    },
     project: result.project ? toMcpProjectContext(result.project) : null,
     error: result.error,
     nextActions: [],
+    suggestedActions: result.suggestedActions.map(toMcpOperationAction),
   };
 }

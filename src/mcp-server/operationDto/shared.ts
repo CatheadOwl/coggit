@@ -58,12 +58,10 @@ export const mcpStatusIssueSchema = z.object({
 export const mcpMaintenanceNextActionSchema = z.object({
   code: z.string(),
   label: z.string(),
-  kind: z.enum(['read-resource', 'read-cognition', 'verify-status']),
+  kind: z.enum(['read-resource', 'read-cognition']),
   priority: z.number().min(0).max(1),
   resourceUri: z.string().optional(),
-  sourcePath: z.string().optional(),
   cognitionPath: z.string().optional(),
-  tool: z.literal('coggit_status').optional(),
 });
 
 export function toMcpProjectContext(project: {

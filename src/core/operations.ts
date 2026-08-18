@@ -5,7 +5,6 @@ import type {
   CoggitTreeNode,
   CoggitNodeKind,
   CoggitOperationAction,
-  CoggitOperationVerifyHint,
   CoggitProjectContext,
   LocatedStatusIssue,
   NodeStatusInspection,
@@ -31,7 +30,6 @@ import { projectContext as projectContextFromProject } from './projectContext';
 
 export type {
   CoggitOperationAction,
-  CoggitOperationVerifyHint,
   CoggitProjectContext,
   CoreOperationId,
   SnapshotOperationScope,
@@ -94,7 +92,6 @@ export interface StatusOperationResult {
   issues: CoggitOperationIssue[];
   suggestedActions: CoggitOperationAction[];
   handbookId: 'leaf' | 'skeleton' | null;
-  verify: CoggitOperationVerifyHint | null;
   node: CoggitTreeNode | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -131,7 +128,7 @@ export interface AddOperationResult {
   cognitionPath: string | null;
   project: CoggitProjectContext | null;
   handbookId: 'leaf' | 'skeleton' | null;
-  verify: CoggitOperationVerifyHint;
+  suggestedActions: CoggitOperationAction[];
   error: AddOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -164,7 +161,7 @@ export interface ResolveOperationResult {
   project: CoggitProjectContext | null;
   sourceKey: string | null;
   verificationTimeMs: number | null;
-  verify: CoggitOperationVerifyHint;
+  suggestedActions: CoggitOperationAction[];
   error: ResolveOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -367,7 +364,6 @@ export async function statusOperation(
       }],
       suggestedActions: [],
       handbookId: null,
-      verify: null,
       node: null,
       pathHints,
       pathMissMessage: pathMissMessage(sourcePath),
@@ -405,7 +401,6 @@ export async function statusOperation(
     issues,
     suggestedActions: inspection.suggestedActions,
     handbookId,
-    verify: inspection.verify,
     node: match.node,
     inspection,
     pathHints: [],
@@ -417,9 +412,8 @@ export async function addOperation(
   sourcePath: string,
   options: { kind?: AddCognitionKind; overwrite?: boolean; sourcePathCandidates?: SourcePathCandidatesExpander } = {},
 ): Promise<AddOperationResult> {
-  const verify = { operation: 'status' as const, sourcePath };
   if (projects.length === 0) {
-    return addFailure(sourcePath, null, verify, 'no-projects', 'No CogGit project found.');
+    return addFailure(sourcePath, null, [recheckStatusAction(sourcePath)], 'no-projects', 'No CogGit project found.');
   }
 
   const { match, pathHints } = await resolveSourcePathWithHits(
@@ -428,7 +422,7 @@ export async function addOperation(
     options.sourcePathCandidates,
   );
   if (!match) {
-    return addFailure(sourcePath, null, verify, 'path-not-found', PATH_MISS_MESSAGE, {
+    return addFailure(sourcePath, null, [], 'path-not-found', PATH_MISS_MESSAGE, {
       pathHints,
       pathMissMessage: pathMissMessage(sourcePath),
       pathHintMessage: pathHints.length > 0 ? PATH_HINT_MESSAGE : undefined,
@@ -442,7 +436,6 @@ export async function addOperation(
     });
     const sourcePath = match.node.relativePath;
     const cognitionPath = toRelativeUriPath(match.project.root.cognitionRootUri, result.cognitionUri);
-    const verifyResult = { operation: 'status' as const, sourcePath };
     return {
       success: true,
       created: result.created,
@@ -451,17 +444,20 @@ export async function addOperation(
       cognitionPath,
       project: projectContext(match.project),
       handbookId: handbookIdForCognitionKind(result.kind),
-      verify: verifyResult,
+      suggestedActions: [],
       error: null,
       pathHints: [],
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const code = classifyAddError(message);
-    return addFailure(match.node.relativePath, projectContext(match.project), {
-      operation: 'status',
-      sourcePath: match.node.relativePath,
-    }, code, message);
+    return addFailure(
+      match.node.relativePath,
+      projectContext(match.project),
+      [recheckStatusAction(match.node.relativePath)],
+      code,
+      message,
+    );
   }
 }
 
@@ -470,9 +466,8 @@ export async function resolveOperation(
   sourcePath: string,
   options: { sourcePathCandidates?: SourcePathCandidatesExpander } = {},
 ): Promise<ResolveOperationResult> {
-  const verify = { operation: 'status' as const, sourcePath };
   if (projects.length === 0) {
-    return resolveFailure(sourcePath, null, null, verify, 'no-projects', 'No CogGit project found.');
+    return resolveFailure(sourcePath, null, null, [recheckStatusAction(sourcePath)], 'no-projects', 'No CogGit project found.');
   }
 
   const expandCandidates = options.sourcePathCandidates ?? identitySourcePathCandidates;
@@ -486,7 +481,6 @@ export async function resolveOperation(
         const result = await candidate.markResolved(candidatePath);
         const node = await candidate.getNode(candidatePath);
         const matchedSourcePath = node?.relativePath ?? candidatePath;
-        const matchedVerify = { operation: 'status' as const, sourcePath: matchedSourcePath };
         return {
           success: true,
           sourcePath: matchedSourcePath,
@@ -494,7 +488,7 @@ export async function resolveOperation(
           project: projectContext(candidate),
           sourceKey: result.sourceKey,
           verificationTimeMs: result.verificationTimeMs ?? null,
-          verify: matchedVerify,
+          suggestedActions: [],
           error: null,
           pathHints: [],
         };
@@ -515,7 +509,7 @@ export async function resolveOperation(
           sourcePath,
           null,
           projectContext(candidate),
-          verify,
+          [recheckStatusAction(sourcePath)],
           code,
           message,
           { pathHints: [] },
@@ -525,12 +519,13 @@ export async function resolveOperation(
   }
 
   const { pathHints } = await resolveSourcePathWithHits(projects, sourcePath, expandCandidates);
+  const miss = sawPathNotFound;
   return resolveFailure(
     sourcePath,
     null,
     null,
-    verify,
-    sawPathNotFound ? 'path-not-found' : 'unknown',
+    miss ? [] : [recheckStatusAction(sourcePath)],
+    miss ? 'path-not-found' : 'unknown',
     PATH_MISS_MESSAGE,
     {
       pathHints,
@@ -701,10 +696,19 @@ function cognitionRelativePath(node: CoggitTreeNode): string | null {
     : null;
 }
 
+function recheckStatusAction(sourcePath: string): CoggitOperationAction {
+  return {
+    code: 'recheck-status',
+    label: 'Re-check the current status of this source path.',
+    operation: 'status',
+    sourcePath,
+  };
+}
+
 function addFailure(
   sourcePath: string,
   project: CoggitProjectContext | null,
-  verify: CoggitOperationVerifyHint,
+  suggestedActions: CoggitOperationAction[],
   code: AddOperationErrorCode,
   message: string,
   miss?: {
@@ -721,7 +725,7 @@ function addFailure(
     cognitionPath: null,
     project,
     handbookId: null,
-    verify,
+    suggestedActions,
     error: { code, message },
     pathHints: miss?.pathHints ?? [],
     ...(miss?.pathMissMessage ? { pathMissMessage: miss.pathMissMessage } : {}),
@@ -733,7 +737,7 @@ function resolveFailure(
   sourcePath: string,
   cognitionPath: string | null,
   project: CoggitProjectContext | null,
-  verify: CoggitOperationVerifyHint,
+  suggestedActions: CoggitOperationAction[],
   code: ResolveErrorCode,
   message: string,
   miss?: {
@@ -749,7 +753,7 @@ function resolveFailure(
     project,
     sourceKey: null,
     verificationTimeMs: null,
-    verify,
+    suggestedActions,
     error: { code, message },
     pathHints: miss?.pathHints ?? [],
     ...(miss?.pathMissMessage ? { pathMissMessage: miss.pathMissMessage } : {}),

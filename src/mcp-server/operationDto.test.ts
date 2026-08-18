@@ -58,7 +58,6 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: 'leaf',
-      verify: null,
       node: null,
       pathHints: [],
       inspection: {
@@ -73,7 +72,6 @@ suite('mcp operation DTO adapter', () => {
         subtreeIssues: { own: [], descendant: [] },
         suggestedActions: [],
         handbookId: 'leaf',
-        verify: null,
       },
     };
 
@@ -96,7 +94,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { operation: 'status', sourcePath: 'missing.ts' },
+      suggestedActions: [],
       error: {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
@@ -118,7 +116,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { operation: 'status', sourcePath: 'missing.ts' },
+      suggestedActions: [],
       error: {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
@@ -147,7 +145,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { operation: 'status', sourcePath: 'registry' },
+      suggestedActions: [],
       error: {
         code: 'path-not-found',
         message: 'Path not found in any CogGit project.',
@@ -179,7 +177,7 @@ suite('mcp operation DTO adapter', () => {
       project,
       sourceKey: 'src/app/',
       verificationTimeMs: 1710000000000,
-      verify: { operation: 'status', sourcePath: 'src/app' },
+      suggestedActions: [],
       error: null,
       pathHints: [],
     };
@@ -363,7 +361,6 @@ suite('mcp operation DTO adapter', () => {
         sourcePath: 'src/main.ts',
       }],
       handbookId: 'leaf',
-      verify: null,
       node: null,
       pathHints: [],
       inspection: {
@@ -400,7 +397,6 @@ suite('mcp operation DTO adapter', () => {
           sourcePath: 'src/main.ts',
         }],
         handbookId: 'leaf',
-        verify: null,
       },
     };
 
@@ -418,7 +414,6 @@ suite('mcp operation DTO adapter', () => {
     ]);
     assert.strictEqual(structuredContent.descendantIssues.length, 0);
     assert.strictEqual(structuredContent.handbookUri, 'coggit://handbook/leaf');
-    assert.deepStrictEqual(structuredContent.verify, null);
     assert.deepStrictEqual(structuredContent.nextActions, [{
       code: 'read-handbook-before-maintenance',
       label: 'If maintaining this cognition, read the matching handbook before editing.',
@@ -450,7 +445,6 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: 'skeleton',
-      verify: null,
       node: null,
       pathHints: [],
       inspection: {
@@ -498,7 +492,6 @@ suite('mcp operation DTO adapter', () => {
         },
         suggestedActions: [],
         handbookId: 'skeleton',
-        verify: null,
       },
     };
 
@@ -538,7 +531,6 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: null,
-      verify: null,
       node: null,
       pathHints: ['coggit/src/core/watchPipeline.ts'],
       pathMissMessage: 'Path not found in any CogGit project: src/core/watchPipeline.ts',
@@ -565,7 +557,7 @@ suite('mcp operation DTO adapter', () => {
       cognitionPath: 'src/main.ts.md',
       project,
       handbookId: 'leaf',
-      verify: { operation: 'status', sourcePath: 'src/main.ts' },
+      suggestedActions: [],
       error: null,
       pathHints: [],
     };

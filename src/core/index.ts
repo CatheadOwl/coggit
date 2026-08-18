@@ -65,7 +65,6 @@ export type {
   CoggitHandbookCatalogEntry,
   CoggitOperationAction,
   CoggitOperationIssue,
-  CoggitOperationVerifyHint,
   CoggitProjectContext,
   CoreOperationId,
   RoutesOperationResult,

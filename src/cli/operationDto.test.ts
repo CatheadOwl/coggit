@@ -13,7 +13,7 @@ suite('CLI operation DTO surfacing', () => {
       cognitionPath: 'src/main.ts.md',
       project: null,
       handbookId: 'leaf',
-      verify: { operation: 'status', sourcePath: 'src/main.ts' },
+      suggestedActions: [],
       error: null,
       pathHints: [],
     };
@@ -31,7 +31,7 @@ suite('CLI operation DTO surfacing', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { operation: 'status', sourcePath: 'src/missing.ts' },
+      suggestedActions: [],
       error: { code: 'path-not-found', message: 'Path not found in any CogGit project.' },
       pathHints: [],
       pathMissMessage: 'Path not found in any CogGit project: src/missing.ts',
@@ -50,7 +50,12 @@ suite('CLI operation DTO surfacing', () => {
       cognitionPath: null,
       project: null,
       handbookId: null,
-      verify: { operation: 'status', sourcePath: 'src/folder' },
+      suggestedActions: [{
+        code: 'recheck-status',
+        label: 'Re-check the current status of this source path.',
+        operation: 'status',
+        sourcePath: 'src/folder',
+      }],
       error: { code: 'invalid-kind', message: 'Cannot create leaf cognition for a folder.' },
       pathHints: [],
     };
@@ -67,7 +72,7 @@ suite('CLI operation DTO surfacing', () => {
       project: null,
       sourceKey: 'src/main.ts',
       verificationTimeMs: 1710000000000,
-      verify: { operation: 'status', sourcePath: 'src/main.ts' },
+      suggestedActions: [],
       error: null,
       pathHints: [],
     };
@@ -84,7 +89,7 @@ suite('CLI operation DTO surfacing', () => {
       project: null,
       sourceKey: null,
       verificationTimeMs: null,
-      verify: { operation: 'status', sourcePath: 'src/missing.ts' },
+      suggestedActions: [],
       error: { code: 'path-not-found', message: 'Path not found in any CogGit project.' },
       pathHints: [],
       pathMissMessage: 'Path not found in any CogGit project: src/missing.ts',
@@ -102,7 +107,12 @@ suite('CLI operation DTO surfacing', () => {
       project: null,
       sourceKey: null,
       verificationTimeMs: null,
-      verify: { operation: 'status', sourcePath: 'src/main.ts' },
+      suggestedActions: [{
+        code: 'recheck-status',
+        label: 'Re-check the current status of this source path.',
+        operation: 'status',
+        sourcePath: 'src/main.ts',
+      }],
       error: { code: 'content-changed', message: 'Content changed during resolve.' },
       pathHints: [],
     };

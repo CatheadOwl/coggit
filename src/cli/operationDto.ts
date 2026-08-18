@@ -1,7 +1,7 @@
 import {
   renderPathMissText,
   type AddOperationResult,
-  type CoggitOperationVerifyHint,
+  type CoggitOperationAction,
   type ResolveOperationResult,
   type SnapshotOperationResult,
   type StatusOperationResult,
@@ -62,7 +62,7 @@ export function renderAddOperationResult(result: AddOperationResult): string {
     }
     return [
       result.error?.message ?? 'Add operation failed.',
-      `Next: verify current status with ${verifyCommandText(result.verify)}.`,
+      `Next: verify current status with ${recheckCommandText(result.suggestedActions)}.`,
     ].join('\n');
   }
 
@@ -77,7 +77,7 @@ export function renderResolveOperationResult(result: ResolveOperationResult): st
     }
     return [
       `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
-      `Next: verify current status with ${verifyCommandText(result.verify)}.`,
+      `Next: verify current status with ${recheckCommandText(result.suggestedActions)}.`,
     ].join('\n');
   }
 
@@ -90,9 +90,14 @@ export function renderResolveOperationResult(result: ResolveOperationResult): st
   ].join('\n');
 }
 
-/** CLI surface addressing for a core verify hint: `coggit <operation> <sourcePath>`. */
-function verifyCommandText(verify: CoggitOperationVerifyHint): string {
-  return `coggit ${verify.operation} ${verify.sourcePath}`;
+/** CLI surface addressing for the emitted re-check action: `coggit <operation> <sourcePath>`. */
+function recheckCommandText(actions: readonly CoggitOperationAction[]): string {
+  for (const action of actions) {
+    if (action.operation === 'status' && action.sourcePath) {
+      return `coggit ${action.operation} ${action.sourcePath}`;
+    }
+  }
+  return '';
 }
 
 function hasSnapshotTreeOptions(options: SnapshotTreeTextOptions): boolean {

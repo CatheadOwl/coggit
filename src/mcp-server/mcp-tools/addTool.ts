@@ -6,13 +6,12 @@ import type { AddOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
-  MCP_TOOL_NAMES,
   addOperationOutputSchema,
   addStructuredContent,
   handbookResourceLink,
   handbookUri,
 } from '../operationDto/index.js';
-import type { ToolContent } from './toolShared.js';
+import { recheckNextStepText, type ToolContent } from './toolShared.js';
 
 export function registerAddTool(
   server: McpServer,
@@ -75,8 +74,8 @@ function addText(result: AddOperationResult): string {
     }
     return [
       `Add failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
-      `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
-    ].join('\n');
+      recheckNextStepText(result.suggestedActions),
+    ].filter(Boolean).join('\n');
   }
 
   const handbook = result.handbookId ? handbookUri(result.handbookId) : null;
