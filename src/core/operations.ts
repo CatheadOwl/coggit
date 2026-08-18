@@ -367,7 +367,7 @@ export async function statusOperation(
       }],
       suggestedActions: [],
       handbookId: null,
-      verify: { operation: 'status', sourcePath },
+      verify: null,
       node: null,
       pathHints,
       pathMissMessage: pathMissMessage(sourcePath),

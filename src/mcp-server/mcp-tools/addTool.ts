@@ -73,7 +73,10 @@ function addText(result: AddOperationResult): string {
     if (result.error?.code === 'path-not-found') {
       return renderPathMissText(result);
     }
-    return `Add failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`;
+    return [
+      `Add failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
+      `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
+    ].join('\n');
   }
 
   const handbook = result.handbookId ? handbookUri(result.handbookId) : null;
@@ -83,7 +86,7 @@ function addText(result: AddOperationResult): string {
     `Source path: ${result.sourcePath}`,
     `Cognition path: ${result.cognitionPath}`,
     handbook
-      ? `Next: read ${handbook}, update only the paired cognition document with design intent/contracts/boundaries rather than implementation summaries, then verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`
-      : `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
+      ? `Next: read ${handbook}, then complete the paired cognition document with design intent/contracts/boundaries rather than implementation summaries.`
+      : 'Next: complete the paired cognition document.',
   ].join('\n');
 }

@@ -363,7 +363,7 @@ suite('mcp operation DTO adapter', () => {
         sourcePath: 'src/main.ts',
       }],
       handbookId: 'leaf',
-      verify: { operation: 'status', sourcePath: 'src/main.ts' },
+      verify: null,
       node: null,
       pathHints: [],
       inspection: {
@@ -400,7 +400,7 @@ suite('mcp operation DTO adapter', () => {
           sourcePath: 'src/main.ts',
         }],
         handbookId: 'leaf',
-        verify: { operation: 'status', sourcePath: 'src/main.ts' },
+        verify: null,
       },
     };
 
@@ -418,7 +418,7 @@ suite('mcp operation DTO adapter', () => {
     ]);
     assert.strictEqual(structuredContent.descendantIssues.length, 0);
     assert.strictEqual(structuredContent.handbookUri, 'coggit://handbook/leaf');
-    assert.deepStrictEqual(structuredContent.verify, { tool: 'coggit_status' });
+    assert.deepStrictEqual(structuredContent.verify, null);
     assert.deepStrictEqual(structuredContent.nextActions, [{
       code: 'read-handbook-before-maintenance',
       label: 'If maintaining this cognition, read the matching handbook before editing.',
@@ -450,7 +450,7 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: 'skeleton',
-      verify: { operation: 'status', sourcePath: 'src/app' },
+      verify: null,
       node: null,
       pathHints: [],
       inspection: {
@@ -498,7 +498,7 @@ suite('mcp operation DTO adapter', () => {
         },
         suggestedActions: [],
         handbookId: 'skeleton',
-        verify: { operation: 'status', sourcePath: 'src/app' },
+        verify: null,
       },
     };
 
@@ -538,7 +538,7 @@ suite('mcp operation DTO adapter', () => {
       issues: [],
       suggestedActions: [],
       handbookId: null,
-      verify: { operation: 'status', sourcePath: 'src/core/watchPipeline.ts' },
+      verify: null,
       node: null,
       pathHints: ['coggit/src/core/watchPipeline.ts'],
       pathMissMessage: 'Path not found in any CogGit project: src/core/watchPipeline.ts',

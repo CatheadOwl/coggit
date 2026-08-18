@@ -60,7 +60,10 @@ export function renderAddOperationResult(result: AddOperationResult): string {
     if (result.error?.code === 'path-not-found') {
       return renderPathMissText(result);
     }
-    return result.error?.message ?? 'Add operation failed.';
+    return [
+      result.error?.message ?? 'Add operation failed.',
+      `Next: verify current status with ${verifyCommandText(result.verify)}.`,
+    ].join('\n');
   }
 
   const action = result.created ? 'Created' : 'Already exists';
@@ -84,7 +87,6 @@ export function renderResolveOperationResult(result: ResolveOperationResult): st
     `Cognition path: ${result.cognitionPath ?? 'none'}`,
     `Registry key: ${result.sourceKey ?? 'none'}`,
     `Verification time: ${formatTimestamp(result.verificationTimeMs, 'none')}`,
-    `Next: verify current status with ${verifyCommandText(result.verify)}.`,
   ].join('\n');
 }
 

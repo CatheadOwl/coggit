@@ -271,7 +271,7 @@ suite('core operations', () => {
       label: 'Create cognition file',
       sourcePath: 'missing.ts',
     }]);
-    assert.deepStrictEqual(result.verify, { operation: 'status', sourcePath: 'missing.ts' });
+    assert.deepStrictEqual(result.verify, null);
   });
 
   test('status default projection excludes untracked descendants', async () => {

@@ -1,7 +1,7 @@
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { resolveOperation } from '../../core/index.js';
+import { renderPathMissText, resolveOperation } from '../../core/index.js';
 import type { ResolveOperationResult } from '../../core/index.js';
 import type { CoggitProject } from '../../core/interfaces.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
@@ -54,7 +54,13 @@ export function registerResolveTool(
 
 function resolveText(result: ResolveOperationResult): string {
   if (!result.success) {
-    return `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`;
+    if (result.error?.code === 'path-not-found') {
+      return renderPathMissText(result);
+    }
+    return [
+      `Resolve failed for ${result.sourcePath}: ${result.error?.message ?? 'Unknown error'}`,
+      `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
+    ].join('\n');
   }
 
   return [
@@ -63,6 +69,5 @@ function resolveText(result: ResolveOperationResult): string {
     `Cognition path: ${result.cognitionPath ?? '(none)'}`,
     `Source key: ${result.sourceKey ?? '(none)'}`,
     `Verification time: ${formatTimestamp(result.verificationTimeMs, '(none)')}`,
-    `Next: verify with ${MCP_TOOL_NAMES[result.verify.operation]} for ${result.verify.sourcePath}.`,
   ].join('\n');
 }

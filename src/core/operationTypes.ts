@@ -27,7 +27,14 @@ export const CORE_OPERATION_IDS = ['snapshot', 'status', 'add', 'resolve', 'rout
 
 export type CoreOperationId = typeof CORE_OPERATION_IDS[number];
 
-/** Next-step hint to re-run the status operation for a source path. */
+/**
+ * Surface-neutral re-inspection handle: how to actively re-check a source
+ * path after a write (`operation: 'status'` + `sourcePath`). It is a data
+ * handle, not workflow guidance. Next-step prose belongs to outcome-aware
+ * hints (`suggestedActions`, `handbookId`, miss fields). Surfacing rule: a
+ * non-miss failure may surface it, success is self-confirming, and a miss
+ * surfaces `pathHints` instead.
+ */
 export interface CoggitOperationVerifyHint {
 	operation: 'status';
 	sourcePath: string;

@@ -280,9 +280,10 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 		},
 		suggestedActions,
 		handbookId: input.handbookId,
-		verify: subtreeIssues.totalIssues > 0
-			? { operation: 'status', sourcePath: input.sourcePath }
-			: null,
+		// `verify` is a write re-check handle (see ADR 0015). Status is itself
+		// the re-inspection read, so its inspection never carries a re-check
+		// hint: a miss surfaces `pathHints` and a hit surfaces `suggestedActions`.
+		verify: null,
 	};
 }
 
