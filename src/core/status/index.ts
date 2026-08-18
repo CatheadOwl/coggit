@@ -16,6 +16,7 @@ import type {
 	StatusResult,
 	SubtreeIssueQueryResult,
 	SourceFactKind,
+	StatusIssueVisibility,
 } from '../types';
 import {
 	collectEvidence,
@@ -162,6 +163,7 @@ export function collectSubtreeIssues(node: CoggitTreeNode): LocatedStatusIssue[]
 				sourceUri: current.sourceUri,
 				cognitionUri: current.cognitionUri,
 				relativePath: current.relativePath,
+				hasPairedCognition: current.ownStatus?.coverage?.ownCognition === 'present',
 				issue,
 			});
 		}
@@ -188,8 +190,24 @@ export function countSubtreeIssues(node: CoggitTreeNode): number {
 	return querySubtreeIssues(node).totalIssues;
 }
 
-function isDefaultVisibleDescendantIssue(located: LocatedStatusIssue): boolean {
-	return located.issue.diagnostic.code !== 'missing-cognition';
+function isMaintainedIssue(located: LocatedStatusIssue): boolean {
+	return located.hasPairedCognition === true;
+}
+
+export function projectStatusIssues(
+	issues: SubtreeIssueQueryResult,
+	visibility: StatusIssueVisibility = 'maintained',
+): SubtreeIssueQueryResult {
+	if (visibility === 'all') {
+		return issues;
+	}
+	const ownIssues = issues.ownIssues.filter(isMaintainedIssue);
+	const descendantIssues = issues.descendantIssues.filter(isMaintainedIssue);
+	return {
+		ownIssues,
+		descendantIssues,
+		totalIssues: ownIssues.length + descendantIssues.length,
+	};
 }
 
 // ─── NodeStatusInspection builder ──────────────────────────────────────────
@@ -199,7 +217,7 @@ export interface InspectNodeStatusInput {
 	sourcePath: string;
 	cognitionPath: string | null;
 	handbookId: 'leaf' | 'skeleton' | null;
-	includeMissingCognitionIssues?: boolean;
+	issueVisibility?: StatusIssueVisibility;
 }
 
 function issueActionsToOperationActions(issues: readonly LocatedStatusIssue[]): CoggitOperationAction[] {
@@ -229,13 +247,12 @@ function uniqueOperationActions(actions: readonly CoggitOperationAction[]): Cogg
 }
 
 export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInspection {
-	const subtreeIssues = querySubtreeIssues(input.node);
-	const ownIssues = input.includeMissingCognitionIssues === false
-		? subtreeIssues.ownIssues.filter(isDefaultVisibleDescendantIssue)
-		: subtreeIssues.ownIssues;
-	const descendantIssues = input.includeMissingCognitionIssues === false
-		? subtreeIssues.descendantIssues.filter(isDefaultVisibleDescendantIssue)
-		: subtreeIssues.descendantIssues;
+	const subtreeIssues = projectStatusIssues(
+		querySubtreeIssues(input.node),
+		input.issueVisibility,
+	);
+	const ownIssues = subtreeIssues.ownIssues;
+	const descendantIssues = subtreeIssues.descendantIssues;
 	const ownActions = issueActionsToOperationActions(ownIssues);
 	const descendantActions = issueActionsToOperationActions(descendantIssues);
 	const suggestedActions = uniqueOperationActions([...ownActions, ...descendantActions]);
@@ -473,6 +490,7 @@ export const __testing__ = {
   collectSubtreeIssues,
   querySubtreeIssues,
   countSubtreeIssues,
+  projectStatusIssues,
   summarizeRepresentativeMtime,
   inspectNodeStatus,
 };

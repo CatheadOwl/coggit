@@ -6,6 +6,7 @@ import { __testing__ as statusTesting, collectSubtreeIssues, countSubtreeIssues,
 import { clipboardText, tooltipText } from '../format/nodeFormat.js';
 import { snapshotTreeText } from '../format/snapshotFormat.js';
 import { nodeClipboardStatusText, nodeTooltip } from '../format/nodePresentation.js';
+import { renderNodeStatusInspectionText } from '../render/status.js';
 import { CoggitTreeDataProvider } from '../runtime/vscode/tree/coggitTreeDataProvider';
 import { __testing__ as gitignoreTesting } from '../core/gitignore';
 import { getParentDir, getProjectRootPath, inferSourceUriCandidatesFromCognitionUri, normalizeSourcePathInput, resolveConfigRoots, toCognitionFilePath, toCognitionFileUri, toCognitionFolderReadmePath, toCognitionFolderReadmeUri } from '../core/mapping';
@@ -638,6 +639,7 @@ suite('CogGit Ghost Tree', () => {
 					observedStatus: 'stale',
 					ownObservedStatus: 'stale',
 					issues: [{ diagnostic: { code: 'outdated-cognition', severity: 'warning', message: 'Stale cognition.' }, actions: [{ label: 'Sync cognition with source changes' }, { label: 'Other action' }] }],
+					coverage: { ownCognition: 'present', isMaterializable: false, missingMaterializableCount: 0, coveredCount: 1 },
 				}, root);
 				root.children = [child];
 				root.status = statusTesting.aggregateNodeStatus({
@@ -672,6 +674,7 @@ suite('CogGit Ghost Tree', () => {
 					observedStatus: 'stale',
 					ownObservedStatus: 'stale',
 					issues: [{ diagnostic: { code: 'outdated-cognition', severity: 'warning', message: 'Stale cognition.' }, actions: [{ label: 'Sync cognition with source changes' }, { label: 'Other action' }] }],
+					coverage: { ownCognition: 'present', isMaterializable: false, missingMaterializableCount: 0, coveredCount: 1 },
 				}, root);
 				root.children = [child];
 				root.status = statusTesting.aggregateNodeStatus({
@@ -693,6 +696,35 @@ suite('CogGit Ghost Tree', () => {
 				assert.match(text, /\*\*Descendant issues\*\*: 1  \n- src\/foo\.ts: \[warning\] Stale cognition/);
 				assert.match(text, /- src\/foo\.ts: \[warning\] Stale cognition.* Suggested actions: Sync cognition with source changes; Other action\./);
 				assert.doesNotMatch(text, /\bAction:/);
+			});
+
+			test('CLI status rendering keeps suggested actions aligned with each issue', () => {
+				const root = mkStatusNode('root', 'src', {
+					observedStatus: 'stale',
+					ownObservedStatus: undefined,
+				});
+				const child = mkStatusNode('child', 'src/foo.ts', {
+					observedStatus: 'stale',
+					ownObservedStatus: 'stale',
+					issues: [{ diagnostic: { code: 'outdated-cognition', severity: 'warning', message: 'Stale cognition.' }, actions: [{ label: 'Sync cognition with source changes' }, { label: 'Other action' }] }],
+					coverage: { ownCognition: 'present', isMaterializable: false, missingMaterializableCount: 0, coveredCount: 1 },
+				}, root);
+				root.children = [child];
+				root.status = statusTesting.aggregateNodeStatus({
+					ownStatus: root.ownStatus,
+					descendantStatuses: [child.status],
+				});
+				const inspection = statusTesting.inspectNodeStatus({
+					node: root,
+					sourcePath: root.relativePath,
+					cognitionPath: null,
+					handbookId: 'skeleton',
+				});
+
+				const text = renderNodeStatusInspectionText(inspection, 'aggregate');
+
+				assert.match(text, /- src\/foo\.ts: \[warning\] Stale cognition\. Suggested actions: Sync cognition with source changes; Other action\./);
+				assert.doesNotMatch(text, /\nSuggested actions:\n/);
 			});
 
 

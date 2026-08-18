@@ -62,6 +62,7 @@ export interface LocatedStatusIssue {
 	sourceUri: UriComponents;
 	cognitionUri?: UriComponents;
 	relativePath: string;
+	hasPairedCognition?: boolean;
 	issue: StatusIssue;
 }
 
@@ -70,6 +71,8 @@ export interface SubtreeIssueQueryResult {
 	descendantIssues: LocatedStatusIssue[];
 	totalIssues: number;
 }
+
+export type StatusIssueVisibility = 'maintained' | 'all';
 
 export type ReasonKind =
 	| 'outdated-mtime'

@@ -237,7 +237,7 @@ suite('core operations', () => {
     )));
   });
 
-  test('status includes actions, project context, and handbook id', async () => {
+  test('status default projection excludes untracked source issue even for explicit path', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
     const project = await makeProject(fs);
@@ -248,9 +248,23 @@ suite('core operations', () => {
     assert.strictEqual(result.sourcePath, 'missing.ts');
     assert.strictEqual(result.project?.sourceRootUri, 'test:///workspace/src');
     assert.strictEqual(result.handbookId, 'leaf');
+    assert.strictEqual(result.issueCount, 0);
+    assert.strictEqual(result.ownIssueCount, 0);
+    assert.strictEqual(result.descendantIssueCount, 0);
+    assert.deepStrictEqual(result.issues, []);
+    assert.deepStrictEqual(result.suggestedActions, []);
+    assert.deepStrictEqual(result.verify, null);
+  });
+
+  test('status all-issue projection includes missing cognition diagnostics for internal diagnosis', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], 'missing.ts', { issueVisibility: 'all' });
+
     assert.strictEqual(result.issueCount, 1);
     assert.strictEqual(result.ownIssueCount, 1);
-    assert.strictEqual(result.descendantIssueCount, 0);
     assert.deepStrictEqual(result.issues.map((issue) => issue.code), ['missing-cognition']);
     assert.deepStrictEqual(result.suggestedActions, [{
       code: 'create-cognition-file',
@@ -260,7 +274,7 @@ suite('core operations', () => {
     assert.deepStrictEqual(result.verify, { operation: 'status', sourcePath: 'missing.ts' });
   });
 
-  test('root status excludes missing-cognition descendants from default inspection', async () => {
+  test('status default projection excludes untracked descendants', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
     fs.addFile(
@@ -282,9 +296,7 @@ suite('core operations', () => {
     );
     const project = await makeProject(fs);
 
-    const result = await statusOperation([project], '.', {
-      includeMissingCognitionIssues: false,
-    });
+    const result = await statusOperation([project], '.');
 
     assert.strictEqual(result.found, true);
     assert.deepStrictEqual(result.issues.map((issue) => issue.relativePath), ['stale.ts']);

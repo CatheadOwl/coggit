@@ -24,7 +24,6 @@ export function renderNodeStatusInspectionText(
     lines.push(`Own issues: ${inspection.issueSummary.own}`);
     lines.push(`Descendant issues: ${inspection.issueSummary.descendant}`);
     appendInspectionIssues(lines, '\nIssues:', inspection.subtreeIssues, mode);
-    appendInspectionActions(lines, inspection.suggestedActions);
     return lines.join('\n');
   }
 
@@ -33,7 +32,6 @@ export function renderNodeStatusInspectionText(
   lines.push(`Descendant status: ${renderStatusText(inspection.descendantStatus ?? undefined)}`);
   lines.push(`Issues: ${mode === 'own' ? inspection.issueSummary.own : inspection.issueSummary.total}`);
   appendInspectionIssues(lines, undefined, inspection.subtreeIssues, mode);
-  appendInspectionActions(lines, inspection.suggestedActions);
   return lines.join('\n');
 }
 
@@ -41,7 +39,11 @@ export function renderNodeStatusInspectionText(
 
 function renderLocatedIssueText(located: SubtreeIssueQueryResult['ownIssues'][number]): string {
   const diagnostic = located.issue.diagnostic;
-  return `- ${located.relativePath}: [${diagnostic.severity}] ${diagnostic.message}`;
+  const actions = located.issue.actions.map((action) => action.label);
+  const actionText = actions.length > 0
+    ? ` Suggested actions: ${actions.join('; ')}.`
+    : '';
+  return `- ${located.relativePath}: [${diagnostic.severity}] ${diagnostic.message}${actionText}`;
 }
 
 function appendInspectionIssues(
@@ -74,20 +76,6 @@ function appendInspectionIssues(
   }
   for (const located of allIssues) {
     lines.push(renderLocatedIssueText(located));
-  }
-}
-
-function appendInspectionActions(
-  lines: string[],
-  actions: NodeStatusInspection['suggestedActions'],
-): void {
-  if (actions.length === 0) {
-    return;
-  }
-
-  lines.push('\nSuggested actions:');
-  for (const action of actions) {
-    lines.push(`- ${action.label}`);
   }
 }
 

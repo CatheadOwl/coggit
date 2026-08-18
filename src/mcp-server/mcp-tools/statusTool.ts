@@ -34,9 +34,7 @@ export function registerStatusTool(
     },
     async ({ sourcePath }) => {
       const effectivePath = sourcePath ?? '.';
-      const result = await statusOperation(await getProjects(), effectivePath, {
-        includeMissingCognitionIssues: sourcePath !== undefined,
-      });
+      const result = await statusOperation(await getProjects(), effectivePath);
       const view = statusMcpView(result);
       const content: ToolContent[] = [
         {

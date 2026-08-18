@@ -13,6 +13,7 @@ import type {
   SnapshotOperationScope,
   StaleAction,
   StatusIssue,
+  StatusIssueVisibility,
   CognitionRoutes,
   CognitionRoutesEntry,
   CognitionDocumentDiagnostic,
@@ -330,7 +331,7 @@ export async function snapshotOperation(
 
 export interface StatusOperationOptions {
   sourcePathCandidates?: SourcePathCandidatesExpander;
-  includeMissingCognitionIssues?: boolean;
+  issueVisibility?: StatusIssueVisibility;
 }
 
 export async function statusOperation(
@@ -381,7 +382,7 @@ export async function statusOperation(
     sourcePath: match.node.relativePath,
     cognitionPath,
     handbookId,
-    includeMissingCognitionIssues: options.includeMissingCognitionIssues ?? true,
+    issueVisibility: options.issueVisibility,
   });
   const issues = [
     ...inspection.subtreeIssues.own,

@@ -36,9 +36,7 @@ async function runProjectRootStatus(
 ): Promise<string> {
   const sections: string[] = [];
   for (const project of projects) {
-    const result = await statusOperation([project], '.', {
-      includeMissingCognitionIssues: false,
-    });
+    const result = await statusOperation([project], '.');
     if (!result.found) {
       continue;
     }

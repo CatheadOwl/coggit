@@ -10,6 +10,7 @@ export type {
 	StaleAction,
 	NodeStatusResult,
 	LocatedStatusIssue,
+	StatusIssueVisibility,
 	SubtreeIssueQueryResult,
 	ReasonKind,
 	Reason,

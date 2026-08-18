@@ -117,6 +117,7 @@ export {
   computeRuntimeStatus,
   countSubtreeIssues,
   inspectNodeStatus,
+  projectStatusIssues,
   projectStatusResultToNodeStatus,
   querySubtreeIssues,
   summarizeRepresentativeMtime,
@@ -177,6 +178,7 @@ export type {
   NodeStatusResult,
   ObservedStatus,
   OrphanedCognitionEntry,
+  StatusIssueVisibility,
   StrayCognitionEntry,
 } from './types';
 export { discoverWorkspaceRoots, readWorkspaceRoot } from './workspace';
