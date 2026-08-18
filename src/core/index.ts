@@ -123,10 +123,12 @@ export {
   summarizeRepresentativeMtime,
 } from './status';
 export {
+  projectStatusMissPresentation,
   projectStatusPresentation,
   renderStatusPresentation,
 } from './statusPresentation';
 export type {
+  StatusMissPresentation,
   StatusPresentationFormat,
   StatusPresentationIssue,
   StatusPresentationView,

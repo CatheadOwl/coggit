@@ -250,6 +250,48 @@ function uniqueOperationActions(actions: readonly CoggitOperationAction[]): Cogg
 	});
 }
 
+/**
+ * Synthesize tool-backed next-step actions from first-class node-level status
+ * signals rather than issue labels:
+ * - `ownCognition === 'missing'` → `add` (materialize the paired cognition).
+ * - own maintained cognition is stale → `resolve` (accept the synced pair).
+ *
+ * Descendant-only stale status must not synthesize a `resolve` for the parent:
+ * only the current node's own maintained cognition being stale qualifies. Issue
+ * labels stay label-only through `issueActionsToOperationActions`; this helper
+ * is the single place where a node-level signal maps to an operation id.
+ */
+function synthesizeNodeOperationActions(
+	node: CoggitTreeNode,
+	sourcePath: string,
+): CoggitOperationAction[] {
+	const actions: CoggitOperationAction[] = [];
+	const ownCoverage = node.ownStatus?.coverage;
+
+	if (ownCoverage?.ownCognition === 'missing') {
+		actions.push({
+			code: 'create-cognition',
+			label: 'Create cognition file',
+			operation: 'add',
+			sourcePath,
+		});
+	}
+
+	if (
+		ownCoverage?.ownCognition === 'present'
+		&& node.ownStatus?.ownObservedStatus === 'stale'
+	) {
+		actions.push({
+			code: 'resolve-stale-cognition',
+			label: 'Accept the synced cognition as reviewed',
+			operation: 'resolve',
+			sourcePath,
+		});
+	}
+
+	return actions;
+}
+
 export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInspection {
 	const subtreeIssues = projectStatusIssues(
 		querySubtreeIssues(input.node),
@@ -259,12 +301,18 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 	const descendantIssues = subtreeIssues.descendantIssues;
 	const ownActions = issueActionsToOperationActions(ownIssues);
 	const descendantActions = issueActionsToOperationActions(descendantIssues);
-	const suggestedActions = uniqueOperationActions([...ownActions, ...descendantActions]);
+	const operationActions = synthesizeNodeOperationActions(input.node, input.sourcePath);
+	const suggestedActions = uniqueOperationActions([
+		...operationActions,
+		...ownActions,
+		...descendantActions,
+	]);
+	const cognitionPresence = input.node.ownStatus?.coverage?.ownCognition ?? 'not-applicable';
 
 	return {
 		sourcePath: input.sourcePath,
 		cognitionPath: input.cognitionPath,
-		cognitionPresence: input.node.ownStatus?.coverage?.ownCognition ?? 'not-applicable',
+		cognitionPresence,
 		nodeKind: input.node.kind,
 		status: input.node.status?.observedStatus ?? null,
 		ownStatus: input.node.status?.ownObservedStatus ?? null,

@@ -57,6 +57,33 @@ export function projectStatusPresentation(
   };
 }
 
+/** Adapter-ready structured view for a status miss: the requested source path
+ *  plus recovery guidance (`pathHints`, miss/hint messages). Complements
+ *  `StatusPresentationView` (the inspection-backed HIT view). */
+export interface StatusMissPresentation {
+  sourcePath: string;
+  pathHints: string[];
+  pathMissMessage?: string;
+  pathHintMessage?: string;
+}
+
+/** Project a status miss into an adapter-ready structured view. A miss has no
+ *  inspection, so this carries the lookup identity and recovery guidance without
+ *  requiring each adapter to assemble its own fallback shape. */
+export function projectStatusMissPresentation(result: {
+  sourcePath: string;
+  pathHints: readonly string[];
+  pathMissMessage?: string;
+  pathHintMessage?: string;
+}): StatusMissPresentation {
+  return {
+    sourcePath: result.sourcePath,
+    pathHints: [...result.pathHints],
+    ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
+    ...(result.pathHintMessage ? { pathHintMessage: result.pathHintMessage } : {}),
+  };
+}
+
 function appendIssueLines(
   lines: string[],
   issues: readonly StatusPresentationIssue[],

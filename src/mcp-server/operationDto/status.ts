@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  projectStatusMissPresentation,
   projectStatusPresentation,
   type StatusOperationResult,
   type StatusPresentationView,
@@ -70,8 +71,8 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
   const inspection = result.inspection;
 
   if (!inspection) {
+    const miss = projectStatusMissPresentation(result);
     return {
-      sourcePath: result.sourcePath,
       cognitionPath: result.cognitionPath,
       cognitionPresence: result.cognitionPath ? 'present' : 'not-applicable',
       status: result.status,
@@ -82,9 +83,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
       handbookUri: null,
       verify: result.verify ? { tool: MCP_TOOL_NAMES[result.verify.operation] } : null,
       nextActions: statusNextActions({ handbookUri: null }),
-      pathHints: result.pathHints,
-      ...(result.pathMissMessage ? { pathMissMessage: result.pathMissMessage } : {}),
-      ...(result.pathHintMessage ? { pathHintMessage: result.pathHintMessage } : {}),
+      ...miss,
     };
   }
 

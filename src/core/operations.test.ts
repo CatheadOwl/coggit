@@ -237,7 +237,7 @@ suite('core operations', () => {
     )));
   });
 
-  test('status default projection excludes untracked source issue even for explicit path', async () => {
+  test('status default projection excludes the untracked issue but keeps the add next step', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
     const project = await makeProject(fs);
@@ -252,7 +252,15 @@ suite('core operations', () => {
     assert.strictEqual(result.ownIssueCount, 0);
     assert.strictEqual(result.descendantIssueCount, 0);
     assert.deepStrictEqual(result.issues, []);
-    assert.deepStrictEqual(result.suggestedActions, []);
+    // The missing-cognition issue is dropped by the default `maintained` filter,
+    // but the add next step is synthesized from the first-class node signal
+    // (`cognitionPresence === 'missing'`), so it survives the filter.
+    assert.deepStrictEqual(result.suggestedActions, [{
+      code: 'create-cognition',
+      label: 'Create cognition file',
+      operation: 'add',
+      sourcePath: 'missing.ts',
+    }]);
     assert.deepStrictEqual(result.verify, null);
   });
 
@@ -266,12 +274,70 @@ suite('core operations', () => {
     assert.strictEqual(result.issueCount, 1);
     assert.strictEqual(result.ownIssueCount, 1);
     assert.deepStrictEqual(result.issues.map((issue) => issue.code), ['missing-cognition']);
+    // The operation-bearing add action is synthesized from the node signal and
+    // precedes the label-only issue action (`create-cognition-file`).
     assert.deepStrictEqual(result.suggestedActions, [{
+      code: 'create-cognition',
+      label: 'Create cognition file',
+      operation: 'add',
+      sourcePath: 'missing.ts',
+    }, {
       code: 'create-cognition-file',
       label: 'Create cognition file',
       sourcePath: 'missing.ts',
     }]);
     assert.deepStrictEqual(result.verify, null);
+  });
+
+  test('status synthesizes a resolve next step for own maintained stale cognition', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
+    fs.addFile(
+      '/workspace/cognition/stale.ts.md',
+      '# stale\n\nThis cognition describes earlier source behavior in enough detail.',
+      1000,
+    );
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], 'stale.ts');
+
+    assert.strictEqual(result.found, true);
+    assert.strictEqual(result.status, 'stale');
+    assert.ok(result.suggestedActions.some((action) => (
+      action.operation === 'resolve' && action.sourcePath === 'stale.ts'
+    )));
+    // Stale edit-work labels stay label-only; core does not invent an edit/sync
+    // operation, only the resolve carries an operation id.
+    assert.ok(result.suggestedActions.some((action) => action.operation === undefined));
+  });
+
+  test('status does not synthesize a resolve next step for descendant-only stale', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
+    fs.addFile(
+      '/workspace/cognition/stale.ts.md',
+      '# stale\n\nThis cognition describes earlier source behavior in enough detail.',
+      1000,
+    );
+    fs.addFile(
+      '/workspace/cognition/README.md',
+      [
+        '# root',
+        '',
+        'This cognition describes the root source folder and its maintained structure.',
+        'It is intentionally substantive so the root fixture has no own template issue.',
+        'The test isolates descendant status filtering from root-level cognition health.',
+      ].join('\n'),
+      3000,
+    );
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], '.');
+
+    assert.strictEqual(result.found, true);
+    assert.strictEqual(result.descendantStatus, 'stale');
+    assert.ok(!result.suggestedActions.some((action) => action.operation === 'resolve'));
+    assert.ok(!result.suggestedActions.some((action) => action.operation === 'add'));
   });
 
   test('status default projection excludes untracked descendants', async () => {

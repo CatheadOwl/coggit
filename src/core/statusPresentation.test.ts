@@ -1,6 +1,7 @@
 import * as assert from 'node:assert';
 
 import {
+  projectStatusMissPresentation,
   projectStatusPresentation,
   renderStatusPresentation,
 } from './statusPresentation';
@@ -116,5 +117,38 @@ suite('status presentation SDK', () => {
       renderStatusPresentation(projectStatusPresentation(input)),
       /^Cognition:/m,
     );
+  });
+});
+
+suite('status miss presentation SDK', () => {
+  test('projects a miss with recovery guidance', () => {
+    const view = projectStatusMissPresentation({
+      sourcePath: 'src/core/watchPipeline.ts',
+      pathHints: ['coggit/src/core/watchPipeline.ts'],
+      pathMissMessage: 'Path not found in any CogGit project: src/core/watchPipeline.ts',
+      pathHintMessage: 'You may mean one of these source-root-relative source paths.',
+    });
+
+    assert.deepStrictEqual(view, {
+      sourcePath: 'src/core/watchPipeline.ts',
+      pathHints: ['coggit/src/core/watchPipeline.ts'],
+      pathMissMessage: 'Path not found in any CogGit project: src/core/watchPipeline.ts',
+      pathHintMessage: 'You may mean one of these source-root-relative source paths.',
+    });
+  });
+
+  test('omits miss/hint messages when absent', () => {
+    const view = projectStatusMissPresentation({
+      sourcePath: 'src/never-exists.ts',
+      pathHints: [],
+      pathMissMessage: 'Path not found in any CogGit project: src/never-exists.ts',
+    });
+
+    assert.deepStrictEqual(view, {
+      sourcePath: 'src/never-exists.ts',
+      pathHints: [],
+      pathMissMessage: 'Path not found in any CogGit project: src/never-exists.ts',
+    });
+    assert.strictEqual('pathHintMessage' in view, false);
   });
 });

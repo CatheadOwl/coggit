@@ -85,10 +85,12 @@ export type {
   RoutesStructuredOutput,
 } from './routesProjection';
 export {
+  projectStatusMissPresentation,
   projectStatusPresentation,
   renderStatusPresentation,
 } from './statusPresentation';
 export type {
+  StatusMissPresentation,
   StatusPresentationFormat,
   StatusPresentationIssue,
   StatusPresentationView,
