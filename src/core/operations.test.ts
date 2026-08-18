@@ -260,6 +260,40 @@ suite('core operations', () => {
     assert.deepStrictEqual(result.verify, { operation: 'status', sourcePath: 'missing.ts' });
   });
 
+  test('root status excludes missing-cognition descendants from default inspection', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
+    fs.addFile(
+      '/workspace/cognition/stale.ts.md',
+      '# stale\n\nThis cognition describes earlier source behavior in enough detail.',
+      1000,
+    );
+    fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
+    fs.addFile(
+      '/workspace/cognition/README.md',
+      [
+        '# root',
+        '',
+        'This cognition describes the root source folder and its maintained structure.',
+        'It is intentionally substantive so the root fixture has no own template issue.',
+        'The test isolates descendant status filtering from root-level cognition health.',
+      ].join('\n'),
+      3000,
+    );
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], '.', {
+      includeMissingCognitionIssues: false,
+    });
+
+    assert.strictEqual(result.found, true);
+    assert.deepStrictEqual(result.issues.map((issue) => issue.relativePath), ['stale.ts']);
+    assert.ok(result.issues.every((issue) => issue.code !== 'missing-cognition'));
+    assert.strictEqual(result.issueCount, 1);
+    assert.strictEqual(result.descendantIssueCount, 1);
+    assert.ok(!result.suggestedActions.some((action) => action.label === 'Create cognition file'));
+  });
+
   test('add returns typed expected failure for invalid kind', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/workspace/src/file.ts', 'export const value = 1;');

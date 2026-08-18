@@ -188,6 +188,10 @@ export function countSubtreeIssues(node: CoggitTreeNode): number {
 	return querySubtreeIssues(node).totalIssues;
 }
 
+function isDefaultVisibleDescendantIssue(located: LocatedStatusIssue): boolean {
+	return located.issue.diagnostic.code !== 'missing-cognition';
+}
+
 // ─── NodeStatusInspection builder ──────────────────────────────────────────
 
 export interface InspectNodeStatusInput {
@@ -195,6 +199,7 @@ export interface InspectNodeStatusInput {
 	sourcePath: string;
 	cognitionPath: string | null;
 	handbookId: 'leaf' | 'skeleton' | null;
+	includeMissingCognitionIssues?: boolean;
 }
 
 function issueActionsToOperationActions(issues: readonly LocatedStatusIssue[]): CoggitOperationAction[] {
@@ -225,8 +230,14 @@ function uniqueOperationActions(actions: readonly CoggitOperationAction[]): Cogg
 
 export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInspection {
 	const subtreeIssues = querySubtreeIssues(input.node);
-	const ownActions = issueActionsToOperationActions(subtreeIssues.ownIssues);
-	const descendantActions = issueActionsToOperationActions(subtreeIssues.descendantIssues);
+	const ownIssues = input.includeMissingCognitionIssues === false
+		? subtreeIssues.ownIssues.filter(isDefaultVisibleDescendantIssue)
+		: subtreeIssues.ownIssues;
+	const descendantIssues = input.includeMissingCognitionIssues === false
+		? subtreeIssues.descendantIssues.filter(isDefaultVisibleDescendantIssue)
+		: subtreeIssues.descendantIssues;
+	const ownActions = issueActionsToOperationActions(ownIssues);
+	const descendantActions = issueActionsToOperationActions(descendantIssues);
 	const suggestedActions = uniqueOperationActions([...ownActions, ...descendantActions]);
 
 	return {
@@ -237,13 +248,13 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 		ownStatus: input.node.status?.ownObservedStatus ?? null,
 		descendantStatus: input.node.status?.descendantObservedStatus ?? null,
 		issueSummary: {
-			total: subtreeIssues.totalIssues,
-			own: subtreeIssues.ownIssues.length,
-			descendant: subtreeIssues.descendantIssues.length,
+			total: ownIssues.length + descendantIssues.length,
+			own: ownIssues.length,
+			descendant: descendantIssues.length,
 		},
 		subtreeIssues: {
-			own: [...subtreeIssues.ownIssues],
-			descendant: [...subtreeIssues.descendantIssues],
+			own: [...ownIssues],
+			descendant: descendantIssues,
 		},
 		suggestedActions,
 		handbookId: input.handbookId,

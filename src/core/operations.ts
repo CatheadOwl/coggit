@@ -330,6 +330,7 @@ export async function snapshotOperation(
 
 export interface StatusOperationOptions {
   sourcePathCandidates?: SourcePathCandidatesExpander;
+  includeMissingCognitionIssues?: boolean;
 }
 
 export async function statusOperation(
@@ -380,6 +381,7 @@ export async function statusOperation(
     sourcePath: match.node.relativePath,
     cognitionPath,
     handbookId,
+    includeMissingCognitionIssues: options.includeMissingCognitionIssues ?? true,
   });
   const issues = [
     ...inspection.subtreeIssues.own,
