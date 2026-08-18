@@ -723,7 +723,9 @@ suite('CogGit Ghost Tree', () => {
 
 				const text = renderNodeStatusInspectionText(inspection, 'aggregate');
 
+				assert.match(text, /\nOwn issues: 0\n\nDescendant issues: 1\n- src\/foo\.ts: \[warning\] Stale cognition/);
 				assert.match(text, /- src\/foo\.ts: \[warning\] Stale cognition\. Suggested actions: Sync cognition with source changes; Other action\./);
+				assert.doesNotMatch(text, /\nIssues:\n/);
 				assert.doesNotMatch(text, /\nSuggested actions:\n/);
 			});
 

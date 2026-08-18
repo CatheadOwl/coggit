@@ -21,9 +21,7 @@ export function renderNodeStatusInspectionText(
 
   if (mode === 'subtree') {
     lines.push(`Status: ${renderStatusText(inspection.status ?? undefined)}`);
-    lines.push(`Own issues: ${inspection.issueSummary.own}`);
-    lines.push(`Descendant issues: ${inspection.issueSummary.descendant}`);
-    appendInspectionIssues(lines, '\nIssues:', inspection.subtreeIssues, mode);
+    appendInspectionIssueSections(lines, inspection, mode);
     return lines.join('\n');
   }
 
@@ -31,7 +29,7 @@ export function renderNodeStatusInspectionText(
   lines.push(`Own status: ${renderStatusText(inspection.ownStatus ?? undefined)}`);
   lines.push(`Descendant status: ${renderStatusText(inspection.descendantStatus ?? undefined)}`);
   lines.push(`Issues: ${mode === 'own' ? inspection.issueSummary.own : inspection.issueSummary.total}`);
-  appendInspectionIssues(lines, undefined, inspection.subtreeIssues, mode);
+  appendInspectionIssueSections(lines, inspection, mode);
   return lines.join('\n');
 }
 
@@ -46,18 +44,15 @@ function renderLocatedIssueText(located: SubtreeIssueQueryResult['ownIssues'][nu
   return `- ${located.relativePath}: [${diagnostic.severity}] ${diagnostic.message}${actionText}`;
 }
 
-function appendInspectionIssues(
+function appendInspectionIssueSections(
   lines: string[],
-  heading: string | undefined,
-  issues: NodeStatusInspection['subtreeIssues'],
+  inspection: NodeStatusInspection,
   mode: 'aggregate' | 'own' | 'subtree',
 ): void {
   if (mode === 'own') {
+    const issues = inspection.subtreeIssues;
     if (issues.own.length === 0) {
       return;
-    }
-    if (heading) {
-      lines.push(heading);
     }
     for (const located of issues.own) {
       lines.push(renderLocatedIssueText(located));
@@ -65,17 +60,19 @@ function appendInspectionIssues(
     return;
   }
 
-  // aggregate or subtree: show own + descendant
-  const allIssues = [...issues.own, ...issues.descendant];
-  if (allIssues.length === 0) {
-    return;
+  const issues = inspection.subtreeIssues;
+  lines.push('', `Own issues: ${inspection.issueSummary.own}`);
+  if (issues.own.length > 0) {
+    for (const located of issues.own) {
+      lines.push(renderLocatedIssueText(located));
+    }
   }
 
-  if (heading) {
-    lines.push(heading);
-  }
-  for (const located of allIssues) {
-    lines.push(renderLocatedIssueText(located));
+  lines.push('', `Descendant issues: ${inspection.issueSummary.descendant}`);
+  if (issues.descendant.length > 0) {
+    for (const located of issues.descendant) {
+      lines.push(renderLocatedIssueText(located));
+    }
   }
 }
 
