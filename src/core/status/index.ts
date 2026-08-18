@@ -292,6 +292,29 @@ function synthesizeNodeOperationActions(
 	return actions;
 }
 
+/**
+ * Merge operation-bearing actions (from node signals) with label-only issue
+ * actions (edit work). A label-only action that duplicates an operation-bearing
+ * action for the same source path and label is dropped: the operation-bearing
+ * form names the tool to call, so keeping both would surface one next step
+ * twice to a consumer (e.g. the synthesized `add` vs the `missing-cognition`
+ * label under the `all` issue visibility).
+ */
+function mergeSuggestedActions(
+	operationActions: readonly CoggitOperationAction[],
+	labelActions: readonly CoggitOperationAction[],
+): CoggitOperationAction[] {
+	const operationKeys = new Set(
+		operationActions
+			.filter((action) => action.operation !== undefined)
+			.map((action) => `${action.sourcePath ?? ''}\u0000${action.label}`),
+	);
+	const survivingLabels = labelActions.filter(
+		(action) => !operationKeys.has(`${action.sourcePath ?? ''}\u0000${action.label}`),
+	);
+	return uniqueOperationActions([...operationActions, ...survivingLabels]);
+}
+
 export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInspection {
 	const subtreeIssues = projectStatusIssues(
 		querySubtreeIssues(input.node),
@@ -302,11 +325,10 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 	const ownActions = issueActionsToOperationActions(ownIssues);
 	const descendantActions = issueActionsToOperationActions(descendantIssues);
 	const operationActions = synthesizeNodeOperationActions(input.node, input.sourcePath);
-	const suggestedActions = uniqueOperationActions([
-		...operationActions,
-		...ownActions,
-		...descendantActions,
-	]);
+	const suggestedActions = mergeSuggestedActions(
+		operationActions,
+		[...ownActions, ...descendantActions],
+	);
 	const cognitionPresence = input.node.ownStatus?.coverage?.ownCognition ?? 'not-applicable';
 
 	return {

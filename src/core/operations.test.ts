@@ -275,18 +275,45 @@ suite('core operations', () => {
     assert.strictEqual(result.ownIssueCount, 1);
     assert.deepStrictEqual(result.issues.map((issue) => issue.code), ['missing-cognition']);
     // The operation-bearing add action is synthesized from the node signal and
-    // precedes the label-only issue action (`create-cognition-file`).
+    // wins over the label-only `missing-cognition` action (same source path and
+    // label), so only the operation-bearing form survives.
     assert.deepStrictEqual(result.suggestedActions, [{
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
       sourcePath: 'missing.ts',
-    }, {
+    }]);
+    assert.deepStrictEqual(result.verify, null);
+  });
+
+  test('status all-issue projection keeps a descendant missing-cognition label-only action', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
+    fs.addFile(
+      '/workspace/cognition/README.md',
+      [
+        '# root',
+        '',
+        'This cognition describes the root source folder and its maintained structure.',
+        'It is intentionally substantive so the root fixture has no own template issue.',
+        'The test isolates descendant status filtering from root-level cognition health.',
+      ].join('\n'),
+      3000,
+    );
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], '.', { issueVisibility: 'all' });
+
+    assert.strictEqual(result.found, true);
+    // The root has its own present cognition, so no synthesized `add` action.
+    // The descendant `missing-cognition` label survives as label-only because no
+    // operation-bearing action covers that source path.
+    assert.ok(!result.suggestedActions.some((action) => action.operation === 'add'));
+    assert.deepStrictEqual(result.suggestedActions, [{
       code: 'create-cognition-file',
       label: 'Create cognition file',
       sourcePath: 'missing.ts',
     }]);
-    assert.deepStrictEqual(result.verify, null);
   });
 
   test('status synthesizes a resolve next step for own maintained stale cognition', async () => {
