@@ -17,7 +17,7 @@ import {
   statusOperationOutputSchema,
   statusStructuredContent,
 } from '../operationDto/index.js';
-import { formatProjectContext, joinMcpSections, type ToolContent } from './toolShared.js';
+import { formatOperationAction, formatProjectContext, joinMcpSections, type ToolContent } from './toolShared.js';
 
 export function registerStatusTool(
   server: McpServer,
@@ -76,21 +76,33 @@ function statusText(result: StatusOperationResult): string {
 }
 
 function statusGuidanceText(result: ReturnType<typeof statusMcpView>): string {
-  if (result.nextActions.length === 0) {
-    return '';
+  const sections: string[] = [];
+
+  const actionable = result.suggestedActions
+    .filter((action) => action.tool)
+    .map((action) => formatOperationAction(action));
+  if (actionable.length > 0) {
+    sections.push([
+      'Suggested next actions:',
+      ...actionable.map((action) => `- ${action}`),
+    ].join('\n'));
   }
 
-  return [
-    'Maintenance guidance:',
-    'If you will maintain this cognition, read the matching handbook before editing:',
-    ...result.nextActions.map((action) => {
-      if (action.kind === 'read-resource' && action.resourceUri) {
-        return `- Read ${action.resourceUri}: ${action.label}`;
-      }
-      if (action.kind === 'read-cognition' && action.cognitionPath) {
-        return `- Read cognition ${action.cognitionPath}: ${action.label}`;
-      }
-      return `- ${action.label}`;
-    }),
-  ].join('\n');
+  if (result.nextActions.length > 0) {
+    sections.push([
+      'Maintenance guidance:',
+      'If you will maintain this cognition, read the matching handbook before editing:',
+      ...result.nextActions.map((action) => {
+        if (action.kind === 'read-resource' && action.resourceUri) {
+          return `- Read ${action.resourceUri}: ${action.label}`;
+        }
+        if (action.kind === 'read-cognition' && action.cognitionPath) {
+          return `- Read cognition ${action.cognitionPath}: ${action.label}`;
+        }
+        return `- ${action.label}`;
+      }),
+    ].join('\n'));
+  }
+
+  return sections.join('\n\n');
 }

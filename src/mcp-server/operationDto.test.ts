@@ -421,6 +421,12 @@ suite('mcp operation DTO adapter', () => {
       priority: 1,
       resourceUri: 'coggit://handbook/leaf',
     }]);
+    assert.deepStrictEqual(structuredContent.suggestedActions, [{
+      code: 'add-cognition',
+      label: 'Create paired cognition for this source path.',
+      tool: 'coggit_add',
+      sourcePath: 'src/main.ts',
+    }]);
 
     assert.deepStrictEqual(
       z.object(statusOperationOutputSchema).parse(structuredContent),

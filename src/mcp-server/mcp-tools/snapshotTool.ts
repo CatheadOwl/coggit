@@ -19,7 +19,7 @@ import {
   snapshotOperationOutputSchema,
   snapshotStructuredContent,
 } from '../operationDto/index.js';
-import { formatProjectContext, joinMcpSections } from './toolShared.js';
+import { formatOperationAction, formatProjectContext, joinMcpSections } from './toolShared.js';
 
 const DEFAULT_MCP_SNAPSHOT_MAX_DEPTH = 2;
 
@@ -109,25 +109,11 @@ function snapshotGuidanceText(result: ReturnType<typeof snapshotMcpView>): strin
 
   const actionable = result.suggestedActions
     .filter((action) => action.tool)
-    .map((action) => formatAction(action));
+    .map((action) => formatOperationAction(action));
   if (actionable.length > 0) {
     lines.push('Suggested next actions:');
     lines.push(...actionable.map((action) => `- ${action}`));
   }
 
   return lines.join('\n');
-}
-
-function formatAction(action: ReturnType<typeof snapshotMcpView>['suggestedActions'][number]): string {
-  const args: string[] = [];
-  if (action.sourcePath) {
-    args.push(`sourcePath="${action.sourcePath}"`);
-  }
-  if (action.scope) {
-    args.push(`scope="${action.scope}"`);
-  }
-  if (action.maxDepth !== undefined) {
-    args.push(`maxDepth=${action.maxDepth}`);
-  }
-  return `${action.tool}${args.length > 0 ? ` (${args.join(', ')})` : ''}: ${action.label}`;
 }

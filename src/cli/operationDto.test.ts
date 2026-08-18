@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 
-import type { AddOperationResult, ResolveOperationResult } from '../core';
-import { renderAddOperationResult, renderResolveOperationResult } from './operationDto';
+import type { AddOperationResult, ResolveOperationResult, StatusOperationResult } from '../core';
+import { renderAddOperationResult, renderResolveOperationResult, renderStatusOperationResult } from './operationDto';
 
 suite('CLI operation DTO surfacing', () => {
   test('add success reports the created cognition without a verify re-check', () => {
@@ -119,5 +119,89 @@ suite('CLI operation DTO surfacing', () => {
     const text = renderResolveOperationResult(result);
     assert.match(text, /Resolve failed for src\/main\.ts/);
     assert.match(text, /Next: verify current status with coggit status src\/main\.ts/);
+  });
+
+  test('status hit renders operation-bearing next steps as CLI commands', () => {
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/missing.ts',
+      nodeKind: 'file',
+      project: null,
+      cognitionPath: null,
+      status: 'stale',
+      ownStatus: 'stale',
+      descendantStatus: null,
+      staleAction: null,
+      issueCount: 0,
+      ownIssueCount: 0,
+      descendantIssueCount: 0,
+      issues: [],
+      suggestedActions: [{
+        code: 'create-cognition',
+        label: 'Create cognition file',
+        operation: 'add',
+        sourcePath: 'src/missing.ts',
+      }],
+      handbookId: 'leaf',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/missing.ts',
+        cognitionPath: null,
+        cognitionPresence: 'missing',
+        nodeKind: 'file',
+        status: 'stale',
+        ownStatus: 'stale',
+        descendantStatus: null,
+        issueSummary: { total: 0, own: 0, descendant: 0 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: [{
+          code: 'create-cognition',
+          label: 'Create cognition file',
+          operation: 'add',
+          sourcePath: 'src/missing.ts',
+        }],
+        handbookId: 'leaf',
+      },
+    };
+    const text = renderStatusOperationResult(result);
+    assert.match(text, /coggit add src\/missing\.ts: Create cognition file/);
+  });
+
+  test('status hit without operation actions omits the suggested-actions section', () => {
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/fresh.ts',
+      nodeKind: 'file',
+      project: null,
+      cognitionPath: 'src/fresh.ts.md',
+      status: 'fresh',
+      ownStatus: 'fresh',
+      descendantStatus: null,
+      staleAction: null,
+      issueCount: 0,
+      ownIssueCount: 0,
+      descendantIssueCount: 0,
+      issues: [],
+      suggestedActions: [],
+      handbookId: 'leaf',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/fresh.ts',
+        cognitionPath: 'src/fresh.ts.md',
+        cognitionPresence: 'present',
+        nodeKind: 'file',
+        status: 'fresh',
+        ownStatus: 'fresh',
+        descendantStatus: null,
+        issueSummary: { total: 0, own: 0, descendant: 0 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: [],
+        handbookId: 'leaf',
+      },
+    };
+    const text = renderStatusOperationResult(result);
+    assert.doesNotMatch(text, /Suggested actions:/);
   });
 });

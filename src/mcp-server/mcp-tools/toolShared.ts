@@ -20,6 +20,31 @@ export function joinMcpSections(...sections: string[]): string {
 }
 
 /**
+ * Render a surface-mapped operation action to one MCP text line
+ * (`<tool> (args) : <label>`). Shared by the snapshot and status tools so the
+ * operation-id → tool-name addressing is formatted in one place.
+ */
+export function formatOperationAction(action: {
+  label: string;
+  tool?: string;
+  sourcePath?: string;
+  scope?: string;
+  maxDepth?: number;
+}): string {
+  const args: string[] = [];
+  if (action.sourcePath) {
+    args.push(`sourcePath="${action.sourcePath}"`);
+  }
+  if (action.scope) {
+    args.push(`scope="${action.scope}"`);
+  }
+  if (action.maxDepth !== undefined) {
+    args.push(`maxDepth=${action.maxDepth}`);
+  }
+  return `${action.tool}${args.length > 0 ? ` (${args.join(', ')})` : ''}: ${action.label}`;
+}
+
+/**
  * Next-step line for a non-miss add/resolve failure: map the emitted `status`
  * re-check action to MCP tool addressing (`coggit_status`). Preserves the
  * original re-check prose while sourcing tool name and path from the

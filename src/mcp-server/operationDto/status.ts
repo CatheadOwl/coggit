@@ -12,6 +12,8 @@ import {
   mcpMaintenanceNextActionSchema,
   mcpStatusIssueSchema,
   observedStatusSchema,
+  operationActionSchema,
+  toMcpOperationAction,
 } from './shared.js';
 
 export const statusOperationOutputSchema = {
@@ -25,6 +27,7 @@ export const statusOperationOutputSchema = {
   descendantIssues: z.array(mcpStatusIssueSchema),
   handbookUri: z.string().nullable(),
   nextActions: z.array(mcpMaintenanceNextActionSchema),
+  suggestedActions: z.array(operationActionSchema),
   pathHints: z.array(z.string()),
   pathMissMessage: z.string().optional(),
   pathHintMessage: z.string().optional(),
@@ -43,6 +46,7 @@ export interface StatusMcpView extends StatusPresentationView {
   [key: string]: unknown;
   handbookUri: string | null;
   nextActions: MaintenanceNextAction[];
+  suggestedActions: Array<z.infer<typeof operationActionSchema>>;
   pathHints: string[];
   pathMissMessage?: string;
   pathHintMessage?: string;
@@ -75,6 +79,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
       descendantIssues: [],
       handbookUri: null,
       nextActions: statusNextActions({ handbookUri: null }),
+      suggestedActions: result.suggestedActions.map(toMcpOperationAction),
       ...miss,
     };
   }
@@ -86,6 +91,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
     ...presentation,
     handbookUri: resolvedHandbookUri,
     nextActions: statusNextActions({ handbookUri: resolvedHandbookUri }),
+    suggestedActions: result.suggestedActions.map(toMcpOperationAction),
     pathHints: result.pathHints,
   };
 }

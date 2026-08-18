@@ -21,7 +21,9 @@ export function renderStatusOperationResult(
 ): string {
   // Use inspection-based rendering when available.
   if (result.inspection) {
-    return renderNodeStatusInspectionText(result.inspection);
+    const text = renderNodeStatusInspectionText(result.inspection);
+    const actions = renderOperationActions(result.inspection.suggestedActions);
+    return actions ? `${text}\n\n${actions}` : text;
   }
 
   // Fallback for not-found results (no node, no inspection).
@@ -98,6 +100,17 @@ function recheckCommandText(actions: readonly CoggitOperationAction[]): string {
     }
   }
   return '';
+}
+
+/** CLI surface addressing for status's operation-bearing next steps: `coggit <operation> [sourcePath]`. */
+function renderOperationActions(actions: readonly CoggitOperationAction[]): string {
+  const lines = actions
+    .filter((action) => action.operation !== undefined)
+    .map((action) => {
+      const command = `coggit ${action.operation}${action.sourcePath ? ` ${action.sourcePath}` : ''}`;
+      return `- ${command}: ${action.label}`;
+    });
+  return lines.length > 0 ? `Suggested actions:\n${lines.join('\n')}` : '';
 }
 
 function hasSnapshotTreeOptions(options: SnapshotTreeTextOptions): boolean {
