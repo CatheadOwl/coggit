@@ -64,6 +64,7 @@ suite('mcp operation DTO adapter', () => {
       inspection: {
         sourcePath: 'src/main.ts',
         cognitionPath: 'src/main.ts.md',
+        cognitionPresence: 'present',
         nodeKind: 'file',
         status: 'fresh',
         ownStatus: 'fresh',
@@ -368,6 +369,7 @@ suite('mcp operation DTO adapter', () => {
       inspection: {
         sourcePath: 'src/main.ts',
         cognitionPath: 'src/main.ts.md',
+        cognitionPresence: 'missing',
         nodeKind: 'file',
         status: 'stale',
         ownStatus: 'stale',
@@ -378,6 +380,7 @@ suite('mcp operation DTO adapter', () => {
             nodeId: 'src/main.ts',
             nodeKind: 'file',
             sourceUri: { scheme: 'file', authority: '', path: '/workspace/src/src/main.ts', query: '', fragment: '' },
+            cognitionPath: 'src/main.ts.md',
             relativePath: 'src/main.ts',
             issue: {
               diagnostic: {
@@ -405,9 +408,12 @@ suite('mcp operation DTO adapter', () => {
     const structuredContent = statusStructuredContent(view);
 
     assert.strictEqual(structuredContent.ownIssues.length, 1);
+    assert.strictEqual(structuredContent.cognitionPresence, 'missing');
+    assert.strictEqual(structuredContent.scope, 'subtree');
     assert.strictEqual(structuredContent.ownIssues[0].sourcePath, 'src/main.ts');
-    assert.strictEqual(structuredContent.ownIssues[0].cognitionPath, null);
+    assert.strictEqual(structuredContent.ownIssues[0].cognitionPath, 'src/main.ts.md');
     assert.strictEqual(structuredContent.ownIssues[0].severity, 'warning');
+    assert.strictEqual(structuredContent.ownIssues[0].message, 'Cognition is missing.');
     assert.deepStrictEqual(structuredContent.ownIssues[0].suggestedActions, [
       'Create paired cognition for this source path.',
     ]);
@@ -451,6 +457,7 @@ suite('mcp operation DTO adapter', () => {
       inspection: {
         sourcePath: 'src/app',
         cognitionPath: 'src/app/README.md',
+        cognitionPresence: 'present',
         nodeKind: 'folder',
         status: 'conflict',
         ownStatus: 'fresh',
@@ -462,6 +469,7 @@ suite('mcp operation DTO adapter', () => {
             nodeKind: 'folder',
             sourceUri: { scheme: 'file', authority: '', path: '/workspace/src/src/app', query: '', fragment: '' },
             cognitionUri: { scheme: 'file', authority: '', path: '/workspace/codebase_cognition/src/app/README.md', query: '', fragment: '' },
+            cognitionPath: 'src/app/README.md',
             relativePath: 'src/app',
             issue: {
               diagnostic: {
@@ -477,6 +485,7 @@ suite('mcp operation DTO adapter', () => {
             nodeKind: 'file',
             sourceUri: { scheme: 'file', authority: '', path: '/workspace/src/src/app/main.ts', query: '', fragment: '' },
             cognitionUri: { scheme: 'file', authority: '', path: '/workspace/codebase_cognition/src/app/main.ts.md', query: '', fragment: '' },
+            cognitionPath: 'src/app/main.ts.md',
             relativePath: 'src/app/main.ts',
             issue: {
               diagnostic: {

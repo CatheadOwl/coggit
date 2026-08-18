@@ -123,6 +123,16 @@ export {
   summarizeRepresentativeMtime,
 } from './status';
 export {
+  projectStatusPresentation,
+  renderStatusPresentation,
+} from './statusPresentation';
+export type {
+  StatusPresentationFormat,
+  StatusPresentationIssue,
+  StatusPresentationMode,
+  StatusPresentationView,
+} from './statusPresentation';
+export {
   normalizeSourcePathInput,
   toCognitionFileUri,
   toCognitionFolderReadmeUri,

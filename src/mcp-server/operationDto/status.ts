@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
-import type { StatusOperationResult } from '../../core/index.js';
-import type { LocatedStatusIssue, ObservedStatus } from '../../core/types.js';
-import { toRelativeUriPath } from '../../core/index.js';
-import type { UriComponents } from '../../core/interfaces.js';
+import {
+  projectStatusPresentation,
+  type StatusOperationResult,
+  type StatusPresentationView,
+} from '../../core/index.js';
 import {
   MCP_TOOL_NAMES,
   createHandbookMaintenanceAction,
@@ -16,6 +17,8 @@ import {
 export const statusOperationOutputSchema = {
   sourcePath: z.string(),
   cognitionPath: z.string().nullable(),
+  cognitionPresence: z.enum(['present', 'missing', 'not-applicable']),
+  scope: z.enum(['own', 'subtree']),
   status: observedStatusSchema,
   ownStatus: observedStatusSchema,
   descendantStatus: observedStatusSchema,
@@ -42,45 +45,14 @@ export interface MaintenanceNextAction {
   tool?: 'coggit_status';
 }
 
-export interface StatusMcpView {
+export interface StatusMcpView extends StatusPresentationView {
   [key: string]: unknown;
-  sourcePath: string;
-  cognitionPath: string | null;
-  status: ObservedStatus | null;
-  ownStatus: ObservedStatus | null;
-  descendantStatus: ObservedStatus | null;
-  ownIssues: Array<{
-    sourcePath: string;
-    cognitionPath: string | null;
-    severity: string;
-    suggestedActions: string[];
-  }>;
-  descendantIssues: Array<{
-    sourcePath: string;
-    cognitionPath: string | null;
-    severity: string;
-    suggestedActions: string[];
-  }>;
   handbookUri: string | null;
   verify: { tool: 'coggit_status' } | null;
   nextActions: MaintenanceNextAction[];
   pathHints: string[];
   pathMissMessage?: string;
   pathHintMessage?: string;
-}
-
-function toMcpStatusIssue(
-  located: LocatedStatusIssue,
-  rootCognitionUri: UriComponents,
-): ReturnType<typeof mcpStatusIssueSchema.parse> {
-  return {
-    sourcePath: located.relativePath,
-    cognitionPath: located.cognitionUri
-      ? toRelativeUriPath(rootCognitionUri, located.cognitionUri)
-      : null,
-    severity: located.issue.diagnostic.severity,
-    suggestedActions: located.issue.actions.map((a) => a.label),
-  };
 }
 
 function statusNextActions(input: {
@@ -102,6 +74,8 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
     return {
       sourcePath: result.sourcePath,
       cognitionPath: result.cognitionPath,
+      cognitionPresence: result.cognitionPath ? 'present' : 'not-applicable',
+      scope: 'subtree',
       status: result.status,
       ownStatus: result.ownStatus,
       descendantStatus: result.descendantStatus,
@@ -116,26 +90,11 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
     };
   }
 
-  const rootCognitionUri = result.node?.root.cognitionRootUri;
-  const mapIssue = rootCognitionUri
-    ? (located: LocatedStatusIssue) => toMcpStatusIssue(located, rootCognitionUri)
-    : (located: LocatedStatusIssue) => ({
-        sourcePath: located.relativePath,
-        cognitionPath: null,
-        severity: located.issue.diagnostic.severity,
-        suggestedActions: located.issue.actions.map((a) => a.label),
-      });
-
   const resolvedHandbookUri = result.handbookId ? handbookUri(result.handbookId) : null;
+  const presentation = projectStatusPresentation(inspection, 'subtree');
 
   return {
-    sourcePath: inspection.sourcePath,
-    cognitionPath: inspection.cognitionPath,
-    status: inspection.status,
-    ownStatus: inspection.ownStatus,
-    descendantStatus: inspection.descendantStatus,
-    ownIssues: inspection.subtreeIssues.own.map(mapIssue),
-    descendantIssues: inspection.subtreeIssues.descendant.map(mapIssue),
+    ...presentation,
     handbookUri: resolvedHandbookUri,
     verify: inspection.verify ? { tool: MCP_TOOL_NAMES[inspection.verify.operation] } : null,
     nextActions: statusNextActions({ handbookUri: resolvedHandbookUri }),

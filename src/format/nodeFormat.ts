@@ -1,5 +1,5 @@
-import type { NodeStatusInspection, NodeStatusResult, SubtreeIssueQueryResult } from '../core/types';
-import { describeObservedStatus } from '../core';
+import type { NodeStatusInspection, NodeStatusResult } from '../core/types';
+import { describeObservedStatus, projectStatusPresentation, renderStatusPresentation } from '../core';
 import type { FormatStyle } from './structFormat.js';
 
 // ── Shared: tooltip and clipboard produce the same content structure ─────────
@@ -91,61 +91,10 @@ export function clipboardText(
   return formatNodeText(sourceRelativePath, cognitionRelativePath, status, 'clipboard');
 }
 
-// ── Inspection-based node status text (tooltip / clipboard) ────────────────
-
-function appendLocatedIssues(
-  text: string,
-  issues: SubtreeIssueQueryResult['ownIssues'],
-  style: FormatStyle,
-): string {
-  const lineSep = style === 'tooltip' ? '  \n' : '\n';
-  let nextText = text;
-  for (const located of issues) {
-    const diag = located.issue.diagnostic;
-    let line = `${lineSep}- ${located.relativePath}: [${diag.severity}] ${diag.message}`;
-    const actions = located.issue.actions.map((action) => action.label);
-    if (actions.length > 0) {
-      line += ` Suggested actions: ${actions.join('; ')}.`;
-    }
-    nextText += line;
-  }
-  return nextText;
-}
-
-function formatInspectionText(
-  inspection: NodeStatusInspection,
-  style: FormatStyle,
-): string {
-  const lineSep = style === 'tooltip' ? '  \n' : '\n';
-  const blockSep = style === 'tooltip' ? '  \n  \n' : '\n\n';
-  const bu = (value: string) => (style === 'clipboard' ? value : `**${value}**`);
-
-  let text = '';
-  const statusLabel = describeObservedStatus(inspection.status ?? undefined);
-  if (statusLabel) {
-    text += `${bu('Status')}: ${statusLabel}`;
-    text += `${lineSep}${bu('Source')}: ${inspection.sourcePath}`;
-  } else {
-    text += `${bu('Source')}: ${inspection.sourcePath}`;
-  }
-  if (inspection.cognitionPresence === 'missing') {
-    text += `${lineSep}${bu('Cognition')}: Not created (add on demand)`;
-  } else if (inspection.cognitionPath !== null && inspection.cognitionPresence !== 'not-applicable') {
-    text += `${lineSep}${bu('Cognition')}: ${inspection.cognitionPath}`;
-  }
-
-  text += `${blockSep}${bu('Own issues')}: ${inspection.issueSummary.own}`;
-  text = appendLocatedIssues(text, inspection.subtreeIssues.own, style);
-  text += `${blockSep}${bu('Descendant issues')}: ${inspection.issueSummary.descendant}`;
-  text = appendLocatedIssues(text, inspection.subtreeIssues.descendant, style);
-
-  return text;
-}
-
 export function tooltipNodeStatusText(inspection: NodeStatusInspection): string {
-  return formatInspectionText(inspection, 'tooltip');
+  return renderStatusPresentation(projectStatusPresentation(inspection, 'subtree'), 'markdown');
 }
 
 export function clipboardNodeStatusText(inspection: NodeStatusInspection): string {
-  return formatInspectionText(inspection, 'clipboard');
+  return renderStatusPresentation(projectStatusPresentation(inspection, 'subtree'), 'text');
 }

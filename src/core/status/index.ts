@@ -29,6 +29,7 @@ import {
 	synthesizeStatus,
 } from '../evidence';
 import { computeSourceFactIdentity } from '../hash';
+import { toRelativeUriPath } from '../mapping';
 import type { AcceptedPair } from '../registryTypes';
 
 export function projectStatusResultToNodeStatus(status: StatusResult): NodeStatusResult {
@@ -162,6 +163,9 @@ export function collectSubtreeIssues(node: CoggitTreeNode): LocatedStatusIssue[]
 				nodeKind: current.kind,
 				sourceUri: current.sourceUri,
 				cognitionUri: current.cognitionUri,
+				cognitionPath: current.cognitionUri
+					? toRelativeUriPath(current.root.cognitionRootUri, current.cognitionUri)
+					: undefined,
 				relativePath: current.relativePath,
 				hasPairedCognition: current.ownStatus?.coverage?.ownCognition === 'present',
 				issue,

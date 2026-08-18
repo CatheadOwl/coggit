@@ -61,6 +61,7 @@ export interface LocatedStatusIssue {
 	nodeKind: CoggitNodeKind;
 	sourceUri: UriComponents;
 	cognitionUri?: UriComponents;
+	cognitionPath?: string;
 	relativePath: string;
 	hasPairedCognition?: boolean;
 	issue: StatusIssue;

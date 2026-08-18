@@ -85,6 +85,16 @@ export type {
   RoutesStructuredOutput,
 } from './routesProjection';
 export {
+  projectStatusPresentation,
+  renderStatusPresentation,
+} from './statusPresentation';
+export type {
+  StatusPresentationFormat,
+  StatusPresentationIssue,
+  StatusPresentationMode,
+  StatusPresentationView,
+} from './statusPresentation';
+export {
   buildMappingIndex,
 } from './snapshot';
 export {
@@ -151,8 +161,10 @@ export type {
   CoggitSnapshot,
   CoggitTreeNode,
   CoggitWorkspaceRoot,
+  CognitionCoveragePresence,
   LocatedStatusIssue,
   MisplacedCognitionEntry,
+  NodeStatusInspection,
   NodeStatusResult,
   ObservedStatus,
   OrphanedCognitionEntry,

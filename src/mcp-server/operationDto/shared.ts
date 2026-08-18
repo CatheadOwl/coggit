@@ -51,6 +51,7 @@ export const mcpStatusIssueSchema = z.object({
   sourcePath: z.string(),
   cognitionPath: z.string().nullable(),
   severity: z.enum(['info', 'warning', 'error']),
+  message: z.string(),
   suggestedActions: z.array(z.string()),
 });
 
