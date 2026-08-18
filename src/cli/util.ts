@@ -17,22 +17,21 @@ export const sourcePathCandidates: SourcePathCandidatesExpander = (
 ): string[] => {
   const candidates = new Set<string>();
   const normalized = normalizeCliPath(inputPath);
-  candidates.add(normalized);
+  const resolvedInputUri = pathToUriComponents(path.resolve(inputPath));
 
   const projectRelative = uriRelativePath(
     project.root.projectRootUri,
-    pathToUriComponents(path.resolve(inputPath)),
+    resolvedInputUri,
   );
-  if (projectRelative !== undefined) {
-    candidates.add(projectRelative);
-  }
-
   const sourceRelative = uriRelativePath(
     project.root.sourceRootUri,
-    pathToUriComponents(path.resolve(inputPath)),
+    resolvedInputUri,
   );
   if (sourceRelative !== undefined) {
     candidates.add(sourceRelative);
+  }
+  if (projectRelative !== undefined) {
+    candidates.add(projectRelative);
   }
 
   const sourceRootProjectRelative = uriRelativePath(
@@ -42,9 +41,14 @@ export const sourcePathCandidates: SourcePathCandidatesExpander = (
   if (sourceRootProjectRelative && normalized.startsWith(`${sourceRootProjectRelative}/`)) {
     candidates.add(normalized.slice(sourceRootProjectRelative.length + 1));
   }
+  candidates.add(normalized);
 
   return Array.from(candidates);
 };
+
+export function defaultSourcePathInput(): string {
+  return process.cwd();
+}
 
 function normalizeCliPath(inputPath: string): string {
   const normalized = inputPath.replace(/\\/g, '/').replace(/\/+$/u, '');

@@ -9,11 +9,19 @@ import { pathToUriComponents } from './uri';
 const CONFIG_PATTERN = '**/.coggit/config.yaml';
 const CONFIG_RELATIVE_PATH = path.join('.coggit', 'config.yaml');
 
+export type NodeConfigDiscoveryMode = 'workspace' | 'nearest';
+
+export interface NodeConfigProviderOptions {
+  discoveryMode?: NodeConfigDiscoveryMode;
+}
+
 export class NodeConfigProvider implements ConfigProvider {
   private readonly workspacePath: string;
+  private readonly discoveryMode: NodeConfigDiscoveryMode;
 
-  constructor(workspacePath: string = process.cwd()) {
+  constructor(workspacePath: string = process.cwd(), options: NodeConfigProviderOptions = {}) {
     this.workspacePath = resolveWorkspacePath(workspacePath);
+    this.discoveryMode = options.discoveryMode ?? 'workspace';
   }
 
   getWorkspaceFolders(): WorkspaceFolderInfo[] {
@@ -35,7 +43,9 @@ export class NodeConfigProvider implements ConfigProvider {
       configPaths.add(nearestAncestor);
     }
 
-    await collectDescendantConfigs(this.workspacePath, configPaths);
+    if (this.discoveryMode === 'workspace') {
+      await collectDescendantConfigs(this.workspacePath, configPaths);
+    }
     return Array.from(configPaths)
       .sort((left, right) => left.localeCompare(right))
       .map(pathToUriComponents);

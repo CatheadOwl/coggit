@@ -9,13 +9,14 @@
 import type { CoggitServices } from '../../core/interfaces';
 import { createCoggitServices } from '../../core/project';
 import { createEnvCoggitLogger } from '../../core/logger';
-import { NodeConfigProvider } from './config';
+import { NodeConfigProvider, type NodeConfigDiscoveryMode } from './config';
 import { NodeFileSystem } from './fs';
 import { NodeProjectLockManager } from './locks';
 import { NodeRegistryProviderFactory } from './registry';
 
 export interface CreateNodeServicesOptions {
   workspacePath?: string;
+  configDiscovery?: NodeConfigDiscoveryMode;
 }
 
 export function createNodeCoggitServices(
@@ -24,7 +25,9 @@ export function createNodeCoggitServices(
   const logger = createEnvCoggitLogger('[coggit:node]');
   return createCoggitServices({
     fs: new NodeFileSystem(),
-    config: new NodeConfigProvider(options.workspacePath),
+    config: new NodeConfigProvider(options.workspacePath, {
+      discoveryMode: options.configDiscovery,
+    }),
     registry: new NodeRegistryProviderFactory(logger),
     logger,
     locks: new NodeProjectLockManager(),

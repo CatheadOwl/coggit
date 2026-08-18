@@ -1,7 +1,7 @@
 import type { CoggitProject } from '../core/interfaces';
 import { statusOperation } from '../core';
 import { renderStatusOperationResult } from './operationDto';
-import { sourcePathCandidates } from './util';
+import { defaultSourcePathInput, sourcePathCandidates } from './util';
 
 export async function runStatus(
   projects: readonly CoggitProject[],
@@ -11,7 +11,7 @@ export async function runStatus(
     throw new UserFacingError('No CogGit project found.');
   }
 
-  const result = await statusOperation(projects, sourcePath ?? '.', {
+  const result = await statusOperation(projects, sourcePath ?? defaultSourcePathInput(), {
     sourcePathCandidates,
   });
   if (!result.found) {

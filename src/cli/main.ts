@@ -17,7 +17,7 @@ void main(process.argv);
 
 async function main(argv: string[]): Promise<void> {
   const program = createProgram(async (command) => {
-    const services = createNodeCoggitServices();
+    const services = createNodeCoggitServices({ configDiscovery: 'nearest' });
     const projects = await discoverCoggitProjects(services);
     const output = await command(projects);
     console.log(output);

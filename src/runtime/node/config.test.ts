@@ -25,6 +25,42 @@ suite('NodeConfigProvider', () => {
 			await nodeFs.rm(tempRoot, { recursive: true, force: true });
 		}
 	});
+
+	test('can restrict discovery to the nearest ancestor project', async () => {
+		const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-config-'));
+		try {
+			await writeConfig(tempRoot);
+			await writeConfig(path.join(tempRoot, 'nested-project'));
+
+			const provider = new NodeConfigProvider(path.join(tempRoot, 'src'), {
+				discoveryMode: 'nearest',
+			});
+			const configs = await provider.findFiles('**/.coggit/config.yaml');
+			const paths = configs.map(uriComponentsToPath);
+
+			assert.deepStrictEqual(paths, [
+				path.join(tempRoot, '.coggit', 'config.yaml'),
+			]);
+		} finally {
+			await nodeFs.rm(tempRoot, { recursive: true, force: true });
+		}
+	});
+
+	test('nearest discovery does not scan descendants when no ancestor project exists', async () => {
+		const tempRoot = await nodeFs.mkdtemp(path.join(os.tmpdir(), 'coggit-node-config-'));
+		try {
+			await writeConfig(path.join(tempRoot, 'nested-project'));
+
+			const provider = new NodeConfigProvider(tempRoot, {
+				discoveryMode: 'nearest',
+			});
+			const configs = await provider.findFiles('**/.coggit/config.yaml');
+
+			assert.deepStrictEqual(configs, []);
+		} finally {
+			await nodeFs.rm(tempRoot, { recursive: true, force: true });
+		}
+	});
 });
 
 async function writeConfig(projectPath: string): Promise<void> {

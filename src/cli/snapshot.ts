@@ -3,7 +3,7 @@ import { projectSnapshotTree, projectTreeFromSnapshot, snapshotOperation } from 
 import { type SnapshotTreeTextOptions } from '../render';
 import { renderSnapshotOperationResult } from './operationDto';
 import { UserFacingError } from './status';
-import { sourcePathCandidates } from './util';
+import { defaultSourcePathInput, sourcePathCandidates } from './util';
 
 export async function runSnapshot(
   projects: readonly CoggitProject[],
@@ -14,13 +14,14 @@ export async function runSnapshot(
     throw new UserFacingError('No CogGit project found.');
   }
 
+  const effectiveSourcePath = sourcePath ?? defaultSourcePathInput();
   const result = await snapshotOperation(projects, {
-    sourcePath,
+    sourcePath: effectiveSourcePath,
     scope: options.scope,
     maxDepth: options.maxDepth,
     sourcePathCandidates,
   });
-  if (sourcePath && !result.found) {
+  if (!result.found) {
     throw new UserFacingError(renderSnapshotOperationResult(result, options));
   }
 
