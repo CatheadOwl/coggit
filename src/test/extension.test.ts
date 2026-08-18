@@ -684,18 +684,34 @@ suite('CogGit Ghost Tree', () => {
 
 				const text = nodeTooltip(root);
 
-				assert.match(text, /^\*\*Status\*\*: Stale  \n\*\*Source\*\*: src/);
-				assert.doesNotMatch(text, /\*\*Own status\*\*:/);
-				assert.match(text, /\*\*Own issues\*\*: 0/);
-				assert.match(text, /\*\*Descendant issues\*\*: 1/);
-				assert.match(text, /\*\*Status\*\*: Stale  \n\*\*Source\*\*: src  \n  \n\*\*Own issues\*\*: 0/);
-				assert.match(text, /\*\*Own issues\*\*: 0  \n  \n\*\*Descendant issues\*\*: 1/);
-				assert.doesNotMatch(text, /^→ /m);
-				assert.doesNotMatch(text, /\*\*This node\*\*:/);
-				assert.doesNotMatch(text, /\*\*Descendants\*\*:/);
-				assert.match(text, /\*\*Descendant issues\*\*: 1  \n- src\/foo\.ts: \[warning\] Stale cognition/);
-				assert.match(text, /- src\/foo\.ts: \[warning\] Stale cognition.* Suggested actions: Sync cognition with source changes; Other action\./);
-				assert.doesNotMatch(text, /\bAction:/);
+				assert.strictEqual(text, [
+					'**Status**: Stale',
+					'**Source**: src',
+					'',
+					'**Own issues**: 0',
+					'',
+					'**Descendant issues**: 1',
+					'- src/foo.ts: [warning] Stale cognition. Suggested actions: Sync cognition with source changes; Other action.',
+				].join('  \n'));
+			});
+
+			test('nodeTooltip renders present cognition with the canonical exact shape', () => {
+				const node = mkStatusNode('present', 'src/present.ts', {
+					observedStatus: 'fresh',
+					ownObservedStatus: 'fresh',
+					coverage: { ownCognition: 'present', isMaterializable: false, missingMaterializableCount: 0, coveredCount: 1 },
+				});
+				node.cognitionUri = mkTestUri('/workspace/cog/src/present.ts.md');
+
+				assert.strictEqual(nodeTooltip(node), [
+					'**Status**: Fresh',
+					'**Source**: src/present.ts',
+					'**Cognition**: src/present.ts.md',
+					'',
+					'**Own issues**: 0',
+					'',
+					'**Descendant issues**: 0',
+				].join('  \n'));
 			});
 
 			test('CLI status rendering keeps suggested actions aligned with each issue', () => {
@@ -721,7 +737,7 @@ suite('CogGit Ghost Tree', () => {
 					handbookId: 'skeleton',
 				});
 
-				const text = renderNodeStatusInspectionText(inspection, 'aggregate');
+				const text = renderNodeStatusInspectionText(inspection);
 
 				assert.match(text, /\nOwn issues: 0\n\nDescendant issues: 1\n- src\/foo\.ts: \[warning\] Stale cognition/);
 				assert.match(text, /- src\/foo\.ts: \[warning\] Stale cognition\. Suggested actions: Sync cognition with source changes; Other action\./);
@@ -741,13 +757,20 @@ suite('CogGit Ghost Tree', () => {
 					handbookId: 'skeleton',
 				});
 
-				const cliText = renderNodeStatusInspectionText(inspection, 'aggregate');
+				const cliText = renderNodeStatusInspectionText(inspection);
 				const tooltip = nodeTooltip(node);
 				const clipboard = nodeClipboardStatusText(node);
 
 				assert.match(cliText, /^Source: coggit_prompt\/evals\/runs\nCognition: Not created \(add on demand\)/);
 				assert.doesNotMatch(cliText, /Cognition: coggit_prompt\/evals\/runs\/README\.md/);
-				assert.match(tooltip, /\*\*Cognition\*\*: Not created \(add on demand\)/);
+				assert.strictEqual(tooltip, [
+					'**Source**: coggit_prompt/evals/runs',
+					'**Cognition**: Not created (add on demand)',
+					'',
+					'**Own issues**: 0',
+					'',
+					'**Descendant issues**: 0',
+				].join('  \n'));
 				assert.match(clipboard, /Cognition: Not created \(add on demand\)/);
 			});
 
@@ -762,7 +785,14 @@ suite('CogGit Ghost Tree', () => {
 					handbookId: 'skeleton',
 				});
 
-				assert.doesNotMatch(renderNodeStatusInspectionText(inspection, 'aggregate'), /^Cognition:/m);
+				assert.doesNotMatch(renderNodeStatusInspectionText(inspection), /^Cognition:/m);
+				assert.strictEqual(nodeTooltip(node), [
+					'**Source**: broken',
+					'',
+					'**Own issues**: 0',
+					'',
+					'**Descendant issues**: 0',
+				].join('  \n'));
 			});
 
 

@@ -6,7 +6,6 @@ import type {
 } from './statusTypes';
 import { describeObservedStatus } from './status';
 
-export type StatusPresentationMode = 'aggregate' | 'own' | 'subtree';
 export type StatusPresentationFormat = 'text' | 'markdown';
 
 export interface StatusPresentationIssue {
@@ -21,17 +20,11 @@ export interface StatusPresentationView {
   sourcePath: string;
   cognitionPath: string | null;
   cognitionPresence: CognitionCoveragePresence;
-  scope: 'own' | 'subtree';
   status: ObservedStatus | null;
   ownStatus: ObservedStatus | null;
   descendantStatus: ObservedStatus | null;
   ownIssues: StatusPresentationIssue[];
   descendantIssues: StatusPresentationIssue[];
-}
-
-function presentationPresence(inspection: NodeStatusInspection): CognitionCoveragePresence {
-  return inspection.cognitionPresence
-    ?? (inspection.cognitionPath !== null ? 'present' : 'not-applicable');
 }
 
 function mapIssues(
@@ -48,19 +41,15 @@ function mapIssues(
 
 export function projectStatusPresentation(
   inspection: NodeStatusInspection,
-  mode: StatusPresentationMode = 'aggregate',
 ): StatusPresentationView {
   const ownIssues = mapIssues(inspection.subtreeIssues.own);
-  const descendantIssues = mode === 'own'
-    ? []
-    : mapIssues(inspection.subtreeIssues.descendant);
+  const descendantIssues = mapIssues(inspection.subtreeIssues.descendant);
 
   return {
     sourcePath: inspection.sourcePath,
     cognitionPath: inspection.cognitionPath,
-    cognitionPresence: presentationPresence(inspection),
-    scope: mode === 'own' ? 'own' : 'subtree',
-    status: mode === 'own' ? inspection.ownStatus : inspection.status,
+    cognitionPresence: inspection.cognitionPresence,
+    status: inspection.status,
     ownStatus: inspection.ownStatus,
     descendantStatus: inspection.descendantStatus,
     ownIssues,
@@ -105,10 +94,8 @@ export function renderStatusPresentation(
   lines.push('', `${label('Own issues')}: ${view.ownIssues.length}`);
   appendIssueLines(lines, view.ownIssues);
 
-  if (view.scope === 'subtree') {
-    lines.push('', `${label('Descendant issues')}: ${view.descendantIssues.length}`);
-    appendIssueLines(lines, view.descendantIssues);
-  }
+  lines.push('', `${label('Descendant issues')}: ${view.descendantIssues.length}`);
+  appendIssueLines(lines, view.descendantIssues);
 
   return lines.join(lineBreak);
 }

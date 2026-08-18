@@ -18,7 +18,6 @@ export const statusOperationOutputSchema = {
   sourcePath: z.string(),
   cognitionPath: z.string().nullable(),
   cognitionPresence: z.enum(['present', 'missing', 'not-applicable']),
-  scope: z.enum(['own', 'subtree']),
   status: observedStatusSchema,
   ownStatus: observedStatusSchema,
   descendantStatus: observedStatusSchema,
@@ -75,7 +74,6 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
       sourcePath: result.sourcePath,
       cognitionPath: result.cognitionPath,
       cognitionPresence: result.cognitionPath ? 'present' : 'not-applicable',
-      scope: 'subtree',
       status: result.status,
       ownStatus: result.ownStatus,
       descendantStatus: result.descendantStatus,
@@ -91,7 +89,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
   }
 
   const resolvedHandbookUri = result.handbookId ? handbookUri(result.handbookId) : null;
-  const presentation = projectStatusPresentation(inspection, 'subtree');
+  const presentation = projectStatusPresentation(inspection);
 
   return {
     ...presentation,

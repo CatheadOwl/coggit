@@ -92,9 +92,9 @@ export function clipboardText(
 }
 
 export function tooltipNodeStatusText(inspection: NodeStatusInspection): string {
-  return renderStatusPresentation(projectStatusPresentation(inspection, 'subtree'), 'markdown');
+  return renderStatusPresentation(projectStatusPresentation(inspection), 'markdown');
 }
 
 export function clipboardNodeStatusText(inspection: NodeStatusInspection): string {
-  return renderStatusPresentation(projectStatusPresentation(inspection, 'subtree'), 'text');
+  return renderStatusPresentation(projectStatusPresentation(inspection), 'text');
 }

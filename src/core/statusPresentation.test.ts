@@ -50,7 +50,6 @@ suite('status presentation SDK', () => {
       sourcePath: 'src/app',
       cognitionPath: 'src/app/README.md',
       cognitionPresence: 'missing',
-      scope: 'subtree',
       status: 'stale',
       ownStatus: null,
       descendantStatus: 'stale',
@@ -90,12 +89,32 @@ suite('status presentation SDK', () => {
     ].join('  \n'));
   });
 
-  test('own scope excludes descendant presentation without changing structured source data', () => {
-    const view = projectStatusPresentation(inspection(), 'own');
+  test('canonical presentation always includes own and descendant issue groups', () => {
+    const view = projectStatusPresentation(inspection());
 
-    assert.strictEqual(view.scope, 'own');
-    assert.strictEqual(view.status, null);
-    assert.deepStrictEqual(view.descendantIssues, []);
-    assert.doesNotMatch(renderStatusPresentation(view), /Descendant issues/);
+    assert.strictEqual(view.status, 'stale');
+    assert.strictEqual(view.ownIssues.length, 0);
+    assert.strictEqual(view.descendantIssues.length, 1);
+    assert.match(renderStatusPresentation(view), /Descendant issues: 1/);
+  });
+
+  test('renders an existing cognition path only when presence is present', () => {
+    const input = inspection();
+    input.cognitionPresence = 'present';
+
+    assert.match(
+      renderStatusPresentation(projectStatusPresentation(input)),
+      /^Cognition: src\/app\/README\.md$/m,
+    );
+  });
+
+  test('omits cognition when presence is not applicable', () => {
+    const input = inspection();
+    input.cognitionPresence = 'not-applicable';
+
+    assert.doesNotMatch(
+      renderStatusPresentation(projectStatusPresentation(input)),
+      /^Cognition:/m,
+    );
   });
 });

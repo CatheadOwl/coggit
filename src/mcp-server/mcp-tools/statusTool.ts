@@ -71,7 +71,7 @@ function statusText(result: StatusOperationResult): string {
   }
   return joinMcpSections(
     result.project ? formatProjectContext([result.project]) : '',
-    renderStatusPresentation(projectStatusPresentation(result.inspection, 'subtree'), 'text'),
+    renderStatusPresentation(projectStatusPresentation(result.inspection), 'text'),
   );
 }
 

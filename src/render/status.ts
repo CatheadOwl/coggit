@@ -9,7 +9,6 @@ export function renderStatusSectionsText(sections: readonly string[]): string {
 
 export function renderNodeStatusInspectionText(
   inspection: NodeStatusInspection,
-  mode: 'aggregate' | 'own' | 'subtree',
 ): string {
-  return renderStatusPresentation(projectStatusPresentation(inspection, mode), 'text');
+  return renderStatusPresentation(projectStatusPresentation(inspection), 'text');
 }

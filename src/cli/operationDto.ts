@@ -18,11 +18,10 @@ export { renderPathMissText };
 
 export function renderStatusOperationResult(
   result: StatusOperationResult,
-  mode: 'aggregate' | 'own' | 'subtree',
 ): string {
   // Use inspection-based rendering when available.
   if (result.inspection) {
-    return renderNodeStatusInspectionText(result.inspection, mode);
+    return renderNodeStatusInspectionText(result.inspection);
   }
 
   // Fallback for not-found results (no node, no inspection).

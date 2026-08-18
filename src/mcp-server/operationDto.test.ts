@@ -409,7 +409,6 @@ suite('mcp operation DTO adapter', () => {
 
     assert.strictEqual(structuredContent.ownIssues.length, 1);
     assert.strictEqual(structuredContent.cognitionPresence, 'missing');
-    assert.strictEqual(structuredContent.scope, 'subtree');
     assert.strictEqual(structuredContent.ownIssues[0].sourcePath, 'src/main.ts');
     assert.strictEqual(structuredContent.ownIssues[0].cognitionPath, 'src/main.ts.md');
     assert.strictEqual(structuredContent.ownIssues[0].severity, 'warning');

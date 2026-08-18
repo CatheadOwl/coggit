@@ -91,7 +91,6 @@ export {
 export type {
   StatusPresentationFormat,
   StatusPresentationIssue,
-  StatusPresentationMode,
   StatusPresentationView,
 } from './statusPresentation';
 export {

@@ -10,7 +10,7 @@ import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
-import { runStatus, type StatusMode, UserFacingError } from './status';
+import { runStatus, UserFacingError } from './status';
 import { openStrictWatchProject, startWatchSession } from './watch';
 
 void main(process.argv);
@@ -57,10 +57,8 @@ function createProgram(
   program
     .command('status')
     .argument('[path]')
-    .addOption(new Option('--own', 'show only the selected node status').conflicts('subtree'))
-    .addOption(new Option('--subtree', 'show subtree issue details').conflicts('own'))
-    .action(async (sourcePath: string | undefined, options: StatusOptions) => {
-      await runWithProjects((projects) => runStatus(projects, sourcePath, statusMode(options)));
+    .action(async (sourcePath: string | undefined) => {
+      await runWithProjects((projects) => runStatus(projects, sourcePath));
     });
 
   program
@@ -174,11 +172,6 @@ function createProgram(
   return program;
 }
 
-interface StatusOptions {
-  own?: boolean;
-  subtree?: boolean;
-}
-
 interface SnapshotOptions {
   scope?: SnapshotScope;
   maxDepth?: number;
@@ -202,16 +195,6 @@ interface WatchOptions {
 interface AddOptions {
   kind: AddCognitionKind;
   overwrite: boolean;
-}
-
-function statusMode(options: StatusOptions): StatusMode {
-  if (options.own) {
-    return 'own';
-  }
-  if (options.subtree) {
-    return 'subtree';
-  }
-  return 'aggregate';
 }
 
 function parseSnapshotScope(value: string): SnapshotScope {
