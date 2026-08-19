@@ -32,7 +32,7 @@ function mapIssues(
 ): StatusPresentationIssue[] {
   return issues.map((located) => ({
     sourcePath: located.relativePath,
-    cognitionPath: located.cognitionPath ?? null,
+    cognitionPath: located.cognitionPath,
     severity: located.issue.diagnostic.severity,
     message: located.issue.diagnostic.message,
     suggestedActions: located.issue.actions.map((action) => action.label),

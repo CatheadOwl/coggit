@@ -165,7 +165,7 @@ export function collectSubtreeIssues(node: CoggitTreeNode): LocatedStatusIssue[]
 				cognitionUri: current.cognitionUri,
 				cognitionPath: current.cognitionUri
 					? toRelativeUriPath(current.root.cognitionRootUri, current.cognitionUri)
-					: undefined,
+					: null,
 				relativePath: current.relativePath,
 				hasPairedCognition: current.ownStatus?.coverage?.ownCognition === 'present',
 				issue,

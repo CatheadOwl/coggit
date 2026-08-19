@@ -627,6 +627,12 @@ export async function openCoggitProject(
             throw new Error('Registry not available');
           }
 
+          // content-changed guard: capture the reviewed pair twice around the
+          // accept write and compare its identity. The identity is the registry
+          // `sourceKey` plus the `source` and `cognition` content identities
+          // (SHA-256 content hashes, not mtimes), covering both the source and
+          // cognition sides. Any divergence means the pair changed mid-accept;
+          // abort so the caller reviews the current contents and retries.
           const before = await captureReviewedPair(
             root,
             services.fs,

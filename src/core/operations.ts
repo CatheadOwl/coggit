@@ -78,12 +78,24 @@ export interface SnapshotOperationResult {
 
 export interface StatusOperationResult {
   found: boolean;
+  /** Source-root-relative source path: the matched node's relative path on a
+   *  hit, or the requested input on a miss. */
   sourcePath: string;
   nodeKind: CoggitNodeKind | null;
+  /** `null` on a miss. */
   project: CoggitProjectContext | null;
+  /**
+   * Expected paired cognition path, cognition-root-relative. `null` on a miss
+   * or when the node has no expected cognition URI. This is the *expected*
+   * target path, not an existence check — same semantics and null encoding as
+   * `LocatedStatusIssue.cognitionPath`.
+   */
   cognitionPath: string | null;
+  /** `null` means "no cognition" (no observed status for this node). */
   status: ObservedStatus | null;
+  /** `null` means "no own cognition". */
   ownStatus: ObservedStatus | null;
+  /** `null` means "no descendants" — not "no cognition". */
   descendantStatus: ObservedStatus | null;
   staleAction: StaleAction | null;
   issueCount: number;
@@ -92,6 +104,7 @@ export interface StatusOperationResult {
   issues: CoggitOperationIssue[];
   suggestedActions: CoggitOperationAction[];
   handbookId: 'leaf' | 'skeleton' | null;
+  /** `null` on a miss; the matched tree node on a hit. */
   node: CoggitTreeNode | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -122,13 +135,20 @@ export interface AddOperationError {
 
 export interface AddOperationResult {
   success: boolean;
+  /** Whether the add materialized a new cognition file; `null` on failure. */
   created: boolean | null;
+  /** Created cognition kind on success; `null` on failure. */
   kind: CognitionKind | null;
+  /** Source-root-relative source path. */
   sourcePath: string;
+  /** Expected paired cognition path, cognition-root-relative; `null` on
+   *  failure (no path materialized). */
   cognitionPath: string | null;
+  /** `null` on a miss or `no-projects`. */
   project: CoggitProjectContext | null;
   handbookId: 'leaf' | 'skeleton' | null;
   suggestedActions: CoggitOperationAction[];
+  /** `null` on success; typed failure details on failure. */
   error: AddOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -138,6 +158,21 @@ export interface AddOperationResult {
   pathHintMessage?: string;
 }
 
+/**
+ * Resolve failure codes.
+ *
+ * - `content-changed`: the source/cognition pair changed during the resolve
+ *   acceptance window. The guard compares the accepted-pair identity captured
+ *   before and after the accept write — the registry `sourceKey` plus the
+ *   `source` and `cognition` content identities (SHA-256 content hashes, not
+ *   mtimes) — covering both the source and cognition sides.
+ * - `registry-changed`: the registry revision changed during the accept write;
+ *   the acceptance was not committed.
+ * - `registry-unavailable`: no registry could be loaded.
+ * - `path-not-found`: the source path matched no node.
+ * - `no-projects`: no CogGit project is open.
+ * - `unknown`: any other failure.
+ */
 export const RESOLVE_ERROR_CODES = [
   'no-projects',
   'path-not-found',
@@ -156,12 +191,19 @@ export interface ResolveOperationError {
 
 export interface ResolveOperationResult {
   success: boolean;
+  /** Source-root-relative source path. */
   sourcePath: string;
+  /** Expected paired cognition path, cognition-root-relative; `null` when the
+   *  node could not be re-read after acceptance. */
   cognitionPath: string | null;
+  /** `null` on a miss or `no-projects`. */
   project: CoggitProjectContext | null;
+  /** Registry key written on success; `null` on failure. */
   sourceKey: string | null;
+  /** Acceptance timestamp written on success; `null` on failure. */
   verificationTimeMs: number | null;
   suggestedActions: CoggitOperationAction[];
+  /** `null` on success; typed failure details on failure. */
   error: ResolveOperationError | null;
   /** Fuzzy source-path hints when the source path matched no node. Empty when found. */
   pathHints: string[];
@@ -690,6 +732,13 @@ function uniqueActions(actions: readonly CoggitOperationAction[]): CoggitOperati
   });
 }
 
+/**
+ * Expected paired cognition path for a node, cognition-root-relative, or `null`
+ * when the node has no expected cognition URI. This is the *expected* target
+ * path derived from `node.cognitionUri`, not an existence check; both
+ * `StatusOperationResult.cognitionPath` and `LocatedStatusIssue.cognitionPath`
+ * carry this same meaning and null encoding.
+ */
 function cognitionRelativePath(node: CoggitTreeNode): string | null {
   return node.cognitionUri
     ? toRelativeUriPath(node.root.cognitionRootUri, node.cognitionUri)

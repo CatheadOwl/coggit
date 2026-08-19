@@ -60,8 +60,19 @@ export interface LocatedStatusIssue {
 	nodeId: string;
 	nodeKind: CoggitNodeKind;
 	sourceUri: UriComponents;
+	/** Expected paired cognition URI. Optional: absent for nodes with no
+	 *  expected cognition URI (e.g. the `error` node kind built by
+	 *  `createErrorNode`); mirrors `CoggitTreeNode.cognitionUri`. */
 	cognitionUri?: UriComponents;
-	cognitionPath?: string;
+	/**
+	 * Expected paired cognition path, cognition-root-relative. Non-null for any
+	 * real node (derived from the node's `cognitionUri`); `null` only for nodes
+	 * with no `cognitionUri`. This is the *expected* target path — it does not
+	 * assert that the document exists. Null is encoded as `null` (not
+	 * `undefined`) to match `StatusOperationResult.cognitionPath`: the two
+	 * fields share one meaning, so they share one null encoding.
+	 */
+	cognitionPath: string | null;
 	relativePath: string;
 	hasPairedCognition?: boolean;
 	issue: StatusIssue;
@@ -158,17 +169,26 @@ export interface StatusResult {
 
 export interface NodeStatusInspection {
 	sourcePath: string;
+	/**
+	 * Expected paired cognition path, cognition-root-relative; `null` only when
+	 * the node has no expected cognition URI. This is the *expected* target
+	 * path, not an existence check — pair it with `cognitionPresence`.
+	 */
 	cognitionPath: string | null;
 	cognitionPresence: CognitionCoveragePresence;
 	nodeKind: CoggitNodeKind;
+	/** `null` means "no cognition" (no observed status for this node). */
 	status: ObservedStatus | null;
+	/** `null` means "no own cognition". */
 	ownStatus: ObservedStatus | null;
+	/** `null` means "no descendants" — not "no cognition". */
 	descendantStatus: ObservedStatus | null;
 	issueSummary: {
 		total: number;
 		own: number;
 		descendant: number;
 	};
+	/** Always present with `own`/`descendant` arrays; `[]` means "none". */
 	subtreeIssues: {
 		own: LocatedStatusIssue[];
 		descendant: LocatedStatusIssue[];
