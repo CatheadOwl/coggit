@@ -46,6 +46,23 @@ interface ProjectRuntime {
   readonly acceptance: AcceptanceStore | null;
 }
 
+/**
+ * Raised by `markResolved` when the acceptance operation fails after the source
+ * path has already resolved to a node. Carries the canonical source-root-relative
+ * node path (`node.relativePath`) so callers can echo a canonical path on
+ * post-resolution failures instead of the raw caller input.
+ */
+export class ResolveAcceptanceError extends Error {
+  constructor(
+    message: string,
+    readonly canonicalSourcePath: string,
+    cause?: unknown,
+  ) {
+    super(message, cause === undefined ? undefined : { cause });
+    this.name = 'ResolveAcceptanceError';
+  }
+}
+
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;
 
@@ -648,8 +665,9 @@ export async function openCoggitProject(
           if (before.sourceKey !== after.sourceKey
             || before.accepted.source !== after.accepted.source
             || before.accepted.cognition !== after.accepted.cognition) {
-            throw new Error(
+            throw new ResolveAcceptanceError(
               'Source or cognition changed during resolve acceptance; review the current contents and retry.',
+              after.relativePath,
             );
           }
 
@@ -670,9 +688,10 @@ export async function openCoggitProject(
             if (recovered) {
               runtime = recovered;
             }
-            throw new Error(
+            throw new ResolveAcceptanceError(
               'Registry changed during resolve acceptance; the acceptance was not committed. Review the current contents and retry.',
-              { cause: error },
+              after.relativePath,
+              error,
             );
           }
           runtimeEvidence.clear(after.sourceKey);
@@ -1085,7 +1104,7 @@ async function captureReviewedPair(
   fs: CoggitServices['fs'],
   registry: Registry,
   sourcePath: string,
-): Promise<{ sourceKey: string; accepted: AcceptedPair }> {
+): Promise<{ sourceKey: string; relativePath: string; accepted: AcceptedPair }> {
   const snapshot = await buildProjectSnapshot(root, fs);
   const normalizedPath = normalizeSourcePathInput(sourcePath, {
     projectRootUri: root.projectRootUri,
@@ -1107,6 +1126,7 @@ async function captureReviewedPair(
   const cognitionContent = await fs.readFile(node.cognitionUri);
   return {
     sourceKey: sourceKeyForReviewedNode(root, registry, node),
+    relativePath: node.relativePath,
     accepted: {
       source: computeSourceFactIdentity(
         node.kind === 'file' ? 'file-content' : 'directory-entry',

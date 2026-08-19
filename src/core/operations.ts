@@ -17,7 +17,7 @@ import type {
   CognitionRoutesEntry,
   CognitionDocumentDiagnostic,
 } from './types';
-import { buildSnapshotFromProjects } from './project';
+import { buildSnapshotFromProjects, ResolveAcceptanceError } from './project';
 import { inspectNodeStatus, querySubtreeIssues } from './status';
 import { toRelativeUriPath } from './mapping';
 import {
@@ -559,11 +559,18 @@ export async function resolveOperation(
             : message.includes('changed during resolve')
               ? 'content-changed'
               : 'unknown';
+        // Echo the canonical node path on post-resolution failures
+        // (`content-changed` and flush-phase `registry-changed`), matching
+        // `addOperation`'s raw-on-miss / canonical-on-found split. Pre-resolution
+        // failures keep the raw caller input.
+        const failureSourcePath = error instanceof ResolveAcceptanceError
+          ? error.canonicalSourcePath
+          : sourcePath;
         return resolveFailure(
-          sourcePath,
+          failureSourcePath,
           null,
           projectContext(candidate),
-          [recheckStatusAction(sourcePath)],
+          [recheckStatusAction(failureSourcePath)],
           code,
           message,
           { pathHints: [] },

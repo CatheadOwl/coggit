@@ -576,6 +576,47 @@ suite('core operations', () => {
     assert.strictEqual(registry.current()?.entries['tracked.ts']?.accepted, null);
   });
 
+  test('resolve echoes the canonical node path on a post-resolution content-changed failure', async () => {
+    const fs = new MockFileSystem();
+    const registry = new CountingRegistryProvider(registryFile({
+      tracked: {
+        sourcePath: 'src/tracked.ts',
+        type: 'leaf',
+        sourceFactMtimeMs: null,
+        cognitionMtimeMs: null,
+        verificationTimeMs: null,
+        createdAt: null,
+        sourceFactHash: null,
+        cognitionBlobHash: null,
+        cognitionLength: null,
+      },
+    }));
+    fs.addFile('/workspace/src/tracked.ts', 'export const tracked = true;');
+    fs.addFile('/workspace/cognition/tracked.ts.md',
+      '# tracked\n\nThis cognition describes the current tracked source in enough detail for review.\n\nIt records the maintained behavior and verification boundary.');
+    const project = await makeProject(fs, registry);
+
+    fs.setAfterReadHook((path, count) => {
+      if (path === '/workspace/src/tracked.ts' && count === 2) {
+        fs.addFile('/workspace/src/tracked.ts', 'export const tracked = changed_during_review;');
+      }
+    });
+
+    // `src/tracked.ts` is a non-canonical (source-root-prefixed) form that still
+    // resolves to the `tracked.ts` node. The failure must echo the canonical
+    // node path, not the raw caller input.
+    const review = await resolveOperation([project], 'src/tracked.ts');
+    assert.strictEqual(review.success, false);
+    assert.strictEqual(review.error?.code, 'content-changed');
+    assert.strictEqual(review.sourcePath, 'tracked.ts');
+    assert.deepStrictEqual(review.suggestedActions, [{
+      code: 'recheck-status',
+      label: 'Re-check the current status of this source path.',
+      operation: 'status',
+      sourcePath: 'tracked.ts',
+    }]);
+  });
+
   test('review unchanged discards its acceptance when the registry revision changes', async () => {
     const fs = new MockFileSystem();
     const registry = new CountingRegistryProvider(registryFile({
