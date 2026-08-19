@@ -250,22 +250,24 @@ function uniqueIssueLegend(
   issues: readonly LocatedStatusIssue[],
   labelOnlyActionsBySourcePath: ReadonlyMap<string, ReadonlyMap<string, CoggitOperationAction>>,
 ): StatusAgentIssueLegendEntry[] {
-  const seen = new Set<string>();
-  const entries: StatusAgentIssueLegendEntry[] = [];
+  const byKey = new Map<string, StatusAgentIssueLegendEntry>();
 
   for (const issue of issues) {
     const level = severityLevel(issue.issue.diagnostic.severity);
     const tag = issueTag(issue.issue.diagnostic);
     const hints = issueHintTags(issue, labelOnlyActionsBySourcePath);
     const key = `${level}\u0000${tag.tag}`;
-    if (seen.has(key)) {
-      continue;
+    const existing = byKey.get(key);
+    if (existing) {
+      // Union hints across every occurrence of the same issue tag so a later
+      // issue with different label-only hints does not silently lose them.
+      existing.hints = uniqueStrings([...existing.hints, ...hints]);
+    } else {
+      byKey.set(key, { level, tag: tag.tag, description: tag.description, hints });
     }
-    seen.add(key);
-    entries.push({ level, tag: tag.tag, description: tag.description, hints });
   }
 
-  return entries;
+  return Array.from(byKey.values());
 }
 
 /**

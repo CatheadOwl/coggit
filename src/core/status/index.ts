@@ -337,13 +337,19 @@ function synthesizeNodeOperationActions(
  * surface one next step twice to a consumer (e.g. the synthesized `add` vs the
  * `missing-cognition` label under the `all` issue visibility, or the
  * handbook-bearing sync action vs the stale issue's label-only edit action).
+ *
+ * `extraStructuredActions` are dedup-only keys (never emitted): they let the
+ * caller feed structured actions from another channel — specifically descendant
+ * triage actions — so a descendant's label-only edit label is dropped too, not
+ * just the inspected node's.
  */
 function mergeSuggestedActions(
 	operationActions: readonly CoggitOperationAction[],
 	labelActions: readonly CoggitOperationAction[],
+	extraStructuredActions: readonly CoggitOperationAction[] = [],
 ): CoggitOperationAction[] {
 	const structuredKeys = new Set(
-		operationActions
+		[...operationActions, ...extraStructuredActions]
 			.filter((action) => action.operation !== undefined || action.handbookId !== undefined)
 			.map((action) => `${action.sourcePath ?? ''}\u0000${action.label}`),
 	);
@@ -466,12 +472,27 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 	);
 	const ownIssues = subtreeIssues.ownIssues;
 	const descendantIssues = subtreeIssues.descendantIssues;
+	const triage = buildTriageEntries({
+		root: input.node,
+		sourcePath: input.sourcePath,
+		cognitionPath: input.cognitionPath,
+		ownIssues,
+		descendantIssues,
+	});
 	const ownActions = issueActionsToOperationActions(ownIssues);
 	const descendantActions = issueActionsToOperationActions(descendantIssues);
 	const operationActions = synthesizeNodeOperationActions(input.node, input.sourcePath, input.handbookId);
+	// Descendant structured actions (sync/resolve/add) live in the triage channel,
+	// not in `operationActions` (which is own-node only). Feed them as dedup-only
+	// keys so a descendant's label-only edit label is dropped instead of surviving
+	// in `suggestedActions` as a duplicate remediation hint.
+	const descendantStructuredActions = triage
+		.filter((entry) => entry.relation === 'descendant')
+		.flatMap((entry) => entry.actions);
 	const suggestedActions = mergeSuggestedActions(
 		operationActions,
 		[...ownActions, ...descendantActions],
+		descendantStructuredActions,
 	);
 	const cognitionPresence = input.node.ownStatus?.coverage?.ownCognition ?? 'not-applicable';
 
@@ -493,13 +514,7 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 			descendant: descendantIssues,
 		},
 		suggestedActions,
-		triage: buildTriageEntries({
-			root: input.node,
-			sourcePath: input.sourcePath,
-			cognitionPath: input.cognitionPath,
-			ownIssues,
-			descendantIssues,
-		}),
+		triage,
 		handbookId: input.handbookId,
 	};
 }

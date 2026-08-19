@@ -284,7 +284,7 @@ suite('core operations', () => {
     }]);
   });
 
-  test('status all-issue projection keeps a descendant missing-cognition label-only action', async () => {
+  test('status all-issue projection dedups descendant missing-cognition label against triage add', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
     fs.addFile(
@@ -303,15 +303,11 @@ suite('core operations', () => {
     const result = await statusOperation([project], '.', { issueVisibility: 'all' });
 
     assert.strictEqual(result.found, true);
-    // The root has its own present cognition, so no synthesized `add` action.
-    // The descendant `missing-cognition` label survives as label-only because no
-    // operation-bearing action covers that source path.
+    // The descendant's structured `add` lives in its triage entry; the matching
+    // label-only `missing-cognition` action is deduped out of `suggestedActions`
+    // so the same remediation is not surfaced twice.
     assert.ok(!result.suggestedActions.some((action) => action.operation === 'add'));
-    assert.deepStrictEqual(result.suggestedActions, [{
-      code: 'create-cognition-file',
-      label: 'Create cognition file',
-      sourcePath: 'missing.ts',
-    }]);
+    assert.deepStrictEqual(result.suggestedActions, []);
   });
 
   test('status synthesizes a resolve next step for own maintained stale cognition', async () => {
@@ -376,8 +372,11 @@ suite('core operations', () => {
 
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.descendantStatus, 'stale');
-    assert.ok(!result.suggestedActions.some((action) => action.operation === 'resolve'));
-    assert.ok(!result.suggestedActions.some((action) => action.operation === 'add'));
+    // Descendant next steps stay in the triage channel: no resolve/add is
+    // synthesized into the top-level channel, and the descendant's label-only
+    // sync edit label is deduped against its structured triage sync-leaf action
+    // (regression guard for the redundant `hint=sync-*` presentation bug).
+    assert.deepStrictEqual(result.suggestedActions, []);
   });
 
   test('status default projection excludes untracked descendants', async () => {

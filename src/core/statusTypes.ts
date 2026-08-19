@@ -192,7 +192,7 @@ export interface NodeStatusTriageEntry {
 	 * Node-scoped workflow actions synthesized from this node's own
 	 * status/coverage signals. Structured-only (carries `operation` or
 	 * `handbookId`): label-only issue guidance stays in the entry's
-	 * `issues[].suggestedActions` and is never echoed here, so consumers never
+	 * `issues[].issue.actions` and is never echoed here, so consumers never
 	 * re-judge which actions are workflow. The own entry is facts-only and
 	 * always `[]`: the inspected node's next steps remain exclusively in the
 	 * top-level `suggestedActions` channel, so no action appears in two
