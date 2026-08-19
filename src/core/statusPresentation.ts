@@ -1,8 +1,8 @@
 import type {
   CognitionCoveragePresence,
+  LocatedStatusIssue,
   NodeStatusInspection,
   ObservedStatus,
-  SubtreeIssueQueryResult,
 } from './statusTypes';
 import { describeObservedStatus } from './status';
 
@@ -27,8 +27,11 @@ export interface StatusPresentationView {
   descendantIssues: StatusPresentationIssue[];
 }
 
-function mapIssues(
-  issues: SubtreeIssueQueryResult['ownIssues'],
+/** Map located issues into the serializable presentation issue shape. Shared
+ *  by the single-node presentation view and the subtree triage projection so
+ *  both keep the same null encoding and field conventions. */
+export function mapStatusPresentationIssues(
+  issues: readonly LocatedStatusIssue[],
 ): StatusPresentationIssue[] {
   return issues.map((located) => ({
     sourcePath: located.relativePath,
@@ -42,8 +45,8 @@ function mapIssues(
 export function projectStatusPresentation(
   inspection: NodeStatusInspection,
 ): StatusPresentationView {
-  const ownIssues = mapIssues(inspection.subtreeIssues.own);
-  const descendantIssues = mapIssues(inspection.subtreeIssues.descendant);
+  const ownIssues = mapStatusPresentationIssues(inspection.subtreeIssues.own);
+  const descendantIssues = mapStatusPresentationIssues(inspection.subtreeIssues.descendant);
 
   return {
     sourcePath: inspection.sourcePath,

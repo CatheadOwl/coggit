@@ -132,6 +132,11 @@ export type {
   StatusPresentationIssue,
   StatusPresentationView,
 } from './statusPresentation';
+export { projectStatusTriage } from './statusTriage';
+export type {
+  StatusTriageEntry,
+  StatusTriageView,
+} from './statusTriage';
 export {
   normalizeSourcePathInput,
   toCognitionFileUri,
@@ -186,6 +191,7 @@ export type {
   LocatedStatusIssue,
   MisplacedCognitionEntry,
   NodeStatusResult,
+  NodeStatusTriageEntry,
   ObservedStatus,
   OrphanedCognitionEntry,
   StatusIssueVisibility,

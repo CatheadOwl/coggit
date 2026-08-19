@@ -71,6 +71,7 @@ suite('mcp operation DTO adapter', () => {
         issueSummary: { total: 0, own: 0, descendant: 0 },
         subtreeIssues: { own: [], descendant: [] },
         suggestedActions: [],
+        triage: [],
         handbookId: 'leaf',
       },
     };
@@ -126,6 +127,7 @@ suite('mcp operation DTO adapter', () => {
         issueSummary: { total: 1, own: 1, descendant: 0 },
         subtreeIssues: { own: [], descendant: [] },
         suggestedActions: staleActions,
+        triage: [],
         handbookId: 'leaf',
       },
     };
@@ -148,6 +150,103 @@ suite('mcp operation DTO adapter', () => {
     // The ordered list is the source of truth for stale maintenance: the
     // top-level read-before-edit entry is suppressed, not duplicated.
     assert.deepStrictEqual(structuredContent.nextActions, []);
+
+    assert.deepStrictEqual(
+      z.object(statusOperationOutputSchema).parse(structuredContent),
+      structuredContent,
+    );
+  });
+
+  test('status triage maps descendant actions and never widens the top-level handbook suppression', () => {
+    const descendantActions = [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookId: 'leaf' as const,
+      sourcePath: 'src/app/main.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      operation: 'resolve' as const,
+      sourcePath: 'src/app/main.ts',
+    }];
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/app',
+      nodeKind: 'folder',
+      project: null,
+      cognitionPath: 'src/app/README.md',
+      status: 'stale',
+      ownStatus: 'fresh',
+      descendantStatus: 'stale',
+      staleAction: null,
+      issueCount: 1,
+      ownIssueCount: 0,
+      descendantIssueCount: 1,
+      issues: [],
+      // Descendant-scoped structured actions never enter the top-level
+      // channel; only the legacy label-only issue echo does.
+      suggestedActions: [{
+        code: 'sync-cognition-with-source',
+        label: 'Sync cognition with source changes',
+        sourcePath: 'src/app/main.ts',
+      }],
+      handbookId: 'skeleton',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/app',
+        cognitionPath: 'src/app/README.md',
+        cognitionPresence: 'present',
+        nodeKind: 'folder',
+        status: 'stale',
+        ownStatus: 'fresh',
+        descendantStatus: 'stale',
+        issueSummary: { total: 1, own: 0, descendant: 1 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: [],
+        triage: [{
+          sourcePath: 'src/app/main.ts',
+          cognitionPath: 'src/app/main.ts.md',
+          nodeKind: 'file',
+          relation: 'descendant',
+          issues: [],
+          actions: descendantActions,
+        }],
+        handbookId: 'skeleton',
+      },
+    };
+
+    const structuredContent = statusStructuredContent(statusMcpView(result));
+
+    // The triage entry maps node-scoped actions to MCP addressing exactly as
+    // top-level actions are mapped.
+    assert.deepStrictEqual(structuredContent.triage, {
+      sourcePath: 'src/app',
+      issueCount: 1,
+      entries: [{
+        sourcePath: 'src/app/main.ts',
+        cognitionPath: 'src/app/main.ts.md',
+        nodeKind: 'file',
+        relation: 'descendant',
+        issues: [],
+        suggestedActions: [{
+          code: 'sync-cognition-with-source',
+          label: 'Sync cognition with source changes',
+          handbookUri: 'coggit://handbook/leaf',
+          sourcePath: 'src/app/main.ts',
+        }, {
+          code: 'resolve-stale-cognition',
+          label: 'After syncing, accept the pair as reviewed',
+          tool: 'coggit_resolve',
+          sourcePath: 'src/app/main.ts',
+        }],
+      }],
+    });
+    // The suppression key only scans top-level suggestedActions, so the
+    // descendant handbook action must not suppress the inspected folder's own
+    // top-level read-before-edit fallback.
+    assert.strictEqual(structuredContent.nextActions.length, 1);
+    assert.strictEqual(structuredContent.nextActions[0].resourceUri, 'coggit://handbook/skeleton');
 
     assert.deepStrictEqual(
       z.object(statusOperationOutputSchema).parse(structuredContent),
@@ -185,6 +284,7 @@ suite('mcp operation DTO adapter', () => {
         issueSummary: { total: 0, own: 0, descendant: 0 },
         subtreeIssues: { own: [], descendant: [] },
         suggestedActions: [],
+        triage: [],
         handbookId: 'skeleton',
       },
     };
@@ -509,6 +609,7 @@ suite('mcp operation DTO adapter', () => {
           operation: 'add',
           sourcePath: 'src/main.ts',
         }],
+        triage: [],
         handbookId: 'leaf',
       },
     };
@@ -610,6 +711,7 @@ suite('mcp operation DTO adapter', () => {
           }],
         },
         suggestedActions: [],
+        triage: [],
         handbookId: 'skeleton',
       },
     };

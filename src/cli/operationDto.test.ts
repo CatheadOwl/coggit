@@ -161,6 +161,7 @@ suite('CLI operation DTO surfacing', () => {
           operation: 'add',
           sourcePath: 'src/missing.ts',
         }],
+        triage: [],
         handbookId: 'leaf',
       },
     };
@@ -209,6 +210,7 @@ suite('CLI operation DTO surfacing', () => {
         issueSummary: { total: 1, own: 1, descendant: 0 },
         subtreeIssues: { own: [], descendant: [] },
         suggestedActions: staleActions,
+        triage: [],
         handbookId: 'leaf',
       },
     };
@@ -218,6 +220,68 @@ suite('CLI operation DTO surfacing', () => {
     assert.match(text, /- coggit handbook leaf: Sync cognition with source changes/);
     assert.match(text, /- coggit resolve src\/stale\.ts: After syncing, accept the pair as reviewed/);
     assert.ok(text.indexOf('coggit handbook leaf') < text.indexOf('coggit resolve'));
+  });
+
+  test('status folder hit renders per-descendant triage steps under their own node', () => {
+    const descendantActions = [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookId: 'leaf' as const,
+      sourcePath: 'src/app/main.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      operation: 'resolve' as const,
+      sourcePath: 'src/app/main.ts',
+    }];
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/app',
+      nodeKind: 'folder',
+      project: null,
+      cognitionPath: 'src/app/README.md',
+      status: 'stale',
+      ownStatus: 'fresh',
+      descendantStatus: 'stale',
+      staleAction: null,
+      issueCount: 1,
+      ownIssueCount: 0,
+      descendantIssueCount: 1,
+      issues: [],
+      // The own entry is facts-only: the top-level channel carries the
+      // inspected node's next steps only (none here), so no Suggested block.
+      suggestedActions: [],
+      handbookId: 'skeleton',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/app',
+        cognitionPath: 'src/app/README.md',
+        cognitionPresence: 'present',
+        nodeKind: 'folder',
+        status: 'stale',
+        ownStatus: 'fresh',
+        descendantStatus: 'stale',
+        issueSummary: { total: 1, own: 0, descendant: 1 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: [],
+        triage: [{
+          sourcePath: 'src/app/main.ts',
+          cognitionPath: 'src/app/main.ts.md',
+          nodeKind: 'file',
+          relation: 'descendant',
+          issues: [],
+          actions: descendantActions,
+        }],
+        handbookId: 'skeleton',
+      },
+    };
+    const text = renderStatusOperationResult(result);
+    assert.match(text, /Subtree triage:/);
+    assert.match(text, /- src\/app\/main\.ts \(descendant\):/);
+    assert.match(text, /- coggit handbook leaf: Sync cognition with source changes/);
+    assert.match(text, /- coggit resolve src\/app\/main\.ts: After syncing, accept the pair as reviewed/);
+    assert.doesNotMatch(text, /Suggested actions:/);
   });
 
   test('status hit without operation actions omits the suggested-actions section', () => {
@@ -250,6 +314,7 @@ suite('CLI operation DTO surfacing', () => {
         issueSummary: { total: 0, own: 0, descendant: 0 },
         subtreeIssues: { own: [], descendant: [] },
         suggestedActions: [],
+        triage: [],
         handbookId: 'leaf',
       },
     };

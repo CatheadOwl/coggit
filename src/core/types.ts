@@ -21,6 +21,7 @@ export type {
 	Evidence,
 	StatusResult,
 	NodeStatusInspection,
+	NodeStatusTriageEntry,
 	SourceFileInfo,
 	CognitionFileInfo,
 	LinkCheckResult,

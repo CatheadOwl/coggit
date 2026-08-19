@@ -38,6 +38,7 @@ function inspection(): NodeStatusInspection {
       }],
     },
     suggestedActions: [],
+    triage: [],
     handbookId: 'skeleton',
   };
 }

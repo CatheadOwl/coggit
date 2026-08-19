@@ -94,6 +94,11 @@ export type {
   StatusPresentationIssue,
   StatusPresentationView,
 } from './statusPresentation';
+export { projectStatusTriage } from './statusTriage';
+export type {
+  StatusTriageEntry,
+  StatusTriageView,
+} from './statusTriage';
 export {
   buildMappingIndex,
 } from './snapshot';
@@ -166,6 +171,7 @@ export type {
   MisplacedCognitionEntry,
   NodeStatusInspection,
   NodeStatusResult,
+  NodeStatusTriageEntry,
   ObservedStatus,
   OrphanedCognitionEntry,
   StrayCognitionEntry,

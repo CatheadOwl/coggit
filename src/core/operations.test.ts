@@ -751,4 +751,56 @@ suite('core operations', () => {
     assert.ok(result.pathHints.includes('coggit/src/core/watchPipeline.ts'));
     assert.ok(result.pathHintMessage);
   });
+
+  test('status triage exposes the descendant ordered pair without touching the top-level channel', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
+    fs.addFile(
+      '/workspace/cognition/stale.ts.md',
+      '# stale\n\nThis cognition describes earlier source behavior in enough detail.',
+      1000,
+    );
+    fs.addFile(
+      '/workspace/cognition/README.md',
+      [
+        '# root',
+        '',
+        'This cognition describes the root source folder and its maintained structure.',
+        'It is intentionally substantive so the root fixture has no own template issue.',
+        'The test isolates descendant status filtering from root-level cognition health.',
+      ].join('\n'),
+      3000,
+    );
+    const project = await makeProject(fs);
+
+    const result = await statusOperation([project], '.');
+
+    assert.strictEqual(result.found, true);
+    assert.ok(result.inspection);
+    // The top-level channel stays the inspected node's direct next-step
+    // surface: no structured (operation- or handbook-bearing) action for the
+    // descendant appears there — only the legacy label-only issue echo.
+    assert.ok(result.suggestedActions.every(
+      (action) => action.operation === undefined && action.handbookId === undefined,
+    ));
+    // The triage channel carries the descendant-scoped ordered pair: the
+    // handbook-bearing sync step leads, the resolve accept step trails, both
+    // re-scoped to the descendant sourcePath.
+    const entries = result.inspection.triage;
+    assert.strictEqual(entries.length, 1);
+    const entry = entries[0];
+    assert.strictEqual(entry.relation, 'descendant');
+    assert.strictEqual(entry.sourcePath, 'stale.ts');
+    assert.deepStrictEqual(entry.actions.slice(0, 2), [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookId: 'leaf',
+      sourcePath: 'stale.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      operation: 'resolve',
+      sourcePath: 'stale.ts',
+    }]);
+  });
 });

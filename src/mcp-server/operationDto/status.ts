@@ -3,8 +3,10 @@ import { z } from 'zod';
 import {
   projectStatusMissPresentation,
   projectStatusPresentation,
+  projectStatusTriage,
   type StatusOperationResult,
   type StatusPresentationView,
+  type StatusTriageView,
 } from '../../core/index.js';
 import {
   createHandbookMaintenanceAction,
@@ -15,6 +17,21 @@ import {
   operationActionSchema,
   toMcpOperationAction,
 } from './shared.js';
+
+export const statusTriageEntrySchema = z.object({
+  sourcePath: z.string(),
+  cognitionPath: z.string().nullable(),
+  nodeKind: z.enum(['root', 'folder', 'file', 'error']),
+  relation: z.enum(['own', 'descendant']),
+  issues: z.array(mcpStatusIssueSchema),
+  suggestedActions: z.array(operationActionSchema),
+});
+
+export const statusTriageSchema = z.object({
+  sourcePath: z.string(),
+  issueCount: z.number().int().nonnegative(),
+  entries: z.array(statusTriageEntrySchema),
+});
 
 export const statusOperationOutputSchema = {
   sourcePath: z.string(),
@@ -28,6 +45,8 @@ export const statusOperationOutputSchema = {
   handbookUri: z.string().nullable(),
   nextActions: z.array(mcpMaintenanceNextActionSchema),
   suggestedActions: z.array(operationActionSchema),
+  /** Subtree triage projection, present on a hit only. Absent on a miss. */
+  triage: statusTriageSchema.optional(),
   pathHints: z.array(z.string()),
   pathMissMessage: z.string().optional(),
   pathHintMessage: z.string().optional(),
@@ -47,9 +66,33 @@ export interface StatusMcpView extends StatusPresentationView {
   handbookUri: string | null;
   nextActions: MaintenanceNextAction[];
   suggestedActions: Array<z.infer<typeof operationActionSchema>>;
+  /** Subtree triage projection, present on a hit only. */
+  triage?: z.infer<typeof statusTriageSchema>;
   pathHints: string[];
   pathMissMessage?: string;
   pathHintMessage?: string;
+}
+
+/**
+ * Map the core triage view to MCP addressing: each entry's node-scoped
+ * actions go through the same `operation` → tool / `handbookId` → resource
+ * URI mapping as the top-level actions. Descendant actions live only here,
+ * never in top-level `suggestedActions`, so the step-local handbook
+ * suppression key never sees them.
+ */
+function toMcpTriageView(triage: StatusTriageView): z.infer<typeof statusTriageSchema> {
+  return {
+    sourcePath: triage.sourcePath,
+    issueCount: triage.issueCount,
+    entries: triage.entries.map((entry) => ({
+      sourcePath: entry.sourcePath,
+      cognitionPath: entry.cognitionPath,
+      nodeKind: entry.nodeKind,
+      relation: entry.relation,
+      issues: entry.issues,
+      suggestedActions: entry.suggestedActions.map(toMcpOperationAction),
+    })),
+  };
 }
 
 function statusNextActions(input: {
@@ -99,6 +142,7 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
     handbookUri: resolvedHandbookUri,
     nextActions: hasStepLocalHandbookAction ? [] : statusNextActions({ handbookUri: resolvedHandbookUri }),
     suggestedActions: result.suggestedActions.map(toMcpOperationAction),
+    triage: toMcpTriageView(projectStatusTriage(inspection)),
     pathHints: result.pathHints,
   };
 }

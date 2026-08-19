@@ -7,6 +7,7 @@ import type {
 	LocatedStatusIssue,
 	NodeStatusInspection,
 	NodeStatusResult,
+	NodeStatusTriageEntry,
 	ObservedStatus,
 	Reason,
 	SourceFileInfo,
@@ -352,6 +353,115 @@ function mergeSuggestedActions(
 	return uniqueOperationActions([...operationActions, ...survivingLabels]);
 }
 
+/**
+ * Handbook id for a descendant triage entry, derived from the node kind with
+ * the same mapping the inspected node receives (file → `leaf`, folder/root →
+ * `skeleton`). Error nodes carry no handbook guidance: triage must not
+ * synthesize authoring or accept steps for them until a future error-node
+ * contract defines such routing.
+ */
+function triageHandbookId(node: CoggitTreeNode): 'leaf' | 'skeleton' | null {
+	if (node.kind === 'error') {
+		return null;
+	}
+	return node.kind === 'file' ? 'leaf' : 'skeleton';
+}
+
+function indexSubtreeNodes(root: CoggitTreeNode): Map<string, CoggitTreeNode> {
+	const nodesById = new Map<string, CoggitTreeNode>();
+	const visit = (current: CoggitTreeNode) => {
+		nodesById.set(current.id, current);
+		for (const child of current.children ?? []) {
+			visit(child);
+		}
+	};
+	visit(root);
+	return nodesById;
+}
+
+/**
+ * Synthesize node-scoped workflow actions for a descendant triage entry from
+ * the descendant node's own status/coverage signals — the same
+ * node-signal rules the inspected node receives (`add` for missing cognition,
+ * the ordered handbook-sync-then-resolve pair for maintained stale), re-scoped
+ * to the descendant `sourcePath` and the descendant's handbook id. Never
+ * derived from issue labels or diagnostic codes; error nodes get no
+ * synthesized actions.
+ */
+function synthesizeDescendantTriageActions(
+	node: CoggitTreeNode,
+	issues: readonly LocatedStatusIssue[],
+): CoggitOperationAction[] {
+	const labelActions = issueActionsToOperationActions(issues);
+	if (node.kind === 'error') {
+		return labelActions;
+	}
+	const operationActions = synthesizeNodeOperationActions(
+		node,
+		node.relativePath,
+		triageHandbookId(node),
+	);
+	return mergeSuggestedActions(operationActions, labelActions);
+}
+
+/**
+ * Group the projected issue set by issue-bearing node into triage entries.
+ * The own entry (when the inspected node has issues) leads and is facts-only:
+ * the inspected node's next steps stay exclusively in the top-level
+ * `suggestedActions` channel, so no action appears in two channels.
+ * Descendant entries carry node-scoped actions synthesized from node signals,
+ * which requires the matched tree nodes — inspection alone does not carry
+ * each descendant's own status/coverage.
+ */
+function buildTriageEntries(input: {
+	root: CoggitTreeNode;
+	sourcePath: string;
+	cognitionPath: string | null;
+	ownIssues: readonly LocatedStatusIssue[];
+	descendantIssues: readonly LocatedStatusIssue[];
+}): NodeStatusTriageEntry[] {
+	const entries: NodeStatusTriageEntry[] = [];
+
+	if (input.ownIssues.length > 0) {
+		entries.push({
+			sourcePath: input.sourcePath,
+			cognitionPath: input.cognitionPath,
+			nodeKind: input.root.kind,
+			relation: 'own',
+			issues: [...input.ownIssues],
+			actions: [],
+		});
+	}
+
+	const nodesById = indexSubtreeNodes(input.root);
+	const issuesByNode = new Map<string, LocatedStatusIssue[]>();
+	for (const located of input.descendantIssues) {
+		const group = issuesByNode.get(located.nodeId);
+		if (group) {
+			group.push(located);
+		} else {
+			issuesByNode.set(located.nodeId, [located]);
+		}
+	}
+
+	for (const [nodeId, issues] of issuesByNode) {
+		const first = issues[0];
+		const node = nodesById.get(nodeId);
+		entries.push({
+			sourcePath: first.relativePath,
+			cognitionPath: first.cognitionPath,
+			nodeKind: first.nodeKind,
+			relation: 'descendant',
+			issues,
+			actions: node
+				? synthesizeDescendantTriageActions(node, issues)
+				: issueActionsToOperationActions(issues),
+		});
+	}
+
+	return entries;
+}
+
 export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInspection {
 	const subtreeIssues = projectStatusIssues(
 		querySubtreeIssues(input.node),
@@ -386,6 +496,13 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 			descendant: descendantIssues,
 		},
 		suggestedActions,
+		triage: buildTriageEntries({
+			root: input.node,
+			sourcePath: input.sourcePath,
+			cognitionPath: input.cognitionPath,
+			ownIssues,
+			descendantIssues,
+		}),
 		handbookId: input.handbookId,
 	};
 }

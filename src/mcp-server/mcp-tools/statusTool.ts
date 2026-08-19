@@ -88,6 +88,27 @@ function statusGuidanceText(result: ReturnType<typeof statusMcpView>): string {
     ].join('\n'));
   }
 
+  // Subtree workflow channel: triage entries are the authoritative surface for
+  // descendant-scoped actions; top-level actions stay the inspected node's
+  // direct next steps, so no cross-channel deduplication is needed.
+  const triageLines: string[] = [];
+  for (const entry of result.triage?.entries ?? []) {
+    const entryActionable = entry.suggestedActions
+      .filter((action) => action.tool || action.handbookUri)
+      .map((action) => formatOperationAction(action));
+    if (entryActionable.length === 0) {
+      continue;
+    }
+    triageLines.push(`- ${entry.sourcePath}:`);
+    triageLines.push(...entryActionable.map((action) => `  - ${action}`));
+  }
+  if (triageLines.length > 0) {
+    sections.push([
+      'Subtree triage (per-descendant maintenance steps):',
+      ...triageLines,
+    ].join('\n'));
+  }
+
   if (result.nextActions.length > 0) {
     sections.push([
       'Maintenance guidance:',

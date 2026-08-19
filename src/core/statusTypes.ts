@@ -167,6 +167,37 @@ export interface StatusResult {
 	computedAt: number;
 }
 
+/**
+ * Per-node triage fact synthesized during inspection: one entry per
+ * issue-bearing node in the projected issue set, grouping that node's issues
+ * with its node-scoped workflow actions. This is the subtree-maintenance
+ * counterpart to the single-node `suggestedActions` channel; the
+ * [[statusTriage.ts]] projection maps these facts into the adapter-ready
+ * `StatusTriageView`.
+ */
+export interface NodeStatusTriageEntry {
+	/** Source-root-relative path of the issue-bearing node. */
+	sourcePath: string;
+	/**
+	 * Expected paired cognition path, cognition-root-relative; same expected-path
+	 * semantics and null encoding as `NodeStatusInspection.cognitionPath`.
+	 */
+	cognitionPath: string | null;
+	nodeKind: CoggitNodeKind;
+	/** Whether this entry is the inspected node itself or a descendant. */
+	relation: 'own' | 'descendant';
+	/** This node's issues under the selected issue visibility. */
+	issues: LocatedStatusIssue[];
+	/**
+	 * Node-scoped workflow actions synthesized from this node's own
+	 * status/coverage signals (never from issue labels/codes). The own entry is
+	 * facts-only and always `[]`: the inspected node's next steps remain
+	 * exclusively in the top-level `suggestedActions` channel, so no action
+	 * appears in two channels. Error nodes carry no synthesized actions.
+	 */
+	actions: CoggitOperationAction[];
+}
+
 export interface NodeStatusInspection {
 	sourcePath: string;
 	/**
@@ -206,6 +237,14 @@ export interface NodeStatusInspection {
 		descendant: LocatedStatusIssue[];
 	};
 	suggestedActions: CoggitOperationAction[];
+	/**
+	 * One entry per issue-bearing node in the projected issue set: the own
+	 * entry first (when the inspected node has issues), then descendant entries
+	 * in subtree collection order. Descendant entries carry node-scoped actions
+	 * synthesized from node signals; adapters render subtree workflow from these
+	 * entries, not from `suggestedActions`.
+	 */
+	triage: NodeStatusTriageEntry[];
 	handbookId: 'leaf' | 'skeleton' | null;
 }
 
