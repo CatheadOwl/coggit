@@ -1,8 +1,4 @@
 export {
-  renderNodeStatusInspectionText,
-  renderStatusSectionsText,
-} from './status';
-export {
   renderNodeSnapshotTreeText,
   renderSnapshotTreeText,
   type SnapshotScope,

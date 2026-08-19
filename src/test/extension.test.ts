@@ -6,7 +6,7 @@ import { __testing__ as statusTesting, collectSubtreeIssues, countSubtreeIssues,
 import { clipboardText, tooltipText } from '../format/nodeFormat.js';
 import { snapshotTreeText } from '../format/snapshotFormat.js';
 import { nodeClipboardStatusText, nodeTooltip } from '../format/nodePresentation.js';
-import { renderNodeStatusInspectionText } from '../render/status.js';
+import { renderStatusAgentInspectionText } from '../core/statusAgentPresentation.js';
 import { CoggitTreeDataProvider } from '../runtime/vscode/tree/coggitTreeDataProvider';
 import { __testing__ as gitignoreTesting } from '../core/gitignore';
 import { getParentDir, getProjectRootPath, inferSourceUriCandidatesFromCognitionUri, normalizeSourcePathInput, resolveConfigRoots, toCognitionFilePath, toCognitionFileUri, toCognitionFolderReadmePath, toCognitionFolderReadmeUri } from '../core/mapping';
@@ -737,12 +737,13 @@ suite('CogGit Ghost Tree', () => {
 					handbookId: 'skeleton',
 				});
 
-				const text = renderNodeStatusInspectionText(inspection);
+				const text = renderStatusAgentInspectionText(inspection);
 
-				assert.match(text, /\nOwn issues: 0\n\nDescendant issues: 1\n- src\/foo\.ts: \[warning\] Stale cognition/);
-				assert.match(text, /- src\/foo\.ts: \[warning\] Stale cognition\. Suggested actions: Sync cognition with source changes; Other action\./);
-				assert.doesNotMatch(text, /\nIssues:\n/);
+				assert.match(text, /Legend:/);
+				assert.match(text, /Actions:/);
+				assert.match(text, /WARN \| stale-cognition \| source=src\/foo\.ts \| actions=sync-leaf,resolve/);
 				assert.doesNotMatch(text, /\nSuggested actions:\n/);
+				assert.doesNotMatch(text, /\nSubtree triage:\n/);
 			});
 
 			test('status presentation labels an expected but uncreated cognition path', () => {
@@ -757,12 +758,13 @@ suite('CogGit Ghost Tree', () => {
 					handbookId: 'skeleton',
 				});
 
-				const cliText = renderNodeStatusInspectionText(inspection);
+				const cliText = renderStatusAgentInspectionText(inspection);
 				const tooltip = nodeTooltip(node);
 				const clipboard = nodeClipboardStatusText(node);
 
 				assert.match(cliText, /^Source: coggit_prompt\/evals\/runs\nCognition: Not created \(add on demand\)/);
 				assert.doesNotMatch(cliText, /Cognition: coggit_prompt\/evals\/runs\/README\.md/);
+				assert.doesNotMatch(cliText, /^Actions:/m);
 				assert.strictEqual(tooltip, [
 					'**Source**: coggit_prompt/evals/runs',
 					'**Cognition**: Not created (add on demand)',
@@ -785,7 +787,7 @@ suite('CogGit Ghost Tree', () => {
 					handbookId: 'skeleton',
 				});
 
-				assert.doesNotMatch(renderNodeStatusInspectionText(inspection), /^Cognition:/m);
+				assert.doesNotMatch(renderStatusAgentInspectionText(inspection), /^Cognition:/m);
 				assert.strictEqual(nodeTooltip(node), [
 					'**Source**: broken',
 					'',

@@ -122,6 +122,19 @@ export {
   summarizeRepresentativeMtime,
 } from './status';
 export {
+  projectStatusAgentPresentation,
+  renderStatusAgentInspectionText,
+  renderStatusAgentPresentation,
+} from './statusAgentPresentation';
+export type {
+  StatusAgentActionLegendEntry,
+  StatusAgentActionRole,
+  StatusAgentIssueLegendEntry,
+  StatusAgentIssueRow,
+  StatusAgentPresentation,
+  StatusAgentSeverityLevel,
+} from './statusAgentPresentation';
+export {
   projectStatusMissPresentation,
   projectStatusPresentation,
   renderStatusPresentation,

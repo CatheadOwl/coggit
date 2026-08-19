@@ -4,8 +4,7 @@ import { z } from 'zod';
 import {
   pathHintsTryText,
   pathMissMessage,
-  projectStatusPresentation,
-  renderStatusPresentation,
+  renderStatusAgentInspectionText,
   statusOperation,
 } from '../../core/index.js';
 import type { StatusOperationResult } from '../../core/index.js';
@@ -17,7 +16,7 @@ import {
   statusOperationOutputSchema,
   statusStructuredContent,
 } from '../operationDto/index.js';
-import { formatOperationAction, formatProjectContext, joinMcpSections, type ToolContent } from './toolShared.js';
+import { formatProjectContext, joinMcpSections, type ToolContent } from './toolShared.js';
 
 export function registerStatusTool(
   server: McpServer,
@@ -44,7 +43,7 @@ export function registerStatusTool(
       const content: ToolContent[] = [
         {
           type: 'text' as const,
-          text: joinMcpSections(statusText(result), statusGuidanceText(view)),
+          text: statusText(result),
         },
       ];
 
@@ -71,59 +70,10 @@ function statusText(result: StatusOperationResult): string {
   }
   return joinMcpSections(
     result.project ? formatProjectContext([result.project]) : '',
-    renderStatusPresentation(projectStatusPresentation(result.inspection), 'text'),
+    renderStatusAgentInspectionText(result.inspection),
   );
 }
 
-function statusGuidanceText(result: ReturnType<typeof statusMcpView>): string {
-  const sections: string[] = [];
-
-  const actionable = result.suggestedActions
-    .filter((action) => action.tool || action.handbookUri)
-    .map((action) => formatOperationAction(action));
-  if (actionable.length > 0) {
-    sections.push([
-      'Suggested next actions:',
-      ...actionable.map((action) => `- ${action}`),
-    ].join('\n'));
-  }
-
-  // Subtree workflow channel: triage entries are the authoritative surface for
-  // descendant-scoped actions; top-level actions stay the inspected node's
-  // direct next steps, so no cross-channel deduplication is needed.
-  const triageLines: string[] = [];
-  for (const entry of result.triage?.entries ?? []) {
-    const entryActionable = entry.suggestedActions
-      .filter((action) => action.tool || action.handbookUri)
-      .map((action) => formatOperationAction(action));
-    if (entryActionable.length === 0) {
-      continue;
-    }
-    triageLines.push(`- ${entry.sourcePath}:`);
-    triageLines.push(...entryActionable.map((action) => `  - ${action}`));
-  }
-  if (triageLines.length > 0) {
-    sections.push([
-      'Subtree triage (per-descendant maintenance steps):',
-      ...triageLines,
-    ].join('\n'));
-  }
-
-  if (result.nextActions.length > 0) {
-    sections.push([
-      'Maintenance guidance:',
-      'If you will maintain this cognition, read the matching handbook before editing:',
-      ...result.nextActions.map((action) => {
-        if (action.kind === 'read-resource' && action.resourceUri) {
-          return `- Read ${action.resourceUri}: ${action.label}`;
-        }
-        if (action.kind === 'read-cognition' && action.cognitionPath) {
-          return `- Read cognition ${action.cognitionPath}: ${action.label}`;
-        }
-        return `- ${action.label}`;
-      }),
-    ].join('\n'));
-  }
-
-  return sections.join('\n\n');
-}
+export const __testing__ = {
+  statusText,
+};
