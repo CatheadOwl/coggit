@@ -236,11 +236,7 @@ suite('agent-facing status presentation', () => {
       descendantStatus: 'stale',
       issueSummary: { total: 1, own: 0, descendant: 1 },
       subtreeIssues: { own: [], descendant: [template] },
-      suggestedActions: [{
-        code: 'fill-in-cognition-content',
-        label: 'Fill in cognition content',
-        sourcePath: 'src/template.ts',
-      }],
+      suggestedActions: [],
       triage: [{
         sourcePath: 'src/template.ts',
         cognitionPath: 'src/template.ts.md',

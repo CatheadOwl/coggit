@@ -777,11 +777,9 @@ suite('core operations', () => {
     assert.strictEqual(result.found, true);
     assert.ok(result.inspection);
     // The top-level channel stays the inspected node's direct next-step
-    // surface: no structured (operation- or handbook-bearing) action for the
-    // descendant appears there — only the legacy label-only issue echo.
-    assert.ok(result.suggestedActions.every(
-      (action) => action.operation === undefined && action.handbookId === undefined,
-    ));
+    // surface: all descendant actions (structured and label-only) stay in the
+    // triage channel.
+    assert.deepStrictEqual(result.suggestedActions, []);
     // The triage channel carries the descendant-scoped ordered pair: the
     // handbook-bearing sync step leads, the resolve accept step trails, both
     // re-scoped to the descendant sourcePath. The entry action channel is

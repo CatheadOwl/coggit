@@ -119,25 +119,39 @@ export function projectStatusAgentPresentation(
     ...inspection.suggestedActions,
     ...inspection.triage.flatMap((entry) => entry.actions),
   ];
-  // Label-only remediation actions live in `suggestedActions` (own and
-  // descendant issue labels merged by `inspectNodeStatus`), keyed by source
-  // path and label. They render as issue-legend `hint=` tags. Attribution is by
-  // label match so a hint lands on its specific issue tag — a sourcePath-level
-  // join alone would smear one issue's hint across every issue of a
-  // multi-issue source.
-  const labelOnlyActionsBySourcePath = new Map<string, Map<string, CoggitOperationAction>>();
+  // Label-only remediation hints are derived from subtree issue actions that
+  // have no structured counterpart in the same node's action channel. For own
+  // issues the structured channel is `suggestedActions`; for descendant issues
+  // it is the triage entry's `actions`. A label-only issue action whose label
+  // matches a structured action for the same source path produces no hint.
+  const structuredKeys = new Set<string>();
   for (const action of inspection.suggestedActions) {
-    if (
-      action.operation === undefined
-      && action.handbookId === undefined
-      && action.sourcePath !== undefined
-    ) {
-      let byLabel = labelOnlyActionsBySourcePath.get(action.sourcePath);
+    if (action.operation !== undefined || action.handbookId !== undefined) {
+      structuredKeys.add(`${action.sourcePath ?? ''}\u0000${action.label}`);
+    }
+  }
+  for (const entry of inspection.triage) {
+    for (const action of entry.actions) {
+      structuredKeys.add(`${action.sourcePath ?? ''}\u0000${action.label}`);
+    }
+  }
+  const labelOnlyActionsBySourcePath = new Map<string, Map<string, CoggitOperationAction>>();
+  for (const located of [
+    ...inspection.subtreeIssues.own,
+    ...inspection.subtreeIssues.descendant,
+  ]) {
+    for (const action of located.issue.actions) {
+      const key = `${located.relativePath}\u0000${action.label}`;
+      if (structuredKeys.has(key)) {
+        continue;
+      }
+      const code = action.label.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-+|-+$/gu, '') || 'inspect';
+      let byLabel = labelOnlyActionsBySourcePath.get(located.relativePath);
       if (byLabel === undefined) {
         byLabel = new Map();
-        labelOnlyActionsBySourcePath.set(action.sourcePath, byLabel);
+        labelOnlyActionsBySourcePath.set(located.relativePath, byLabel);
       }
-      byLabel.set(action.label, action);
+      byLabel.set(action.label, { code, label: action.label, sourcePath: located.relativePath });
     }
   }
 

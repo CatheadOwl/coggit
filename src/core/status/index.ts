@@ -269,21 +269,11 @@ function uniqueOperationActions(actions: readonly CoggitOperationAction[]): Cogg
 }
 
 /**
- * Synthesize tool-backed next-step actions from first-class node-level status
- * signals rather than issue labels:
- * - `ownCognition === 'missing'` → `add` (materialize the paired cognition).
- * - own maintained cognition is stale → the ordered pair-maintenance steps:
- *   a handbook-bearing authoring action (sync, read-before-edit) *before* the
- *   `resolve` accept action, mirroring the canonical loop's edit-on-demand →
- *   resolve ordering. The sync step is a `handbookId` reference, not an
- *   operation id — core does not invent an edit/sync operation. When no
- *   handbook id is available (defensive; maintained nodes map to leaf or
- *   skeleton), the sync step is omitted rather than degraded to label-only.
- *
- * Descendant-only stale status must not synthesize a `resolve` for the parent:
- * only the current node's own maintained cognition being stale qualifies. Issue
- * labels stay label-only through `issueActionsToOperationActions`; this helper
- * is the single place where a node-level signal maps to an operation id.
+ * Synthesize tool-backed next-step actions from node-level status signals:
+ * - `ownCognition === 'missing'` → `add`
+ * - own maintained cognition is stale → ordered pair: handbook-bearing sync
+ *   action, then `resolve` accept action. Sync step is omitted when no
+ *   handbook id is available.
  */
 function synthesizeNodeOperationActions(
 	node: CoggitTreeNode,
@@ -309,8 +299,7 @@ function synthesizeNodeOperationActions(
 		if (handbookId !== null) {
 			actions.push({
 				code: 'sync-cognition-with-source',
-				// Reuses the exact issue edit-work label (per node kind) so the
-				// human edit path stays single-source and dedups by label match.
+				// Reuses the exact issue label so dedup matches by label.
 				label: node.kind === 'file'
 					? SYNC_COGNITION_ACTION_LABEL
 					: SYNC_FOLDER_README_ACTION_LABEL,
@@ -330,18 +319,9 @@ function synthesizeNodeOperationActions(
 }
 
 /**
- * Merge structured actions (from node signals) with label-only issue actions
- * (edit work). "Structured" means carrying an `operation` *or* a `handbookId`:
- * both are adapter-mappable, so a label-only action duplicating a structured
- * action for the same source path and label is dropped — keeping both would
- * surface one next step twice to a consumer (e.g. the synthesized `add` vs the
- * `missing-cognition` label under the `all` issue visibility, or the
- * handbook-bearing sync action vs the stale issue's label-only edit action).
- *
- * `extraStructuredActions` are dedup-only keys (never emitted): they let the
- * caller feed structured actions from another channel — specifically descendant
- * triage actions — so a descendant's label-only edit label is dropped too, not
- * just the inspected node's.
+ * Merge structured actions with label-only issue actions, dropping label-only
+ * duplicates that share the same source path and label. `extraStructuredActions`
+ * are dedup-only keys (never emitted).
  */
 function mergeSuggestedActions(
 	operationActions: readonly CoggitOperationAction[],
@@ -386,15 +366,10 @@ function indexSubtreeNodes(root: CoggitTreeNode): Map<string, CoggitTreeNode> {
 }
 
 /**
- * Synthesize node-scoped workflow actions for a descendant triage entry from
- * the descendant node's own status/coverage signals — the same
- * node-signal rules the inspected node receives (`add` for missing cognition,
- * the ordered handbook-sync-then-resolve pair for maintained stale), re-scoped
- * to the descendant `sourcePath` and the descendant's handbook id. The entry
- * action channel is structured-only (`operation` or `handbookId`): label-only
- * issue guidance already rides the entry's `issues[].suggestedActions` and is
- * not echoed here, so consumers never re-judge which entries are workflow.
- * Error nodes get no synthesized actions.
+ * Synthesize node-scoped workflow actions for a descendant triage entry,
+ * reusing the same node-signal rules the inspected node receives, re-scoped
+ * to the descendant `sourcePath` and the descendant's handbook id.
+ * Returns structured-only actions; error nodes get none.
  */
 function synthesizeDescendantTriageActions(node: CoggitTreeNode): CoggitOperationAction[] {
 	if (node.kind === 'error') {
@@ -409,12 +384,8 @@ function synthesizeDescendantTriageActions(node: CoggitTreeNode): CoggitOperatio
 
 /**
  * Group the projected issue set by issue-bearing node into triage entries.
- * The own entry (when the inspected node has issues) leads and is facts-only:
- * the inspected node's next steps stay exclusively in the top-level
- * `suggestedActions` channel, so no action appears in two channels.
- * Descendant entries carry node-scoped actions synthesized from node signals,
- * which requires the matched tree nodes — inspection alone does not carry
- * each descendant's own status/coverage.
+ * The own entry (when present) leads with empty actions; descendant entries
+ * carry node-scoped actions synthesized from the matched tree nodes.
  */
 function buildTriageEntries(input: {
 	root: CoggitTreeNode;
@@ -480,18 +451,14 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 		descendantIssues,
 	});
 	const ownActions = issueActionsToOperationActions(ownIssues);
-	const descendantActions = issueActionsToOperationActions(descendantIssues);
 	const operationActions = synthesizeNodeOperationActions(input.node, input.sourcePath, input.handbookId);
-	// Descendant structured actions (sync/resolve/add) live in the triage channel,
-	// not in `operationActions` (which is own-node only). Feed them as dedup-only
-	// keys so a descendant's label-only edit label is dropped instead of surviving
-	// in `suggestedActions` as a duplicate remediation hint.
+	// Descendant structured actions are dedup-only keys for mergeSuggestedActions.
 	const descendantStructuredActions = triage
 		.filter((entry) => entry.relation === 'descendant')
 		.flatMap((entry) => entry.actions);
 	const suggestedActions = mergeSuggestedActions(
 		operationActions,
-		[...ownActions, ...descendantActions],
+		ownActions,
 		descendantStructuredActions,
 	);
 	const cognitionPresence = input.node.ownStatus?.coverage?.ownCognition ?? 'not-applicable';

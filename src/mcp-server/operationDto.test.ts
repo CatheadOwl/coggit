@@ -183,13 +183,9 @@ suite('mcp operation DTO adapter', () => {
       ownIssueCount: 0,
       descendantIssueCount: 1,
       issues: [],
-      // Descendant-scoped structured actions never enter the top-level
-      // channel; only the legacy label-only issue echo does.
-      suggestedActions: [{
-        code: 'sync-cognition-with-source',
-        label: 'Sync cognition with source changes',
-        sourcePath: 'src/app/main.ts',
-      }],
+      // All descendant actions stay in the triage channel; top-level
+      // suggestedActions is empty for descendant-only stale.
+      suggestedActions: [],
       handbookId: 'skeleton',
       node: null,
       pathHints: [],
