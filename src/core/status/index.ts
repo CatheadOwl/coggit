@@ -384,24 +384,21 @@ function indexSubtreeNodes(root: CoggitTreeNode): Map<string, CoggitTreeNode> {
  * the descendant node's own status/coverage signals — the same
  * node-signal rules the inspected node receives (`add` for missing cognition,
  * the ordered handbook-sync-then-resolve pair for maintained stale), re-scoped
- * to the descendant `sourcePath` and the descendant's handbook id. Never
- * derived from issue labels or diagnostic codes; error nodes get no
- * synthesized actions.
+ * to the descendant `sourcePath` and the descendant's handbook id. The entry
+ * action channel is structured-only (`operation` or `handbookId`): label-only
+ * issue guidance already rides the entry's `issues[].suggestedActions` and is
+ * not echoed here, so consumers never re-judge which entries are workflow.
+ * Error nodes get no synthesized actions.
  */
-function synthesizeDescendantTriageActions(
-	node: CoggitTreeNode,
-	issues: readonly LocatedStatusIssue[],
-): CoggitOperationAction[] {
-	const labelActions = issueActionsToOperationActions(issues);
+function synthesizeDescendantTriageActions(node: CoggitTreeNode): CoggitOperationAction[] {
 	if (node.kind === 'error') {
-		return labelActions;
+		return [];
 	}
-	const operationActions = synthesizeNodeOperationActions(
+	return synthesizeNodeOperationActions(
 		node,
 		node.relativePath,
 		triageHandbookId(node),
 	);
-	return mergeSuggestedActions(operationActions, labelActions);
 }
 
 /**
@@ -454,8 +451,8 @@ function buildTriageEntries(input: {
 			relation: 'descendant',
 			issues,
 			actions: node
-				? synthesizeDescendantTriageActions(node, issues)
-				: issueActionsToOperationActions(issues),
+				? synthesizeDescendantTriageActions(node)
+				: [],
 		});
 	}
 

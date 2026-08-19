@@ -244,9 +244,11 @@ suite('status subtree triage', () => {
 
     const entry = inspection.triage[0];
     assert.strictEqual(entry.nodeKind, 'error');
-    assert.ok(entry.actions.every(
-      (action) => action.operation === undefined && action.handbookId === undefined,
-    ));
+    // Error nodes carry no synthesized workflow actions; the issue's label
+    // guidance stays in entry.issues[].suggestedActions, not in the action
+    // channel.
+    assert.deepStrictEqual(entry.actions, []);
+    assert.deepStrictEqual(entry.issues[0].issue.actions, [{ label: 'Remove the orphan cognition.' }]);
   });
 
   test('synthesizes add for a missing-cognition descendant only under all visibility', () => {

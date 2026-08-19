@@ -785,13 +785,15 @@ suite('core operations', () => {
     ));
     // The triage channel carries the descendant-scoped ordered pair: the
     // handbook-bearing sync step leads, the resolve accept step trails, both
-    // re-scoped to the descendant sourcePath.
+    // re-scoped to the descendant sourcePath. The entry action channel is
+    // structured-only — label-only issue guidance stays in the entry's issues,
+    // so exactly the pair appears here.
     const entries = result.inspection.triage;
     assert.strictEqual(entries.length, 1);
     const entry = entries[0];
     assert.strictEqual(entry.relation, 'descendant');
     assert.strictEqual(entry.sourcePath, 'stale.ts');
-    assert.deepStrictEqual(entry.actions.slice(0, 2), [{
+    assert.deepStrictEqual(entry.actions, [{
       code: 'sync-cognition-with-source',
       label: 'Sync cognition with source changes',
       handbookId: 'leaf',
