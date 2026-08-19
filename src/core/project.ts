@@ -190,6 +190,17 @@ export async function openCoggitProject(
 ): Promise<CoggitProject> {
   const runtimeEvidence = options.runtimeEvidence?.(root) ?? new RuntimeAcceptanceEvidence();
   let runtime = await createProjectRuntime(services, root, runtimeEvidence, options);
+  const ensureRuntimeFresh = async (): Promise<void> => {
+    if (!services.registry) {
+      return;
+    }
+    runtime = await reconcileProjectRuntime(
+      services,
+      root,
+      'project.ensure-fresh',
+      runtimeEvidence,
+    );
+  };
   const listRegistryMaintenance = async <Entry>(
     detect: (
       root: CoggitWorkspaceRoot,
@@ -197,6 +208,7 @@ export async function openCoggitProject(
       entries: Record<string, PathKeyRecord>,
     ) => Promise<Entry[]>,
   ): Promise<Entry[]> => {
+    await ensureRuntimeFresh();
     if (!runtime.registry) {
       return [];
     }
@@ -206,17 +218,7 @@ export async function openCoggitProject(
 
   return {
     root,
-    ensureFresh: async () => {
-      if (!services.registry) {
-        return;
-      }
-      runtime = await reconcileProjectRuntime(
-        services,
-        root,
-        'project.ensure-fresh',
-        runtimeEvidence,
-      );
-    },
+    ensureFresh: ensureRuntimeFresh,
 	buildSnapshot: async () => withProjectWriteLock(
 		services,
 		root,

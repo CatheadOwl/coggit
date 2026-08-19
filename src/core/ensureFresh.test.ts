@@ -353,4 +353,27 @@ suite('ensureFresh — concurrent reconciliation', () => {
       `snapshot should include late-addition after ensureFresh, got: ${afterKeys.join(', ')}`,
     );
   });
+
+  test('maintenance diagnostics freshen the project runtime before listing', async () => {
+    const fs = new MockFileSystem();
+    setupProject(fs);
+    const provider = new SharedRegistryProvider();
+    const locks = new SerializingLockManager();
+    const services = createCoggitServices({
+      fs,
+      config: new MockConfigProvider(),
+      registry: { create: () => provider } satisfies RegistryProviderFactory,
+      locks,
+    });
+
+    const project = await openCoggitProject(services, makeRoot());
+    const freshCallsBefore = locks.acquisitions.filter((c) => c.operation === 'project.ensure-fresh').length;
+
+    await project.listOrphanedCognition();
+    await project.listMisplacedCognition();
+    await project.listStrayCognition();
+
+    const freshCallsAfter = locks.acquisitions.filter((c) => c.operation === 'project.ensure-fresh').length;
+    assert.strictEqual(freshCallsAfter - freshCallsBefore, 3);
+  });
 });

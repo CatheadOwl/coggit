@@ -94,11 +94,13 @@ class MockConfigProvider implements ConfigProvider {
 }
 
 class CountingRegistryProvider {
+  loadCount = 0;
   saveCount = 0;
 
   constructor(private data: RegistryFile | null) {}
 
   async load(): Promise<RegistryFile | null> {
+    this.loadCount++;
     return this.data ? JSON.parse(JSON.stringify(this.data)) : null;
   }
 
@@ -260,14 +262,17 @@ suite('project — listMisplacedCognition', () => {
       { create: () => provider } satisfies RegistryProviderFactory,
     );
     const project = await openCoggitProject(services, makeRoot());
-    const saveCountAfterOpen = provider.saveCount;
+    const loadCountAfterOpen = provider.loadCount;
 
     const result = await project.listOrphanedCognition();
 
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0].registryKey, 'missing.ts');
     assert.strictEqual(result[0].sourcePath, 'src/missing.ts');
-    assert.strictEqual(provider.saveCount, saveCountAfterOpen);
+    assert.ok(
+      provider.loadCount > loadCountAfterOpen,
+      'maintenance diagnostics should reconcile registry freshness before listing',
+    );
   });
 
   test('returns misplaced cognition from project runtime registry', async () => {
@@ -285,13 +290,16 @@ suite('project — listMisplacedCognition', () => {
       { create: () => provider } satisfies RegistryProviderFactory,
     );
     const project = await openCoggitProject(services, makeRoot());
-    const saveCountAfterOpen = provider.saveCount;
+    const loadCountAfterOpen = provider.loadCount;
 
     const result = await project.listMisplacedCognition();
 
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0].registryKey, 'old/foo.ts');
-    assert.strictEqual(provider.saveCount, saveCountAfterOpen);
+    assert.ok(
+      provider.loadCount > loadCountAfterOpen,
+      'maintenance diagnostics should reconcile registry freshness before listing',
+    );
   });
 
   test('resolves empty sourcePath from mirror layout and saves project-relative path', async () => {
