@@ -79,7 +79,7 @@ function statusGuidanceText(result: ReturnType<typeof statusMcpView>): string {
   const sections: string[] = [];
 
   const actionable = result.suggestedActions
-    .filter((action) => action.tool)
+    .filter((action) => action.tool || action.handbookUri)
     .map((action) => formatOperationAction(action));
   if (actionable.length > 0) {
     sections.push([

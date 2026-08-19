@@ -102,14 +102,24 @@ function recheckCommandText(actions: readonly CoggitOperationAction[]): string {
   return '';
 }
 
-/** CLI surface addressing for status's operation-bearing next steps: `coggit <operation> [sourcePath]`. */
+/**
+ * CLI surface addressing for status's structured next steps: operation
+ * actions render as `coggit <operation> [sourcePath]`, handbook-bearing
+ * authoring actions as the real `coggit handbook <kind>` subcommand.
+ */
 function renderOperationActions(actions: readonly CoggitOperationAction[]): string {
   const lines = actions
-    .filter((action) => action.operation !== undefined)
     .map((action) => {
-      const command = `coggit ${action.operation}${action.sourcePath ? ` ${action.sourcePath}` : ''}`;
-      return `- ${command}: ${action.label}`;
-    });
+      if (action.operation !== undefined) {
+        const command = `coggit ${action.operation}${action.sourcePath ? ` ${action.sourcePath}` : ''}`;
+        return `- ${command}: ${action.label}`;
+      }
+      if (action.handbookId !== undefined) {
+        return `- coggit handbook ${action.handbookId}: ${action.label}`;
+      }
+      return null;
+    })
+    .filter((line): line is string => line !== null);
   return lines.length > 0 ? `Suggested actions:\n${lines.join('\n')}` : '';
 }
 

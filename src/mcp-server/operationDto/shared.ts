@@ -23,19 +23,26 @@ export const operationActionSchema = z.object({
   code: z.string(),
   label: z.string(),
   tool: z.enum(['coggit_snapshot', 'coggit_status', 'coggit_add', 'coggit_resolve', 'coggit_routes']).optional(),
+  handbookUri: z.string().optional(),
   sourcePath: z.string().optional(),
   scope: z.enum(['tracked', 'untracked', 'issues', 'all']).optional(),
   maxDepth: z.number().int().nonnegative().optional(),
 });
 
-/** Maps a surface-neutral core action to MCP tool-name addressing. */
+/**
+ * Maps a surface-neutral core action to MCP addressing: `operation` → tool
+ * name, `handbookId` → handbook resource URI (the same mapping the top-level
+ * `handbookId` receives). A handbook-bearing action stays mappable without
+ * carrying an `operation`.
+ */
 export function toMcpOperationAction(
   action: CoggitOperationAction,
 ): z.infer<typeof operationActionSchema> {
-  const { operation, ...rest } = action;
+  const { operation, handbookId, ...rest } = action;
   return {
     ...rest,
     ...(operation ? { tool: MCP_TOOL_NAMES[operation] } : {}),
+    ...(handbookId ? { handbookUri: handbookUri(handbookId) } : {}),
   };
 }
 

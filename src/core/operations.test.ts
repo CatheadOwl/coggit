@@ -328,12 +328,27 @@ suite('core operations', () => {
 
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.status, 'stale');
-    assert.ok(result.suggestedActions.some((action) => (
-      action.operation === 'resolve' && action.sourcePath === 'stale.ts'
-    )));
-    // Stale edit-work labels stay label-only; core does not invent an edit/sync
-    // operation, only the resolve carries an operation id.
-    assert.ok(result.suggestedActions.some((action) => action.operation === undefined));
+    // The stale next steps are the ordered pair-maintenance pair: the
+    // handbook-bearing sync authoring step leads, the resolve accept step
+    // trails. Core does not invent an edit/sync operation — the sync step is
+    // a handbookId reference — and the issue's label-only edit action (same
+    // source path and label) is deduped so exactly one sync hint remains.
+    // The template hint is distinct edit work (different label) and survives.
+    assert.deepStrictEqual(result.suggestedActions, [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookId: 'leaf',
+      sourcePath: 'stale.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      operation: 'resolve',
+      sourcePath: 'stale.ts',
+    }, {
+      code: 'fill-in-cognition-content',
+      label: 'Fill in cognition content',
+      sourcePath: 'stale.ts',
+    }]);
   });
 
   test('status does not synthesize a resolve next step for descendant-only stale', async () => {

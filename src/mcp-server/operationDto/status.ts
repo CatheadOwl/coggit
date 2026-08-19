@@ -86,11 +86,18 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
 
   const resolvedHandbookUri = result.handbookId ? handbookUri(result.handbookId) : null;
   const presentation = projectStatusPresentation(inspection);
+  // When the ordered action list already carries a step-local handbook action
+  // for this result's handbook (stale maintenance), the ordered list is the
+  // source of truth: suppress the duplicate top-level read-before-edit entry
+  // instead of surfacing the same handbook twice. The top-level projection
+  // remains the fallback for results without a step-local handbook action.
+  const hasStepLocalHandbookAction = result.handbookId !== null
+    && result.suggestedActions.some((action) => action.handbookId === result.handbookId);
 
   return {
     ...presentation,
     handbookUri: resolvedHandbookUri,
-    nextActions: statusNextActions({ handbookUri: resolvedHandbookUri }),
+    nextActions: hasStepLocalHandbookAction ? [] : statusNextActions({ handbookUri: resolvedHandbookUri }),
     suggestedActions: result.suggestedActions.map(toMcpOperationAction),
     pathHints: result.pathHints,
   };

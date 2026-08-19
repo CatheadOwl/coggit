@@ -27,6 +27,8 @@ import {
 	checkSymbols,
 	deriveStaleDegree,
 	synthesizeStatus,
+	SYNC_COGNITION_ACTION_LABEL,
+	SYNC_FOLDER_README_ACTION_LABEL,
 } from '../evidence';
 import { computeSourceFactIdentity } from '../hash';
 import { toRelativeUriPath } from '../mapping';
@@ -269,7 +271,13 @@ function uniqueOperationActions(actions: readonly CoggitOperationAction[]): Cogg
  * Synthesize tool-backed next-step actions from first-class node-level status
  * signals rather than issue labels:
  * - `ownCognition === 'missing'` → `add` (materialize the paired cognition).
- * - own maintained cognition is stale → `resolve` (accept the synced pair).
+ * - own maintained cognition is stale → the ordered pair-maintenance steps:
+ *   a handbook-bearing authoring action (sync, read-before-edit) *before* the
+ *   `resolve` accept action, mirroring the canonical loop's edit-on-demand →
+ *   resolve ordering. The sync step is a `handbookId` reference, not an
+ *   operation id — core does not invent an edit/sync operation. When no
+ *   handbook id is available (defensive; maintained nodes map to leaf or
+ *   skeleton), the sync step is omitted rather than degraded to label-only.
  *
  * Descendant-only stale status must not synthesize a `resolve` for the parent:
  * only the current node's own maintained cognition being stale qualifies. Issue
@@ -279,6 +287,7 @@ function uniqueOperationActions(actions: readonly CoggitOperationAction[]): Cogg
 function synthesizeNodeOperationActions(
 	node: CoggitTreeNode,
 	sourcePath: string,
+	handbookId: 'leaf' | 'skeleton' | null,
 ): CoggitOperationAction[] {
 	const actions: CoggitOperationAction[] = [];
 	const ownCoverage = node.ownStatus?.coverage;
@@ -296,9 +305,21 @@ function synthesizeNodeOperationActions(
 		ownCoverage?.ownCognition === 'present'
 		&& node.ownStatus?.ownObservedStatus === 'stale'
 	) {
+		if (handbookId !== null) {
+			actions.push({
+				code: 'sync-cognition-with-source',
+				// Reuses the exact issue edit-work label (per node kind) so the
+				// human edit path stays single-source and dedups by label match.
+				label: node.kind === 'file'
+					? SYNC_COGNITION_ACTION_LABEL
+					: SYNC_FOLDER_README_ACTION_LABEL,
+				handbookId,
+				sourcePath,
+			});
+		}
 		actions.push({
 			code: 'resolve-stale-cognition',
-			label: 'Accept the synced cognition as reviewed',
+			label: 'After syncing, accept the pair as reviewed',
 			operation: 'resolve',
 			sourcePath,
 		});
@@ -308,24 +329,25 @@ function synthesizeNodeOperationActions(
 }
 
 /**
- * Merge operation-bearing actions (from node signals) with label-only issue
- * actions (edit work). A label-only action that duplicates an operation-bearing
- * action for the same source path and label is dropped: the operation-bearing
- * form names the tool to call, so keeping both would surface one next step
- * twice to a consumer (e.g. the synthesized `add` vs the `missing-cognition`
- * label under the `all` issue visibility).
+ * Merge structured actions (from node signals) with label-only issue actions
+ * (edit work). "Structured" means carrying an `operation` *or* a `handbookId`:
+ * both are adapter-mappable, so a label-only action duplicating a structured
+ * action for the same source path and label is dropped — keeping both would
+ * surface one next step twice to a consumer (e.g. the synthesized `add` vs the
+ * `missing-cognition` label under the `all` issue visibility, or the
+ * handbook-bearing sync action vs the stale issue's label-only edit action).
  */
 function mergeSuggestedActions(
 	operationActions: readonly CoggitOperationAction[],
 	labelActions: readonly CoggitOperationAction[],
 ): CoggitOperationAction[] {
-	const operationKeys = new Set(
+	const structuredKeys = new Set(
 		operationActions
-			.filter((action) => action.operation !== undefined)
+			.filter((action) => action.operation !== undefined || action.handbookId !== undefined)
 			.map((action) => `${action.sourcePath ?? ''}\u0000${action.label}`),
 	);
 	const survivingLabels = labelActions.filter(
-		(action) => !operationKeys.has(`${action.sourcePath ?? ''}\u0000${action.label}`),
+		(action) => !structuredKeys.has(`${action.sourcePath ?? ''}\u0000${action.label}`),
 	);
 	return uniqueOperationActions([...operationActions, ...survivingLabels]);
 }
@@ -339,7 +361,7 @@ export function inspectNodeStatus(input: InspectNodeStatusInput): NodeStatusInsp
 	const descendantIssues = subtreeIssues.descendantIssues;
 	const ownActions = issueActionsToOperationActions(ownIssues);
 	const descendantActions = issueActionsToOperationActions(descendantIssues);
-	const operationActions = synthesizeNodeOperationActions(input.node, input.sourcePath);
+	const operationActions = synthesizeNodeOperationActions(input.node, input.sourcePath, input.handbookId);
 	const suggestedActions = mergeSuggestedActions(
 		operationActions,
 		[...ownActions, ...descendantActions],

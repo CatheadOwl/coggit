@@ -85,6 +85,119 @@ suite('mcp operation DTO adapter', () => {
     }]);
   });
 
+  test('status stale hit maps the ordered handbook-then-resolve actions and suppresses the duplicate top-level handbook action', () => {
+    const staleActions = [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookId: 'leaf' as const,
+      sourcePath: 'src/stale.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      operation: 'resolve' as const,
+      sourcePath: 'src/stale.ts',
+    }];
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/stale.ts',
+      nodeKind: 'file',
+      project: null,
+      cognitionPath: 'src/stale.ts.md',
+      status: 'stale',
+      ownStatus: 'stale',
+      descendantStatus: null,
+      staleAction: 'align-cognition-first',
+      issueCount: 1,
+      ownIssueCount: 1,
+      descendantIssueCount: 0,
+      issues: [],
+      suggestedActions: staleActions,
+      handbookId: 'leaf',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/stale.ts',
+        cognitionPath: 'src/stale.ts.md',
+        cognitionPresence: 'present',
+        nodeKind: 'file',
+        status: 'stale',
+        ownStatus: 'stale',
+        descendantStatus: null,
+        issueSummary: { total: 1, own: 1, descendant: 0 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: staleActions,
+        handbookId: 'leaf',
+      },
+    };
+
+    const structuredContent = statusStructuredContent(statusMcpView(result));
+
+    // Action-level handbookId maps to the handbook resource URI exactly as the
+    // top-level field does; array order keeps the authoring hint first.
+    assert.deepStrictEqual(structuredContent.suggestedActions, [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookUri: 'coggit://handbook/leaf',
+      sourcePath: 'src/stale.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      tool: 'coggit_resolve',
+      sourcePath: 'src/stale.ts',
+    }]);
+    // The ordered list is the source of truth for stale maintenance: the
+    // top-level read-before-edit entry is suppressed, not duplicated.
+    assert.deepStrictEqual(structuredContent.nextActions, []);
+
+    assert.deepStrictEqual(
+      z.object(statusOperationOutputSchema).parse(structuredContent),
+      structuredContent,
+    );
+  });
+
+  test('status keeps the top-level handbook next action when no step-local handbook action exists', () => {
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/fresh.ts',
+      nodeKind: 'file',
+      project: null,
+      cognitionPath: 'src/fresh.ts.md',
+      status: 'fresh',
+      ownStatus: 'fresh',
+      descendantStatus: null,
+      staleAction: null,
+      issueCount: 0,
+      ownIssueCount: 0,
+      descendantIssueCount: 0,
+      issues: [],
+      suggestedActions: [],
+      handbookId: 'skeleton',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/fresh.ts',
+        cognitionPath: 'src/fresh.ts.md',
+        cognitionPresence: 'present',
+        nodeKind: 'file',
+        status: 'fresh',
+        ownStatus: 'fresh',
+        descendantStatus: null,
+        issueSummary: { total: 0, own: 0, descendant: 0 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: [],
+        handbookId: 'skeleton',
+      },
+    };
+
+    assert.deepStrictEqual(statusStructuredContent(statusMcpView(result)).nextActions, [{
+      code: 'read-handbook-before-maintenance',
+      label: 'If maintaining this cognition, read the matching handbook before editing.',
+      kind: 'read-resource',
+      priority: 1,
+      resourceUri: 'coggit://handbook/skeleton',
+    }]);
+  });
+
   test('add structured content preserves typed failure details', () => {
     const result: AddOperationResult = {
       success: false,

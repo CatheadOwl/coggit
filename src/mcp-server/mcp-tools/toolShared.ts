@@ -20,17 +20,23 @@ export function joinMcpSections(...sections: string[]): string {
 }
 
 /**
- * Render a surface-mapped operation action to one MCP text line
- * (`<tool> (args) : <label>`). Shared by the snapshot and status tools so the
+ * Render a surface-mapped operation action to one MCP text line. Operation
+ * actions render as `<tool> (args): <label>`; handbook-bearing authoring
+ * actions render as `Read <handbookUri>: <label>`, matching the top-level
+ * read-before-edit guidance line. Shared by the snapshot and status tools so
  * operation-id → tool-name addressing is formatted in one place.
  */
 export function formatOperationAction(action: {
   label: string;
   tool?: string;
+  handbookUri?: string;
   sourcePath?: string;
   scope?: string;
   maxDepth?: number;
 }): string {
+  if (!action.tool && action.handbookUri) {
+    return `Read ${action.handbookUri}: ${action.label}`;
+  }
   const args: string[] = [];
   if (action.sourcePath) {
     args.push(`sourcePath="${action.sourcePath}"`);

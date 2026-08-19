@@ -168,6 +168,58 @@ suite('CLI operation DTO surfacing', () => {
     assert.match(text, /coggit add src\/missing\.ts: Create cognition file/);
   });
 
+  test('status stale hit renders the handbook sync step before the resolve step', () => {
+    const staleActions = [{
+      code: 'sync-cognition-with-source',
+      label: 'Sync cognition with source changes',
+      handbookId: 'leaf' as const,
+      sourcePath: 'src/stale.ts',
+    }, {
+      code: 'resolve-stale-cognition',
+      label: 'After syncing, accept the pair as reviewed',
+      operation: 'resolve' as const,
+      sourcePath: 'src/stale.ts',
+    }];
+    const result: StatusOperationResult = {
+      found: true,
+      sourcePath: 'src/stale.ts',
+      nodeKind: 'file',
+      project: null,
+      cognitionPath: 'src/stale.ts.md',
+      status: 'stale',
+      ownStatus: 'stale',
+      descendantStatus: null,
+      staleAction: 'align-cognition-first',
+      issueCount: 1,
+      ownIssueCount: 1,
+      descendantIssueCount: 0,
+      issues: [],
+      suggestedActions: staleActions,
+      handbookId: 'leaf',
+      node: null,
+      pathHints: [],
+      inspection: {
+        sourcePath: 'src/stale.ts',
+        cognitionPath: 'src/stale.ts.md',
+        cognitionPresence: 'present',
+        nodeKind: 'file',
+        status: 'stale',
+        ownStatus: 'stale',
+        descendantStatus: null,
+        issueSummary: { total: 1, own: 1, descendant: 0 },
+        subtreeIssues: { own: [], descendant: [] },
+        suggestedActions: staleActions,
+        handbookId: 'leaf',
+      },
+    };
+    const text = renderStatusOperationResult(result);
+    // Handbook-bearing actions map to the real `coggit handbook <kind>`
+    // subcommand, and array order keeps the authoring step before resolve.
+    assert.match(text, /- coggit handbook leaf: Sync cognition with source changes/);
+    assert.match(text, /- coggit resolve src\/stale\.ts: After syncing, accept the pair as reviewed/);
+    assert.ok(text.indexOf('coggit handbook leaf') < text.indexOf('coggit resolve'));
+  });
+
   test('status hit without operation actions omits the suggested-actions section', () => {
     const result: StatusOperationResult = {
       found: true,

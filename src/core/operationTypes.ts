@@ -31,6 +31,14 @@ export interface CoggitOperationAction {
 	code: string;
 	label: string;
 	operation?: CoreOperationId;
+	/**
+	 * Read-before-edit asset reference for authoring steps (e.g. the stale
+	 * sync step). Same opaque id as the top-level `StatusOperationResult
+	 * .handbookId`; adapters map it to their skill/resource address exactly as
+	 * they map the top-level field. An action carrying `handbookId` is
+	 * structured (adapter-mappable) even without an `operation`.
+	 */
+	handbookId?: 'leaf' | 'skeleton';
 	sourcePath?: string;
 	scope?: SnapshotOperationScope;
 	maxDepth?: number;

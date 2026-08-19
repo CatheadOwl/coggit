@@ -356,7 +356,7 @@ function issueForOutdatedSourceFact(kind: SourceFactKind): StatusIssue {
 				severity: 'warning',
 				message: 'Stale folder README.',
 			},
-			'Sync folder README with child structure changes',
+			SYNC_FOLDER_README_ACTION_LABEL,
 		);
 	}
 
@@ -366,9 +366,17 @@ function issueForOutdatedSourceFact(kind: SourceFactKind): StatusIssue {
 			severity: 'warning',
 			message: 'Stale cognition.',
 		},
-		'Sync cognition with source changes',
+		SYNC_COGNITION_ACTION_LABEL,
 	);
 }
+
+/**
+ * Single-source edit-work labels for stale pairs. The status inspection
+ * reuses these exact labels on its synthesized handbook-bearing sync action,
+ * so the issue action and the next-step action always dedup by label match.
+ */
+export const SYNC_COGNITION_ACTION_LABEL = 'Sync cognition with source changes';
+export const SYNC_FOLDER_README_ACTION_LABEL = 'Sync folder README with child structure changes';
 
 export function actionLabelsFromIssues(issues: Iterable<StatusIssue> | undefined): string[] {
 	return Array.from(issues ?? []).flatMap((statusIssue) =>
