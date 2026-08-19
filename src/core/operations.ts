@@ -105,7 +105,8 @@ export interface StatusOperationResult {
   /**
    * Worst observed status over descendants with an observed status (the
    * tracked node-status subset) by `fresh` < `stale` < `conflict`. `null` means
-   * "no descendants" — not "no cognition".
+   * no descendant in that subset has an observed status (untracked descendants
+   * are skipped) — not "no cognition".
    */
   descendantStatus: ObservedStatus | null;
   staleAction: StaleAction | null;
