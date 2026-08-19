@@ -39,5 +39,45 @@ function requireNonEmptyRoot(label: string, value: string): string {
   if (trimmed.length === 0) {
     throw new UserFacingError(`${label} cannot be empty.`);
   }
+  requireValidRootPath(label, trimmed);
   return trimmed;
+}
+
+/**
+ * Reject root paths that are not simple project-relative directory paths.
+ *
+ * Accepts slash-separated relative paths like `src`, `lib/internal`.
+ * Rejects absolute paths, `.`/`..` segments, empty segments, and paths
+ * whose canonical form differs from the input.
+ */
+function requireValidRootPath(label: string, value: string): void {
+  // Absolute POSIX path: /foo
+  if (value.startsWith('/')) {
+    throw new UserFacingError(`${label} must be a project-relative path, not absolute: "${value}".`);
+  }
+  // Windows drive path: C:/, C:\, or drive-relative C:tmp
+  if (/^[a-zA-Z]:/u.test(value)) {
+    throw new UserFacingError(`${label} must be a project-relative path, not a drive path: "${value}".`);
+  }
+  // Backslash anywhere: foo\bar, UNC \\server\share
+  if (value.includes('\\')) {
+    throw new UserFacingError(`${label} must use forward slashes, not backslashes: "${value}".`);
+  }
+
+  const segments = value.split('/');
+  for (const seg of segments) {
+    if (seg === '') {
+      throw new UserFacingError(`${label} contains empty segments (repeated slashes): "${value}".`);
+    }
+    if (seg === '.' || seg === '..') {
+      throw new UserFacingError(`${label} must not contain "." or ".." segments: "${value}".`);
+    }
+  }
+
+  // Reject paths whose canonical form differs from the input
+  // (catches redundant separators, mixed styles).
+  const canonical = segments.join('/');
+  if (canonical !== value) {
+    throw new UserFacingError(`${label} is not in canonical form (expected "${canonical}"): "${value}".`);
+  }
 }

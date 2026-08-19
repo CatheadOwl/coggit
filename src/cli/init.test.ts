@@ -132,4 +132,65 @@ suite('cli init', () => {
 			'CogGit project already initialised at this root. Remove .coggit/config.yaml to re-initialise.',
 		);
 	});
+
+	test('accepts slash-separated relative paths', async () => {
+		const fs = new MockFs();
+
+		await runInit(fs, TARGET, { sourceRoot: 'lib/internal', cognitionRoot: 'docs/cognition' });
+
+		const config = await readConfig(fs);
+		assert.match(config, /source_root: "lib\/internal"/);
+		assert.match(config, /cognition_root: "docs\/cognition"/);
+	});
+
+	const invalidRoots: Array<{ input: string; label: string; fragment: string }> = [
+		{ input: '../foo', label: 'Source root', fragment: '"." or ".."' },
+		{ input: './foo', label: 'Source root', fragment: '"." or ".."' },
+		{ input: 'a/../b', label: 'Source root', fragment: '"." or ".."' },
+		{ input: '/tmp/src', label: 'Source root', fragment: 'not absolute' },
+		{ input: 'C:/tmp/src', label: 'Source root', fragment: 'not a drive path' },
+		{ input: 'C:\\tmp\\src', label: 'Source root', fragment: 'not a drive path' },
+		{ input: 'C:tmp', label: 'Source root', fragment: 'not a drive path' },
+		{ input: 'foo//bar', label: 'Source root', fragment: 'empty segments' },
+		{ input: 'foo/./bar', label: 'Source root', fragment: '"." or ".."' },
+		{ input: 'foo\\bar', label: 'Source root', fragment: 'not backslashes' },
+		{ input: '..', label: 'Source root', fragment: '"." or ".."' },
+		{ input: '.', label: 'Source root', fragment: '"." or ".."' },
+	];
+
+	for (const { input, label, fragment } of invalidRoots) {
+		test(`rejects invalid source root "${input}"`, async () => {
+			const fs = new MockFs();
+
+			await assert.rejects(
+				runInit(fs, TARGET, { sourceRoot: input }),
+				(error: unknown) =>
+					error instanceof UserFacingError
+					&& error.message.startsWith(`${label}`)
+					&& error.message.includes(fragment),
+			);
+		});
+	}
+
+	const invalidCogRoots: Array<{ input: string; fragment: string }> = [
+		{ input: '../docs', fragment: '"." or ".."' },
+		{ input: '/abs/docs', fragment: 'not absolute' },
+		{ input: 'docs//cognition', fragment: 'empty segments' },
+		{ input: 'docs\\cognition', fragment: 'not backslashes' },
+		{ input: 'D:docs', fragment: 'not a drive path' },
+	];
+
+	for (const { input, fragment } of invalidCogRoots) {
+		test(`rejects invalid cognition root "${input}"`, async () => {
+			const fs = new MockFs();
+
+			await assert.rejects(
+				runInit(fs, TARGET, { cognitionRoot: input }),
+				(error: unknown) =>
+					error instanceof UserFacingError
+					&& error.message.startsWith('Cognition root')
+					&& error.message.includes(fragment),
+			);
+		});
+	}
 });
