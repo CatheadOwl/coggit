@@ -62,6 +62,12 @@ export function computeMtimeObservedStatus(
   return 'stale';
 }
 
+/**
+ * Combine observed statuses by severity: `conflict` > `stale` > `fresh`. Returns
+ * the worst (highest-priority) observed status, or `undefined` when none are
+ * observed. This is the single place that defines the aggregation ordering used
+ * by `NodeStatusInspection.status` / `StatusOperationResult.status`.
+ */
 export function combineObservedStatus(
 	statuses: Iterable<ObservedStatus | undefined>,
 ): ObservedStatus | undefined {
@@ -92,6 +98,15 @@ export interface AggregateNodeStatusInput {
 	descendantStatuses?: Iterable<NodeStatusResult | undefined>;
 }
 
+/**
+ * Aggregate own and descendant status for a node.
+ *
+ * - `observedStatus` (whole-node): worst of own + descendant by `fresh` <
+ *   `stale` < `conflict`.
+ * - `descendantObservedStatus`: same worst-of over descendants with an observed
+ *   status (the tracked node-status subset; untracked descendants are skipped).
+ * - `ownObservedStatus`: the node's own status, before descendant aggregation.
+ */
 export function aggregateNodeStatus(
 	input: AggregateNodeStatusInput,
 ): NodeStatusResult {

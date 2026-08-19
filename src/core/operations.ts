@@ -91,11 +91,22 @@ export interface StatusOperationResult {
    * `LocatedStatusIssue.cognitionPath`.
    */
   cognitionPath: string | null;
-  /** `null` means "no cognition" (no observed status for this node). */
+  /**
+   * Whole-node observed status: the worst of `ownStatus` and `descendantStatus`
+   * by `fresh` < `stale` < `conflict`. `null` means "no cognition" (neither the
+   * node nor any tracked descendant has an observed status).
+   */
   status: ObservedStatus | null;
-  /** `null` means "no own cognition". */
+  /**
+   * This node's own observed status, before descendant aggregation; `null`
+   * means "no own cognition".
+   */
   ownStatus: ObservedStatus | null;
-  /** `null` means "no descendants" — not "no cognition". */
+  /**
+   * Worst observed status over descendants with an observed status (the
+   * tracked node-status subset) by `fresh` < `stale` < `conflict`. `null` means
+   * "no descendants" — not "no cognition".
+   */
   descendantStatus: ObservedStatus | null;
   staleAction: StaleAction | null;
   issueCount: number;
