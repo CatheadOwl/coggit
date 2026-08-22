@@ -170,6 +170,36 @@ suite('MCP runtime support', () => {
     assert.strictEqual(await runNode(second.launcherPath), 'runtime-v1');
   });
 
+  test('repairs a symlinked runtime entry instead of preserving it', async function () {
+    if (process.platform === 'win32' && !await canCreateSymlink(tempDirectory)) {
+      this.skip();
+    }
+
+    const first = await ensureMcpRuntime({
+      bundledEntryPath,
+      version: '1.2.3',
+      installedBy: 'test',
+      homeDirectory,
+    });
+    const escapedRuntime = path.join(tempDirectory, 'escaped-runtime.js');
+    await fs.writeFile(escapedRuntime, "process.stdout.write('runtime-v1');\n");
+    await fs.rm(first.runtimeEntryPath);
+    await fs.symlink(escapedRuntime, first.runtimeEntryPath);
+
+    assert.strictEqual((await fs.lstat(first.runtimeEntryPath)).isSymbolicLink(), true);
+
+    const second = await ensureMcpRuntime({
+      bundledEntryPath,
+      version: '1.2.3',
+      installedBy: 'test',
+      homeDirectory,
+    });
+
+    assert.strictEqual(second.changed, true);
+    assert.strictEqual((await fs.lstat(second.runtimeEntryPath)).isSymbolicLink(), false);
+    assert.strictEqual(await runNode(second.launcherPath), 'runtime-v1');
+  });
+
   test('launcher rejects descriptors with incomplete schema fields', async () => {
     const first = await ensureMcpRuntime({
       bundledEntryPath,

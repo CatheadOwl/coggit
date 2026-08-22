@@ -140,13 +140,14 @@ async function keepNewerCurrentRuntime(
     && compareSemanticVersions(current.descriptor.runtimeVersion, callerVersion) > 0
     && await fileMatchesIntegrity(current.entryPath, current.descriptor.integrity)
   ) {
+    const runtimeChanged = await ensureRegularManagedFile(current.entryPath);
     const launcherChanged = await ensureFileContent(launcherPath, MCP_LAUNCHER_SOURCE);
     return {
       launcherPath,
       runtimeEntryPath: current.entryPath,
       activeVersion: current.descriptor.runtimeVersion,
       activeIntegrity: current.descriptor.integrity,
-      changed: launcherChanged,
+      changed: runtimeChanged || launcherChanged,
     };
   }
 
@@ -209,7 +210,7 @@ async function ensureFileContent(
   const desired = typeof content === 'string' ? Buffer.from(content) : Buffer.from(content);
   try {
     const existing = await fs.readFile(destination);
-    if (existing.equals(desired)) {
+    if (existing.equals(desired) && await isRegularFile(destination)) {
       return false;
     }
   } catch (error) {
@@ -221,6 +222,23 @@ async function ensureFileContent(
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await replaceFileAtomically(destination, desired);
   return true;
+}
+
+async function ensureRegularManagedFile(destination: string): Promise<boolean> {
+  try {
+    if (await isRegularFile(destination)) {
+      return false;
+    }
+
+    const existing = await fs.readFile(destination);
+    await replaceFileAtomically(destination, existing);
+    return true;
+  } catch (error) {
+    if (hasCode(error, 'ENOENT')) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 async function replaceFileAtomically(destination: string, content: Uint8Array): Promise<void> {
@@ -285,6 +303,14 @@ function resolveContainedPath(root: string, relativePath: string): string | unde
 
 function toPortableRelativePath(root: string, target: string): string {
   return path.relative(root, target).split(path.sep).join('/');
+}
+
+async function isRegularFile(filePath: string): Promise<boolean> {
+  try {
+    return (await fs.lstat(filePath)).isFile();
+  } catch {
+    return false;
+  }
 }
 
 async function fileMatchesIntegrity(filePath: string, integrity: string): Promise<boolean> {
