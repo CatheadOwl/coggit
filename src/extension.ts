@@ -14,9 +14,9 @@ import {
 } from './runtime/vscode/adapter/mcpJson.js';
 import { createVscodeCoggitLogger } from './runtime/vscode/adapter/logger';
 import {
-	ensureUserMcpRuntime,
-	getUserMcpLauncherPath,
-} from './runtime/node/userMcpRuntime.js';
+	ensureMcpRuntime as installMcpRuntime,
+	getMcpLauncherPath,
+} from './runtime-support/mcp/userMcpRuntime.js';
 import type { CoggitLogger } from './core';
 
 type McpExperienceState =
@@ -85,16 +85,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// ── MCP Registration ───────────────────────────────────────────────────
 	const channel = vscode.window.createOutputChannel('CogGit MCP');
 	const bundledMcpEntryPath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'mcp-stdio.js').fsPath;
-	const mcpLauncherPath = getUserMcpLauncherPath();
+	const mcpLauncherPath = getMcpLauncherPath();
 	let runtimeInstallation: Promise<string> | undefined;
 	const ensureMcpRuntime = async (): Promise<string> => {
-		runtimeInstallation ??= ensureUserMcpRuntime({
+		runtimeInstallation ??= installMcpRuntime({
 			bundledEntryPath: bundledMcpEntryPath,
 			version: String(context.extension.packageJSON.version),
+			installedBy: 'vscode-extension',
 		}).then((installation) => {
 			if (installation.changed) {
 				channel.appendLine(
-					`Installed CogGit MCP runtime ${installation.activeVersion} at ${installation.runtimeEntryPath}.`,
+					`Installed CogGit MCP runtime ${installation.activeVersion} (${installation.activeIntegrity}) at ${installation.runtimeEntryPath}.`,
 				);
 			}
 			return installation.launcherPath;

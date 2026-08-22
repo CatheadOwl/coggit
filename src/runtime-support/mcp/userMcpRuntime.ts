@@ -14,17 +14,27 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 try {
-  const coggitHome = path.resolve(__dirname, '..');
+  const coggitHome = fs.realpathSync(path.resolve(__dirname, '..'));
   const currentPath = path.join(coggitHome, 'current.json');
   const current = JSON.parse(fs.readFileSync(currentPath, 'utf8'));
-  if (current.schemaVersion !== 1 || typeof current.entry !== 'string') {
+  if (
+    current.schemaVersion !== 1
+    || typeof current.runtimeVersion !== 'string'
+    || typeof current.entry !== 'string'
+    || !/^sha256:[a-f0-9]{64}$/.test(current.integrity)
+    || typeof current.installedBy !== 'string'
+  ) {
     throw new Error('current.json does not contain a supported CogGit runtime entry.');
   }
 
-  const entryPath = path.resolve(coggitHome, current.entry);
+  const entryPath = fs.realpathSync(path.resolve(coggitHome, current.entry));
   const relativeEntry = path.relative(coggitHome, entryPath);
   if (relativeEntry === '' || relativeEntry === '..' || relativeEntry.startsWith('..' + path.sep) || path.isAbsolute(relativeEntry)) {
     throw new Error('current.json points outside the CogGit home directory.');
+  }
+
+  if (!fs.statSync(entryPath).isFile()) {
+    throw new Error('current.json does not point to a runtime file.');
   }
 
   require(entryPath);
@@ -43,65 +53,67 @@ interface CurrentRuntimeDescriptor {
   installedBy: string;
 }
 
-export interface EnsureUserMcpRuntimeOptions {
+export interface EnsureMcpRuntimeOptions {
   bundledEntryPath: string;
   version: string;
+  installedBy: string;
   homeDirectory?: string;
-  installedBy?: string;
 }
 
-export interface UserMcpRuntimeInstallation {
+export interface McpRuntimeInstallation {
   launcherPath: string;
   runtimeEntryPath: string;
   activeVersion: string;
+  activeIntegrity: string;
   changed: boolean;
 }
 
-export function getUserMcpLauncherPath(homeDirectory = os.homedir()): string {
+export function getMcpLauncherPath(homeDirectory = os.homedir()): string {
   return path.join(homeDirectory, COGGIT_HOME_DIRECTORY, MCP_LAUNCHER_RELATIVE_PATH);
 }
 
-export async function ensureUserMcpRuntime(
-  options: EnsureUserMcpRuntimeOptions,
-): Promise<UserMcpRuntimeInstallation> {
+export async function ensureMcpRuntime(
+  options: EnsureMcpRuntimeOptions,
+): Promise<McpRuntimeInstallation> {
   assertSafeVersion(options.version);
+  assertInstalledBy(options.installedBy);
 
   const homeDirectory = options.homeDirectory ?? os.homedir();
   const coggitHome = path.join(homeDirectory, COGGIT_HOME_DIRECTORY);
   const runtimesDirectory = path.join(coggitHome, 'runtimes');
-  const launcherPath = getUserMcpLauncherPath(homeDirectory);
+  const launcherPath = getMcpLauncherPath(homeDirectory);
   const currentPath = path.join(coggitHome, 'current.json');
 
   await fs.mkdir(runtimesDirectory, { recursive: true });
   await fs.mkdir(path.dirname(launcherPath), { recursive: true });
 
+  const bundledEntry = await readBundledEntry(options.bundledEntryPath);
+  const digest = createHash('sha256').update(bundledEntry).digest('hex');
+  const integrity = `sha256:${digest}`;
   const current = await readCurrentRuntime(currentPath, coggitHome);
-  if (
-    current
-    && compareSemanticVersions(current.descriptor.runtimeVersion, options.version) > 0
-    && await fileMatchesIntegrity(current.entryPath, current.descriptor.integrity)
-  ) {
-    const launcherChanged = await ensureFileExists(launcherPath, MCP_LAUNCHER_SOURCE);
-    return {
-      launcherPath,
-      runtimeEntryPath: current.entryPath,
-      activeVersion: current.descriptor.runtimeVersion,
-      changed: launcherChanged,
-    };
+  const currentInstallation = await keepNewerCurrentRuntime(current, options.version, launcherPath);
+  if (currentInstallation) {
+    return currentInstallation;
   }
 
-  const bundledEntry = await fs.readFile(options.bundledEntryPath);
-  const digest = createHash('sha256').update(bundledEntry).digest('hex');
   const runtimeDirectoryName = `${options.version}-${digest.slice(0, 12)}`;
   const runtimeEntryPath = path.join(runtimesDirectory, runtimeDirectoryName, 'mcp-stdio.js');
   const runtimeChanged = await ensureFileContent(runtimeEntryPath, bundledEntry);
+  const latestCurrent = await readCurrentRuntime(currentPath, coggitHome);
+  const latestCurrentInstallation = await keepNewerCurrentRuntime(latestCurrent, options.version, launcherPath);
+  if (latestCurrentInstallation) {
+    return {
+      ...latestCurrentInstallation,
+      changed: runtimeChanged || latestCurrentInstallation.changed,
+    };
+  }
 
   const descriptor: CurrentRuntimeDescriptor = {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     runtimeVersion: options.version,
     entry: toPortableRelativePath(coggitHome, runtimeEntryPath),
-    integrity: `sha256:${digest}`,
-    installedBy: options.installedBy ?? 'vscode-extension',
+    integrity,
+    installedBy: options.installedBy,
   };
   const currentChanged = await ensureFileContent(
     currentPath,
@@ -113,8 +125,45 @@ export async function ensureUserMcpRuntime(
     launcherPath,
     runtimeEntryPath,
     activeVersion: options.version,
+    activeIntegrity: integrity,
     changed: runtimeChanged || currentChanged || launcherChanged,
   };
+}
+
+async function keepNewerCurrentRuntime(
+  current: { descriptor: CurrentRuntimeDescriptor; entryPath: string } | undefined,
+  callerVersion: string,
+  launcherPath: string,
+): Promise<McpRuntimeInstallation | undefined> {
+  if (
+    current
+    && compareSemanticVersions(current.descriptor.runtimeVersion, callerVersion) > 0
+    && await fileMatchesIntegrity(current.entryPath, current.descriptor.integrity)
+  ) {
+    const launcherChanged = await ensureFileContent(launcherPath, MCP_LAUNCHER_SOURCE);
+    return {
+      launcherPath,
+      runtimeEntryPath: current.entryPath,
+      activeVersion: current.descriptor.runtimeVersion,
+      activeIntegrity: current.descriptor.integrity,
+      changed: launcherChanged,
+    };
+  }
+
+  return undefined;
+}
+
+async function readBundledEntry(bundledEntryPath: string): Promise<Buffer> {
+  if (!path.isAbsolute(bundledEntryPath)) {
+    throw new Error(`CogGit MCP runtime bundle path must be absolute: ${bundledEntryPath}`);
+  }
+
+  try {
+    return await fs.readFile(bundledEntryPath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Cannot read CogGit MCP runtime bundle "${bundledEntryPath}": ${message}`);
+  }
 }
 
 async function readCurrentRuntime(
@@ -163,27 +212,14 @@ async function ensureFileContent(
     if (existing.equals(desired)) {
       return false;
     }
-  } catch {
-    // Missing or unreadable managed files are repaired below.
+  } catch (error) {
+    if (!hasCode(error, 'ENOENT')) {
+      throw error;
+    }
   }
 
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await replaceFileAtomically(destination, desired);
-  return true;
-}
-
-async function ensureFileExists(destination: string, content: string): Promise<boolean> {
-  try {
-    const stat = await fs.stat(destination);
-    if (stat.isFile() && stat.size > 0) {
-      return false;
-    }
-  } catch {
-    // The missing managed launcher is restored below.
-  }
-
-  await fs.mkdir(path.dirname(destination), { recursive: true });
-  await replaceFileAtomically(destination, Buffer.from(content));
   return true;
 }
 
@@ -268,6 +304,12 @@ async function fileMatchesIntegrity(filePath: string, integrity: string): Promis
 function assertSafeVersion(version: string): void {
   if (!/^[0-9A-Za-z][0-9A-Za-z._+-]*$/.test(version)) {
     throw new Error(`Cannot install CogGit MCP runtime with unsafe version: ${version}`);
+  }
+}
+
+function assertInstalledBy(installedBy: string): void {
+  if (installedBy.trim().length === 0) {
+    throw new Error('Cannot install CogGit MCP runtime without an installedBy caller identity.');
   }
 }
 

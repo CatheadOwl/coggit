@@ -1,6 +1,7 @@
 const esbuild = require("esbuild");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const packageJson = require("./package.json");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -39,6 +40,9 @@ async function main() {
 			'.md': 'text',
 		},
 		logLevel: 'silent',
+		define: {
+			__COGGIT_PACKAGE_VERSION__: JSON.stringify(packageJson.version),
+		},
 		plugins: [
 			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,

@@ -6,12 +6,15 @@ import type { SnapshotScope } from '../render';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
 import { runInit, type InitOptions } from './init';
+import { resolveBundledMcpEntryPath, runMcpInstall } from './mcpInstall';
 import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
 import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
 import { runStatus, UserFacingError } from './status';
 import { openStrictWatchProject, startWatchSession } from './watch';
+
+declare const __COGGIT_PACKAGE_VERSION__: string | undefined;
 
 void main(process.argv);
 
@@ -72,6 +75,24 @@ function createProgram(
       const output = await runInit(services.fs, targetPath ?? '.', {
         sourceRoot: options.sourceRoot,
         cognitionRoot: options.cognitionRoot,
+      });
+      console.log(output);
+    });
+
+  const mcp = program
+    .command('mcp')
+    .description('Manage CogGit MCP runtime support.');
+
+  mcp
+    .command('install')
+    .description('Install or repair the user-level CogGit MCP runtime launcher.')
+    .option('-j, --json', 'output structured installation JSON instead of text')
+    .action(async (options: McpInstallCommandOptions) => {
+      const output = await runMcpInstall({
+        bundledEntryPath: resolveBundledMcpEntryPath(__dirname),
+        version: packageVersion(),
+        installedBy: 'cli',
+        json: options.json,
       });
       console.log(output);
     });
@@ -192,6 +213,10 @@ interface WatchOptions {
   json?: boolean;
 }
 
+interface McpInstallCommandOptions {
+  json?: boolean;
+}
+
 interface AddOptions {
   kind: AddCognitionKind;
   overwrite: boolean;
@@ -231,4 +256,10 @@ function parseHandbookKind(value: string): CognitionKind | 'all' {
     return value;
   }
   throw new InvalidArgumentError('handbook kind must be one of: all, leaf, skeleton.');
+}
+
+function packageVersion(): string {
+  return typeof __COGGIT_PACKAGE_VERSION__ === 'string'
+    ? __COGGIT_PACKAGE_VERSION__
+    : '0.0.0-development';
 }
