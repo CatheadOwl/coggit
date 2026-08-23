@@ -7,8 +7,8 @@ import type {
 	FileSystem,
 	UriComponents,
 	WorkspaceFolderInfo,
-} from '../../../core/interfaces';
-import type { CoggitTreeNode, CoggitWorkspaceRoot } from '../../../core/types';
+} from '@coggit/core';
+import type { CoggitTreeNode, CoggitWorkspaceRoot } from '@coggit/core';
 import type { FileChangeCallback } from '../watch/watcher';
 import { CoggitModel } from './model';
 

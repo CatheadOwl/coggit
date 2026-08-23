@@ -5,13 +5,15 @@ import { randomUUID } from 'node:crypto';
 
 import {
   ProjectLockError,
-  WatchLeaseError,
   type ProjectLockContext,
   type ProjectLockManager,
+} from '@coggit/core';
+import type { UriComponents } from '@coggit/core';
+import {
+  WatchLeaseError,
   type WatchLeaseHandle,
   type WatchLeaseManager,
-} from '../../core/locks';
-import type { UriComponents } from '../../core/interfaces';
+} from '@coggit/core/internal';
 import { uriComponentsToPath } from './uri';
 
 export interface NodeProjectLockManagerOptions {

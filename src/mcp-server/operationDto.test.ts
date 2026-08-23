@@ -8,10 +8,10 @@ import type {
   RoutesOperationResult,
   SnapshotOperationResult,
   StatusOperationResult,
-} from '../core/index.js';
-import { selectRoutesBySourcePath } from '../core/index.js';
-import { applyRoutesFilters, suggestRoutePathHints } from '../core/routesProjection.js';
-import type { TreeProjectionNode } from '../core/types.js';
+} from '@coggit/core';
+import { selectRoutesBySourcePath } from '@coggit/core';
+import { applyRoutesFilters, suggestRoutePathHints } from '@coggit/core/internal';
+import type { TreeProjectionNode } from '@coggit/core/internal';
 import { clipboardNodeStatusText } from '../format/nodeFormat.js';
 import {
   addOperationOutputSchema,

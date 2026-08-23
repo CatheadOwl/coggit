@@ -1,7 +1,7 @@
 import * as nodeFs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import type { FileStat, FileSystem, UriComponents } from '../../core/interfaces';
+import type { FileStat, FileSystem, UriComponents } from '@coggit/core';
 import { uriComponentsToPath } from './uri';
 
 const FILE_TYPE_FILE = 1;

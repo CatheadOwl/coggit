@@ -1,4 +1,4 @@
-import { getCognitionHandbook, type CognitionKind } from '../core';
+import { getCognitionHandbook, type CognitionKind } from '@coggit/core';
 
 export function runHandbook(kind: CognitionKind | 'all'): string {
   return kind === 'all'

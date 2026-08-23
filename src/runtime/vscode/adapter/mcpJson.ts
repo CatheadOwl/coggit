@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import type { CoggitLogger } from '../../../core/logger';
-import { nullCoggitLogger, warnLog } from '../../../core/logger';
+import type { CoggitLogger } from '@coggit/core';
+import { nullCoggitLogger, warnLog } from '@coggit/core';
 
 interface McpJson {
   mcpServers?: Record<string, unknown>;

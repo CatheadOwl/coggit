@@ -1,0 +1,42 @@
+{
+  "name": "@coggit/core",
+  "version": "0.2.0",
+  "description": "CogGit core kernel: source/cognition freshness semantics, registry, snapshot, status, and operations.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CatheadOwl/coggit.git",
+    "directory": "packages/core"
+  },
+  "main": "./dist/public.js",
+  "types": "./dist/public.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node build.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node build.js --watch"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "esbuild": "^0.28.1",
+    "typescript": "^6.0.3",
+    "yaml": "^2.8.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

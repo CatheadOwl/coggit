@@ -1,5 +1,5 @@
-import type { CoggitProject } from '../core/interfaces';
-import { statusOperation } from '../core';
+import type { CoggitProject } from '@coggit/core';
+import { statusOperation } from '@coggit/core';
 import { renderStatusOperationResult } from './operationDto';
 import { defaultSourcePathInput, sourcePathCandidates } from './util';
 

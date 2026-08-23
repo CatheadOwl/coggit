@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
-import type { RegistryFile } from '../core/types.js';
+import type { RegistryFile } from '@coggit/core';
 import { createNodeCoggitServices } from '../runtime/node/index.js';
 import { createCoggitMcpServer } from './server.js';
 

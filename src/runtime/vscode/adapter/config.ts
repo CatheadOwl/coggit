@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '../../../core/interfaces';
-import { generatedSourceStructureGlobExcludePatterns } from '../../../core/sourceStructureIgnore';
+import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '@coggit/core';
+import { generatedSourceStructureGlobExcludePatterns } from '@coggit/core/internal';
 import { toComponents } from './uri';
 
 type FilesExcludeConfig = Record<string, boolean | undefined>;

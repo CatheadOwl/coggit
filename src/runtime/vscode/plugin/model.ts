@@ -1,25 +1,27 @@
 import * as vscode from 'vscode';
 
-import type { CoggitSnapshot, CoggitTreeNode } from '../../../core/types';
-import type { CoggitProject, CoggitServices, FileSystem } from '../../../core/interfaces';
+import type { CoggitSnapshot, CoggitTreeNode } from '@coggit/core';
+import type { CoggitProject, CoggitServices, FileSystem } from '@coggit/core';
 import {
 	aggregateNodeStatus,
 	buildMappingIndex,
 	buildSnapshotFromProjects,
 	discoverCoggitProjects,
 	createCoggitServices,
-	applyWatchEventToProjects,
 	debugLog,
-	planWatchRefresh,
 	RuntimeAcceptanceEvidence,
-	selectWatchRefreshMode,
 	summarizeRepresentativeMtime,
 	toCognitionFileUri,
 	toCognitionFolderReadmeUri,
 	type CoggitLogger,
-	type WatchEventDomain,
 	warnLog,
-} from '../../../core/index';
+} from '@coggit/core';
+import {
+	applyWatchEventToProjects,
+	planWatchRefresh,
+	selectWatchRefreshMode,
+	type WatchEventDomain,
+} from '@coggit/core/internal';
 import { createPatternWatcher, type FileChangeCallback, type FileChangeKind } from '../watch/watcher';
 import { VscodeFileSystem } from '../adapter/fs';
 import { VscodeConfigProvider } from '../adapter/config';

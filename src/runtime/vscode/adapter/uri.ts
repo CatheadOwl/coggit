@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { UriComponents, UriKey } from '../../../core/interfaces';
+import type { UriComponents, UriKey } from '@coggit/core';
 
 export function toComponents(uri: vscode.Uri): UriComponents {
   return {

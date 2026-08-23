@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { externalPathFromString, type CognitionKind } from '../../core/index.js';
-import type { CoggitOperationAction, CoreOperationId } from '../../core/index.js';
-import type { UriComponents } from '../../core/interfaces.js';
+import { externalPathFromString, type CognitionKind } from '@coggit/core';
+import type { CoggitOperationAction, CoreOperationId } from '@coggit/core';
+import type { UriComponents } from '@coggit/core';
 
 export const observedStatusSchema = z.enum(['fresh', 'stale', 'conflict']).nullable();
 

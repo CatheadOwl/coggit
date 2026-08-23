@@ -5,7 +5,7 @@ import {
   Registry,
   RegistryRevisionMismatchError,
 } from './index';
-import { InMemoryRegistryProvider } from '../../runtime/vscode/adapter/registryFs';
+import { InMemoryRegistryProvider } from './inMemoryRegistryProvider';
 import type { PathKeyRecord } from '../types';
 import type { CoggitLogEvent } from '../logger';
 

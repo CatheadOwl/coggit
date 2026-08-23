@@ -6,8 +6,8 @@ import {
   DEFAULT_ROUTES_DEPTH,
   routesOperation,
   toRoutesStructuredOutput,
-} from '../../core/index.js';
-import type { CoggitProject } from '../../core/interfaces.js';
+} from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 import { routesContentText } from '../../format/index.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import { routesOperationOutputSchema } from '../operationDto/index.js';

@@ -212,3 +212,69 @@ export type {
 } from './types';
 export { discoverWorkspaceRoots, readWorkspaceRoot } from './workspace';
 export { buildSnapshot } from './buildSnapshot';
+
+// ─── Internal-only surface (monorepo consumers via `@coggit/core/internal`) ───
+// These symbols are deliberately absent from `public.ts`: they are either
+// adapter/CLI-private (watch lease, registry implementation, gitignore rules,
+// source-structure ignore) or shared internal helpers not part of the stable
+// SDK contract.
+
+export { formatTimestamp, latestAcceptedTime } from './time';
+export {
+  REGISTRY_MAINTENANCE_NOTICE,
+  REGISTRY_SCHEMA_VERSION,
+  Registry,
+  RegistryRevisionMismatchError,
+  computeRegistryRevision,
+  type RegistryCreateOptions,
+  type RegistryRevision,
+} from './registry/index';
+export { InMemoryRegistryProvider } from './registry/inMemoryRegistryProvider';
+export {
+  GENERATED_SOURCE_STRUCTURE_DIRECTORY_NAMES,
+  generatedSourceStructureGlobExclude,
+  generatedSourceStructureGlobExcludePatterns,
+  isIgnoredSourceStructureEntry,
+} from './sourceStructureIgnore';
+export {
+  isIgnoredByGitignoreRules,
+  loadGitignoreRules,
+  type CoggitIgnoreRuleSet,
+  type FileReader,
+  __testing__ as gitignoreTesting,
+} from './gitignore';
+export { __testing__ as statusTesting } from './status';
+export { RESOLVE_ERROR_CODES } from './operations';
+export {
+  applyRoutesFilters,
+  suggestRoutePathHints,
+} from './routesProjection';
+export { joinUriPath } from './uri-utils';
+export {
+  WatchLeaseError,
+  noOpWatchLeaseManager,
+  type WatchLeaseHandle,
+  type WatchLeaseManager,
+} from './locks';
+export type {
+  MappingIndex,
+  RoutesProjectionNode,
+  TreeProjectionNode,
+} from './types';
+export {
+  getParentDir,
+  getProjectRootPath,
+  inferSourceUriCandidatesFromCognitionUri,
+  resolveConfigRoots,
+  toCognitionFilePath,
+  toCognitionFolderReadmePath,
+} from './mapping';
+export type {
+  EvidenceDiagnostic,
+  StatusContext,
+  StatusIssue,
+} from './statusTypes';
+export type {
+  CoggitConfig,
+  CoggitNodeKind,
+} from './snapshotTypes';

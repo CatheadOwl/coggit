@@ -1,6 +1,6 @@
-import type { AddCognitionKind } from '../core';
-import type { CoggitProject } from '../core/interfaces';
-import { addOperation } from '../core';
+import type { AddCognitionKind } from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
+import { addOperation } from '@coggit/core';
 import { renderAddOperationResult } from './operationDto';
 import { UserFacingError } from './status';
 import { sourcePathCandidates } from './util';

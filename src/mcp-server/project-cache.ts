@@ -1,6 +1,6 @@
-import { discoverCoggitProjects } from '../core/index.js';
-import type { CoggitProject, CoggitServices } from '../core/interfaces.js';
-import type { CoggitProjectDiscoveryOptions } from '../core/index.js';
+import { discoverCoggitProjects } from '@coggit/core';
+import type { CoggitProject, CoggitServices } from '@coggit/core';
+import type { CoggitProjectDiscoveryOptions } from '@coggit/core';
 
 export type GetCoggitProjects = () => Promise<CoggitProject[]>;
 

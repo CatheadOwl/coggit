@@ -6,13 +6,13 @@ import {
   renderStatusAgentInspectionText,
   type SnapshotOperationResult,
   type StatusOperationResult,
-} from '../core';
+} from '@coggit/core';
 import {
   renderNodeSnapshotTreeText,
   renderSnapshotTreeText,
   type SnapshotTreeTextOptions,
 } from '../render';
-import { formatTimestamp } from '../core/time';
+import { formatTimestamp } from '@coggit/core/internal';
 
 export { renderPathMissText };
 

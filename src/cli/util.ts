@@ -1,8 +1,8 @@
 import * as path from 'node:path';
 
-import type { CoggitProject } from '../core/interfaces';
-import type { SourcePathCandidatesExpander } from '../core';
-import { uriRelativePath } from '../core';
+import type { CoggitProject } from '@coggit/core';
+import type { SourcePathCandidatesExpander } from '@coggit/core';
+import { uriRelativePath } from '@coggit/core';
 import { pathToUriComponents } from '../runtime/node/uri';
 
 /**

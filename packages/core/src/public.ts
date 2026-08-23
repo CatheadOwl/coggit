@@ -1,11 +1,12 @@
 /**
- * Public SDK surface for `coggit/core`.
+ * Public SDK surface for `@coggit/core`.
  *
- * This is the curated barrel exposed through the package `./core` export. It
+ * This is the curated barrel exposed through the package `.` export. It
  * intentionally omits the watch family (`calculateAffected`, `applyWatchEventToProjects`,
  * `createWatchHost`, watch types) — v1 is reconcile-on-read and watch authority
  * remains adapter-only — and adds the port contracts runtime adapters must
- * implement against. `src/core/index.ts` stays the full internal barrel.
+ * implement against. `internal.ts` stays the full internal barrel (the
+ * `@coggit/core/internal` export for in-repo consumers).
  */
 
 export { initProject } from './init';

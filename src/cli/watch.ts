@@ -2,19 +2,19 @@ import * as path from 'node:path';
 
 import {
   buildSnapshotFromProjects,
-  createWatchHost,
   openCoggitProject,
   readWorkspaceRoot,
+} from '@coggit/core';
+import type { CoggitProject, CoggitServices } from '@coggit/core';
+import {
+  createWatchHost,
+  WatchLeaseError,
   type WatchHostObservationResult,
   type WatchObservation,
   type WatchObserver,
-} from '../core';
-import type { CoggitProject, CoggitServices } from '../core/interfaces';
-import {
-  WatchLeaseError,
   type WatchLeaseHandle,
   type WatchLeaseManager,
-} from '../core/locks';
+} from '@coggit/core/internal';
 import { NodeWatchLeaseManager } from '../runtime/node';
 import { createNodeFileWatchObserver } from '../runtime/node/watch';
 import { pathToUriComponents, uriComponentsToPath } from '../runtime/node/uri';

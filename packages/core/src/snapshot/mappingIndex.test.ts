@@ -1,37 +1,34 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 
 import { calculateAffected } from '../affected';
+import type { UriComponents } from '../interfaces';
 import type { CoggitTreeNode, CoggitWorkspaceRoot } from '../types';
-import { uriKey } from '../../runtime/vscode/adapter/uri';
+import { joinUriPath, uriKey } from '../uri-utils';
 import { buildMappingIndex } from './mappingIndex';
 
 suite('mapping index URI identity', () => {
 	test('builds mapping index with URI identity strings', () => {
-		const sourceRoot = vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project/src');
-		const cognitionRoot = vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project/src_cog');
-		const sourceUri = vscode.Uri.joinPath(sourceRoot, 'foo.ts');
-		const cognitionUri = vscode.Uri.joinPath(cognitionRoot, 'foo.md');
+		const remoteRoot: UriComponents = {
+			scheme: 'vscode-remote',
+			authority: 'ssh-remote%2Bbox',
+			path: '/workspace/project',
+			query: '',
+			fragment: '',
+		};
+		const sourceRoot = joinUriPath(remoteRoot, 'src');
+		const cognitionRoot = joinUriPath(remoteRoot, 'src_cog');
+		const sourceUri = joinUriPath(sourceRoot, 'foo.ts');
+		const cognitionUri = joinUriPath(cognitionRoot, 'foo.md');
 		const root: CoggitWorkspaceRoot = {
 			id: 'root',
 			label: 'root',
 			workspaceFolder: {
-				uri: {
-					scheme: 'vscode-remote',
-					authority: 'ssh-remote%2Bbox',
-					path: '/workspace/project',
-					query: '',
-					fragment: '',
-				},
+				uri: remoteRoot,
 				name: 'project',
 				index: 0,
 			},
-			configUri: vscode.Uri.joinPath(
-				vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project'),
-				'.coggit',
-				'config.yaml',
-			),
-			projectRootUri: vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project'),
+			configUri: joinUriPath(remoteRoot, '.coggit', 'config.yaml'),
+			projectRootUri: remoteRoot,
 			sourceRootUri: sourceRoot,
 			cognitionRootUri: cognitionRoot,
 		};

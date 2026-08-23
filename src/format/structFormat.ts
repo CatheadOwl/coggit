@@ -5,13 +5,9 @@
 // lives in nodeFormat.ts so VS Code, MCP, copy, and future CLI paths share one
 // node-aware formatter.
 
-import type {
-  CoggitSnapshot,
-  CoggitTreeNode,
-  NodeStatusResult,
-  StatusIssue,
-} from '../core/types';
-import { describeObservedStatus } from '../core';
+import type { CoggitSnapshot, CoggitTreeNode, NodeStatusResult } from '@coggit/core';
+import type { StatusIssue } from '@coggit/core/internal';
+import { describeObservedStatus } from '@coggit/core';
 
 // ── Block Types ──────────────────────────────────────────────────────────────────
 

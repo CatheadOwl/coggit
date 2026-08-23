@@ -14,7 +14,7 @@ import {
   nullCoggitLogger,
   warnLog,
   type CoggitLogger,
-} from '../core/index.js';
+} from '@coggit/core';
 import { createCoggitMcpServer } from './server.js';
 import { MCP_PROJECT_DISCOVERY_OPTIONS } from './project-cache.js';
 

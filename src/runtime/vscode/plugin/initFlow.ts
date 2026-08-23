@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
-import type { FileSystem, UriComponents } from '../../../core/interfaces';
-import { initProject } from '../../../core/index';
+import type { FileSystem, UriComponents } from '@coggit/core';
+import { initProject } from '@coggit/core';
 import { toComponents } from '../adapter/uri';
-import { joinUriPath } from '../../../core/uri-utils';
+import { joinUriPath } from '@coggit/core/internal';
 
 export async function runInitProjectFlow(vfs: FileSystem): Promise<boolean> {
 	const workspaceFolders = vscode.workspace.workspaceFolders;

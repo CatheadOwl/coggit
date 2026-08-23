@@ -1,4 +1,4 @@
-import type { CoggitSnapshot, CoggitTreeNode } from '../core/types';
+import type { CoggitSnapshot, CoggitTreeNode } from '@coggit/core';
 import { nodeSnapshotTreeText, snapshotTreeText, type SnapshotScope, type SnapshotTreeTextOptions } from '../format/snapshotFormat';
 
 export type { SnapshotScope } from '../format/snapshotFormat';

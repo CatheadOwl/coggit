@@ -6,16 +6,15 @@ import * as path from 'node:path';
 import {
   discoverCoggitProjects,
   initProject,
-  type WatchObservationHandler,
-  type WatchObserver,
-} from '../core';
+} from '@coggit/core';
+import type { ProjectLockContext, UriComponents } from '@coggit/core';
 import {
   WatchLeaseError,
-  type ProjectLockContext,
+  type WatchObservationHandler,
+  type WatchObserver,
   type WatchLeaseHandle,
   type WatchLeaseManager,
-} from '../core/locks';
-import type { UriComponents } from '../core/interfaces';
+} from '@coggit/core/internal';
 import { createNodeCoggitServices, watchLeaseLockPath } from '../runtime/node';
 import { pathToUriComponents, uriComponentsToPath } from '../runtime/node/uri';
 import { openStrictWatchProject, startWatchSession } from './watch';

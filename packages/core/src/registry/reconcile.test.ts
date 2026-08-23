@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import { REGISTRY_SCHEMA_VERSION, Registry } from './index';
-import { InMemoryRegistryProvider } from '../../runtime/vscode/adapter/registryFs';
+import { InMemoryRegistryProvider } from './inMemoryRegistryProvider';
 import { computeBlobHash } from '../hash';
 import {
   scanCognitionDirectory,

@@ -17,7 +17,7 @@ import {
 	ensureMcpRuntime as installMcpRuntime,
 	getMcpLauncherPath,
 } from './runtime-support/mcp/userMcpRuntime.js';
-import type { CoggitLogger } from './core';
+import type { CoggitLogger } from '@coggit/core';
 
 type McpExperienceState =
 	| { kind: 'notAvailable' }

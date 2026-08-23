@@ -6,13 +6,15 @@ import type ParcelWatcher = require('@parcel/watcher');
 
 import {
   buildSnapshotFromProjects,
-  createWatchHost,
   discoverCoggitProjects,
   initProject,
   statusOperation,
+} from '@coggit/core';
+import {
+  createWatchHost,
   type WatchHostObservationResult,
   type WatchObservation,
-} from '../../core';
+} from '@coggit/core/internal';
 import { createNodeCoggitServices } from './index';
 import { pathToUriComponents } from './uri';
 import { createNodeFileWatchObserver } from './watch';

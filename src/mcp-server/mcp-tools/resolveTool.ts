@@ -1,15 +1,15 @@
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { renderPathMissText, resolveOperation } from '../../core/index.js';
-import type { ResolveOperationResult } from '../../core/index.js';
-import type { CoggitProject } from '../../core/interfaces.js';
+import { renderPathMissText, resolveOperation } from '@coggit/core';
+import type { ResolveOperationResult } from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
   resolveOperationOutputSchema,
   resolveStructuredContent,
 } from '../operationDto/index.js';
-import { formatTimestamp } from '../../core/time.js';
+import { formatTimestamp } from '@coggit/core/internal';
 import { recheckNextStepText, type ToolContent } from './toolShared.js';
 
 export function registerResolveTool(

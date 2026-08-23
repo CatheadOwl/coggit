@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { CoggitSnapshot, CoggitTreeNode } from '../../../core/types';
+import type { CoggitSnapshot, CoggitTreeNode } from '@coggit/core';
 import { COGGIT_RESOURCE_SCHEME, fromCoggitResourceUri, toCoggitResourceUri } from '../adapter/resourceMapper';
 import { fromComponents, uriKey } from '../adapter/uri';
 import { badgeFromStatus } from './badgeFormat.js';

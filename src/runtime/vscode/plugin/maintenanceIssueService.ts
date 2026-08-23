@@ -1,10 +1,10 @@
-import type { CoggitProject } from '../../../core/interfaces';
+import type { CoggitProject } from '@coggit/core';
 import type {
 	CoggitTreeNode,
 	NodeStatusResult,
 	OrphanedCognitionEntry,
-} from '../../../core/types';
-import { toRelativeUriPath } from '../../../core/index';
+} from '@coggit/core';
+import { toRelativeUriPath } from '@coggit/core';
 import type { MisplacedTreeEntry } from '../tree/misplacedTreeTypes';
 import { collectMisplacedTreeEntries } from './misplacedActions';
 

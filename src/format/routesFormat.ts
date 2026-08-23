@@ -1,5 +1,5 @@
-import type { RoutesPresentationContent } from '../core/routesProjection.js';
-import { countRouteNodes } from '../core/routesProjection.js';
+import type { RoutesPresentationContent } from '@coggit/core';
+import { countRouteNodes } from '@coggit/core';
 
 export type RoutesTextSurface = 'cli' | 'mcp';
 

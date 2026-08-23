@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 
-import type { ResolveOperationResult } from '../../core/index.js';
+import type { ResolveOperationResult } from '@coggit/core';
 import { __testing__ } from './resolveTool.js';
 
 const { resolveText } = __testing__;

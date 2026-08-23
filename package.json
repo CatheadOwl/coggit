@@ -38,10 +38,6 @@
   "main": "./dist/extension.js",
   "exports": {
     ".": "./dist/extension.js",
-    "./core": {
-      "types": "./dist/core/public.d.ts",
-      "default": "./dist/core.js"
-    },
     "./runtime-node": {
       "types": "./dist/runtime/node/index.d.ts",
       "default": "./dist/runtime-node.js"
@@ -258,13 +254,14 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run check-types && pnpm run lint && pnpm run build:types && node esbuild.js",
+    "compile": "pnpm run build:core && pnpm run check-types && pnpm run lint && pnpm run build:types && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run check-types && pnpm run lint && pnpm run build:types && node esbuild.js --production",
+    "package": "pnpm run build:core && pnpm run check-types && pnpm run lint && pnpm run build:types && node esbuild.js --production",
+    "build:core": "pnpm --filter @coggit/core build",
     "build:types": "tsc -p tsconfig.build.json",
-    "test:compile": "tsc -p . --outDir out && node scripts/copy-test-assets.js",
+    "test:compile": "tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
     "test:watch": "tsc -p . -w --outDir out",
     "pretest": "pnpm run test:compile && pnpm run compile && pnpm run lint",
     "check-types": "tsc --noEmit",
@@ -274,6 +271,7 @@
     "publish:marketplace": "npx --yes @vscode/vsce publish"
   },
   "devDependencies": {
+    "@coggit/core": "workspace:*",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "@types/vscode": "1.90.0",

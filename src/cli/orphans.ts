@@ -1,5 +1,5 @@
-import type { CoggitProject } from '../core/interfaces';
-import type { OrphanedCognitionEntry } from '../core/types';
+import type { CoggitProject } from '@coggit/core';
+import type { OrphanedCognitionEntry } from '@coggit/core';
 import { UserFacingError } from './status';
 
 export interface OrphansCliOptions {

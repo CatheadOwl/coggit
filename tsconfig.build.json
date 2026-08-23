@@ -7,7 +7,6 @@
         "outDir": "dist"
     },
     "include": [
-        "src/core/public.ts",
         "src/runtime/node/index.ts",
         "src/markdown.d.ts"
     ]

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { CoggitTreeNode } from '../../../core/types';
+import type { CoggitTreeNode } from '@coggit/core';
 import { nodeClipboardStatusText } from '../../../format/nodePresentation.js';
 import { buildMisplacedInfoText } from '../../../format/misplacedInfoText.js';
 import type { CoggitModel } from '../plugin/model';

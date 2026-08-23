@@ -2,15 +2,16 @@ import * as nodeFs from 'node:fs/promises';
 import * as path from 'node:path';
 import ParcelWatcher = require('@parcel/watcher');
 
+import type { CoggitWorkspaceRoot } from '@coggit/core';
+import type { UriComponents } from '@coggit/core';
 import type {
-  CoggitWorkspaceRoot,
   WatchObservation,
   WatchObservationHandler,
   WatchObserver,
   WatchObserverSubscription,
-} from '../../core';
-import type { WatchEventDomain, WatchFileChangeKind } from '../../core';
-import type { UriComponents } from '../../core/interfaces';
+  WatchEventDomain,
+  WatchFileChangeKind,
+} from '@coggit/core/internal';
 import { pathToUriComponents, uriComponentsToPath } from './uri';
 
 interface WatchTarget {

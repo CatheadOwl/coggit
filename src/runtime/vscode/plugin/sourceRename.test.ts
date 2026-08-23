@@ -1,14 +1,14 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 
-import type { CoggitProject, UriComponents } from '../../../core/interfaces';
+import type { CoggitProject, UriComponents } from '@coggit/core';
 import type {
 	CoggitTreeNode,
 	CoggitWorkspaceRoot,
 	MisplacedCognitionEntry,
 	OrphanedCognitionEntry,
 	StrayCognitionEntry,
-} from '../../../core/types';
+} from '@coggit/core';
 import { handleSourceRenameFiles } from './sourceRename';
 
 function uri(path: string): vscode.Uri {

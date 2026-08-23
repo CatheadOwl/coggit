@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { ADD_OPERATION_ERROR_CODES } from '../../core/index.js';
-import type { AddOperationResult, CognitionKind } from '../../core/index.js';
+import { ADD_OPERATION_ERROR_CODES } from '@coggit/core';
+import type { AddOperationResult, CognitionKind } from '@coggit/core';
 import {
   createHandbookMaintenanceAction,
   handbookUri,

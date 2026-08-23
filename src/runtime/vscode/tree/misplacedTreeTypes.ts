@@ -1,4 +1,4 @@
-import type { MisplacedCognitionEntry } from '../../../core/types';
+import type { MisplacedCognitionEntry } from '@coggit/core';
 
 export type MisplacedMoveState = 'pending' | 'succeeded' | 'failed';
 

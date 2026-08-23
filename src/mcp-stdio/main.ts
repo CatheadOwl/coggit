@@ -1,6 +1,6 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-import { discoverCoggitProjects } from '../core/index.js';
+import { discoverCoggitProjects } from '@coggit/core';
 import { createNodeCoggitServices } from '../runtime/node/index.js';
 import { MCP_PROJECT_DISCOVERY_OPTIONS } from '../mcp-server/project-cache.js';
 import { createCoggitMcpServer } from '../mcp-server/server.js';

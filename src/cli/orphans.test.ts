@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 
-import type { CoggitProject, UriComponents } from '../core/interfaces';
-import type { OrphanedCognitionEntry } from '../core/types';
+import type { CoggitProject, UriComponents } from '@coggit/core';
+import type { OrphanedCognitionEntry } from '@coggit/core';
 import { runOrphans } from './orphans';
 
 function uri(path: string): UriComponents {

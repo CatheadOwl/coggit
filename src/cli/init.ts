@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 
-import { initProject } from '../core';
-import type { FileSystem } from '../core/interfaces';
+import { initProject } from '@coggit/core';
+import type { FileSystem } from '@coggit/core';
 import { pathToUriComponents } from '../runtime/node/uri';
 import { UserFacingError } from './status';
 

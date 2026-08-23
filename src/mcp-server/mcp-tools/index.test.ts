@@ -11,8 +11,8 @@ import type {
   FileStat,
   FileSystem,
   UriComponents,
-} from '../../core/interfaces.js';
-import type { CoggitWorkspaceRoot } from '../../core/types.js';
+} from '@coggit/core';
+import type { CoggitWorkspaceRoot } from '@coggit/core';
 import { PROJECTS_RESOURCE_URI } from '../resources.js';
 import { routesOperationOutputSchema } from '../operationDto/index.js';
 import { createCoggitMcpServer } from '../server.js';

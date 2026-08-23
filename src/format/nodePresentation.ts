@@ -1,5 +1,5 @@
-import type { CoggitTreeNode } from '../core/types';
-import { inspectNodeStatus, toRelativeUriPath } from '../core';
+import type { CoggitTreeNode } from '@coggit/core';
+import { inspectNodeStatus, toRelativeUriPath } from '@coggit/core';
 import { clipboardNodeStatusText, tooltipNodeStatusText } from './nodeFormat';
 
 export function nodeTooltip(node: CoggitTreeNode): string {

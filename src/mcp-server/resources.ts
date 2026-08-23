@@ -4,8 +4,8 @@ import {
   getCognitionHandbook,
   handbookCatalog,
   projectContext,
-} from '../core/index.js';
-import type { CognitionKind } from '../core/index.js';
+} from '@coggit/core';
+import type { CognitionKind } from '@coggit/core';
 import type { GetCoggitProjects } from './project-cache.js';
 export const PROJECTS_RESOURCE_URI = 'coggit://projects';
 export const COGNITION_ROOTS_RESOURCE_URI = 'coggit://cognition-root';

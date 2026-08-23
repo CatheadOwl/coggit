@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 import type {
   SnapshotOperationResult,
-} from '../../core/index.js';
-import type { TreeProjectionNode } from '../../core/types.js';
+} from '@coggit/core';
+import type { TreeProjectionNode } from '@coggit/core/internal';
 import { projectContextSchema, operationActionSchema, toMcpOperationAction, toMcpProjectContext } from './shared.js';
 
 export const leanSnapshotNodeSchema: z.ZodType<ReturnType<typeof toLeanSnapshotNode>> = z.lazy(() => z.object({

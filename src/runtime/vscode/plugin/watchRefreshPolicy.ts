@@ -1,4 +1,4 @@
 export {
 	selectWatchRefreshMode,
 	type WatchRefreshMode,
-} from '../../../core/index';
+} from '@coggit/core/internal';

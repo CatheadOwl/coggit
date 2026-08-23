@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { RESOLVE_ERROR_CODES } from '../../core/operations.js';
-import type { ResolveOperationResult } from '../../core/index.js';
+import { RESOLVE_ERROR_CODES } from '@coggit/core/internal';
+import type { ResolveOperationResult } from '@coggit/core';
 import {
   mcpMaintenanceNextActionSchema,
   operationActionSchema,

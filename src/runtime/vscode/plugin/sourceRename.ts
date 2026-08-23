@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { CoggitProject } from '../../../core/interfaces';
+import type { CoggitProject } from '@coggit/core';
 import { fromComponents, toComponents, uriRelativePath } from '../adapter/uri';
 
 export interface SourceRenameFile {

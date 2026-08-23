@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { NodeStatusResult } from '../../../core/types';
+import type { NodeStatusResult } from '@coggit/core';
 
 // File decoration badge mapping for VS Code.
 

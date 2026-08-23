@@ -6,9 +6,9 @@
  * filesystem adapters. The watcher observer is adapter-only and stays a deep
  * import (`runtime/node/watch`), outside the v1 reconcile-on-read surface.
  */
-import type { CoggitServices } from '../../core/interfaces';
-import { createCoggitServices } from '../../core/project';
-import { createEnvCoggitLogger } from '../../core/logger';
+import type { CoggitServices } from '@coggit/core';
+import { createCoggitServices } from '@coggit/core';
+import { createEnvCoggitLogger } from '@coggit/core';
 import { NodeConfigProvider, type NodeConfigDiscoveryMode } from './config';
 import { NodeFileSystem } from './fs';
 import { NodeProjectLockManager } from './locks';

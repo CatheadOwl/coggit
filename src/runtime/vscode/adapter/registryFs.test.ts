@@ -1,8 +1,8 @@
 import * as assert from 'node:assert';
-import { InMemoryRegistryProvider } from './registryFs';
-import { Registry } from '../../../core/registry/index';
-import type { RegistryFile } from '../../../core/types';
-import { REGISTRY_SCHEMA_VERSION } from '../../../core/registry/index';
+import { InMemoryRegistryProvider } from '@coggit/core/internal';
+import { Registry } from '@coggit/core/internal';
+import type { RegistryFile } from '@coggit/core';
+import { REGISTRY_SCHEMA_VERSION } from '@coggit/core/internal';
 
 function makeFile(entries: Record<string, any> = {}): RegistryFile {
   return {

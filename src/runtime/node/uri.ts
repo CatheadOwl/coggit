@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { UriComponents } from '../../core/interfaces';
+import type { UriComponents } from '@coggit/core';
 
 export function pathToUriComponents(filePath: string): UriComponents {
   const url = pathToFileURL(path.resolve(filePath));

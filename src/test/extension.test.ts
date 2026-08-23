@@ -2,18 +2,21 @@ import * as assert from 'assert';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-import { __testing__ as statusTesting, collectSubtreeIssues, countSubtreeIssues, computeRuntimeStatus, projectStatusResultToNodeStatus, querySubtreeIssues } from '../core/status';
+import { collectSubtreeIssues, countSubtreeIssues, computeRuntimeStatus, projectStatusResultToNodeStatus, querySubtreeIssues } from '@coggit/core';
+import { statusTesting } from '@coggit/core/internal';
 import { clipboardText, tooltipText } from '../format/nodeFormat.js';
 import { snapshotTreeText } from '../format/snapshotFormat.js';
 import { nodeClipboardStatusText, nodeTooltip } from '../format/nodePresentation.js';
-import { renderStatusAgentInspectionText } from '../core/statusAgentPresentation.js';
+import { renderStatusAgentInspectionText } from '@coggit/core';
 import { CoggitTreeDataProvider } from '../runtime/vscode/tree/coggitTreeDataProvider';
-import { __testing__ as gitignoreTesting } from '../core/gitignore';
-import { getParentDir, getProjectRootPath, inferSourceUriCandidatesFromCognitionUri, normalizeSourcePathInput, resolveConfigRoots, toCognitionFilePath, toCognitionFileUri, toCognitionFolderReadmePath, toCognitionFolderReadmeUri } from '../core/mapping';
+import { gitignoreTesting } from '@coggit/core/internal';
+import { normalizeSourcePathInput, toCognitionFileUri, toCognitionFolderReadmeUri } from '@coggit/core';
+import { getParentDir, getProjectRootPath, inferSourceUriCandidatesFromCognitionUri, resolveConfigRoots, toCognitionFilePath, toCognitionFolderReadmePath } from '@coggit/core/internal';
 import { toCoggitResourceUri, fromCoggitResourceUri } from '../runtime/vscode/adapter/resourceMapper';
 import { formatUri, fromComponents, isEqualOrChildUri, joinUriPath, uriBasename, uriKey, uriRelativePath } from '../runtime/vscode/adapter/uri';
-import type { CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, EvidenceDiagnostic, NodeStatusResult, StatusContext } from '../core/types';
-import type { UriComponents } from '../core/interfaces';
+import type { CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, NodeStatusResult } from '@coggit/core';
+import type { EvidenceDiagnostic, StatusContext } from '@coggit/core/internal';
+import type { UriComponents } from '@coggit/core';
 
 suite('CogGit Ghost Tree', () => {
 	function mkTestUri(path: string): UriComponents {

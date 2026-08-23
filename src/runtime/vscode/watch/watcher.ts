@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { WatchFileChangeKind } from '../../../core/index';
+import type { WatchFileChangeKind } from '@coggit/core/internal';
 
 export type FileChangeKind = WatchFileChangeKind;
 

@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 
-import type { StatusOperationResult } from '../../core/index.js';
+import type { StatusOperationResult } from '@coggit/core';
 import { __testing__ } from './statusTool.js';
 
 const { statusText } = __testing__;

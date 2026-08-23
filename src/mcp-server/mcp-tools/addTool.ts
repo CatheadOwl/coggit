@@ -1,9 +1,9 @@
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { addOperation, renderPathMissText } from '../../core/index.js';
-import type { AddOperationResult } from '../../core/index.js';
-import type { CoggitProject } from '../../core/interfaces.js';
+import { addOperation, renderPathMissText } from '@coggit/core';
+import type { AddOperationResult } from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
   addOperationOutputSchema,

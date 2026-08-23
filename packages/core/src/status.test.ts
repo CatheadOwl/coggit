@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 
 import { computeRuntimeStatus, describeObservedStatus } from './status';
 import { computeCognitionIdentity, computeSourceFactIdentity } from './hash';
@@ -7,14 +6,14 @@ import type { ObservedStatus } from './types';
 
 suite('runtime status adapter', () => {
 	test('computes runtime status with URI evidence identities', () => {
-		const sourceUri = vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project/src/foo.ts');
-		const cognitionUri = vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project/src_cog/foo.md');
+		const sourceUri = 'vscode-remote://ssh-remote%2Bbox/workspace/project/src/foo.ts';
+		const cognitionUri = 'vscode-remote://ssh-remote%2Bbox/workspace/project/src_cog/foo.md';
 
 		const result = computeRuntimeStatus({
-			sourceUri: sourceUri.toString(),
+			sourceUri,
 			sourceContent: 'export const value = 1;\n',
 			sourceMtimeMs: 1000,
-			cognitionUri: cognitionUri.toString(),
+			cognitionUri,
 			cognitionContent: '# Foo\n\nUseful implementation notes.\nMore context.\n',
 			cognitionMtimeMs: 2000,
 		});

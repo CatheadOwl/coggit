@@ -5,8 +5,8 @@ import {
   projectRoutesEntries,
   routeProjectionLineText,
   type RoutesOperationResult,
-} from '../../core/index.js';
-import type { RoutesProjectionNode } from '../../core/types.js';
+} from '@coggit/core';
+import type { RoutesProjectionNode } from '@coggit/core/internal';
 
 export const routesProjectionNodeSchema: z.ZodType<RoutesProjectionNode> = z.lazy(() => z.object({
   path: z.string(),

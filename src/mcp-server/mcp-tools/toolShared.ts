@@ -1,4 +1,4 @@
-import type { CoggitOperationAction, CoggitProjectContext } from '../../core/index.js';
+import type { CoggitOperationAction, CoggitProjectContext } from '@coggit/core';
 import { MCP_TOOL_NAMES } from '../operationDto/shared.js';
 
 export function formatProjectContext(projects: readonly Pick<CoggitProjectContext, 'label' | 'sourceRoot' | 'cognitionRoot'>[]): string {

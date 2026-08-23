@@ -1,4 +1,4 @@
-import type { CoggitProject } from '../../../core/interfaces';
+import type { CoggitProject } from '@coggit/core';
 import type { MisplacedTreeEntry } from '../tree/misplacedTreeTypes';
 
 export async function collectMisplacedTreeEntries(

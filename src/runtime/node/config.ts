@@ -2,8 +2,8 @@ import * as nodeFs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 
-import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '../../core/interfaces';
-import { isIgnoredSourceStructureEntry } from '../../core/sourceStructureIgnore';
+import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '@coggit/core';
+import { isIgnoredSourceStructureEntry } from '@coggit/core/internal';
 import { pathToUriComponents } from './uri';
 
 const CONFIG_PATTERN = '**/.coggit/config.yaml';

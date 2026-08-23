@@ -1,0 +1,17 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "noEmit": false
+    },
+    "include": [
+        "src",
+        "packages/core/src"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "out",
+        "packages/core/src/markdown.d.ts"
+    ]
+}

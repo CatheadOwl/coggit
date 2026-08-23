@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { CoggitLogEvent, CoggitLogLevel, CoggitLogger } from '../../../core';
+import type { CoggitLogEvent, CoggitLogLevel, CoggitLogger } from '@coggit/core';
 
 const LOG_LEVEL_PRIORITIES: Record<CoggitLogLevel, number> = {
 	debug: 10,

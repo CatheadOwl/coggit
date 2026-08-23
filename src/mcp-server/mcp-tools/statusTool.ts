@@ -6,9 +6,9 @@ import {
   pathMissMessage,
   renderStatusAgentInspectionText,
   statusOperation,
-} from '../../core/index.js';
-import type { StatusOperationResult } from '../../core/index.js';
-import type { CoggitProject } from '../../core/interfaces.js';
+} from '@coggit/core';
+import type { StatusOperationResult } from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
   handbookResourceLink,

@@ -1,5 +1,5 @@
-import type { CoggitProject } from '../core/interfaces';
-import { resolveOperation } from '../core';
+import type { CoggitProject } from '@coggit/core';
+import { resolveOperation } from '@coggit/core';
 import { renderResolveOperationResult } from './operationDto';
 import { UserFacingError } from './status';
 import { sourcePathCandidates } from './util';

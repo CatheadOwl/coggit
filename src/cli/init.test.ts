@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as path from 'node:path';
 
-import type { FileStat, FileSystem, UriComponents } from '../core/interfaces';
+import type { FileStat, FileSystem, UriComponents } from '@coggit/core';
 import { pathToUriComponents } from '../runtime/node/uri';
 import { runInit } from './init';
 import { UserFacingError } from './status';

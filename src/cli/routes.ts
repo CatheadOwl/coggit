@@ -1,8 +1,8 @@
 import {
   assembleRoutesContent,
   routesOperation,
-} from '../core';
-import type { CoggitProject } from '../core/interfaces';
+} from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 import { routesContentText } from '../format';
 import { UserFacingError } from './status';
 

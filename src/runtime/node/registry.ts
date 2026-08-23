@@ -1,10 +1,10 @@
 import * as nodeFs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import type { RegistryFile, RegistryProvider } from '../../core/types';
-import type { RegistryProviderFactory, UriComponents } from '../../core/interfaces';
-import type { CoggitLogger } from '../../core/logger';
-import { warnLog } from '../../core/logger';
+import type { RegistryFile, RegistryProvider } from '@coggit/core';
+import type { RegistryProviderFactory, UriComponents } from '@coggit/core';
+import type { CoggitLogger } from '@coggit/core';
+import { warnLog } from '@coggit/core';
 import { uriComponentsToPath } from './uri';
 
 export class NodeRegistryProviderFactory implements RegistryProviderFactory {

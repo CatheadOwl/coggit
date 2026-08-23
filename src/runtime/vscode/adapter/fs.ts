@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { FileSystem, FileStat, UriComponents } from '../../../core/interfaces';
+import type { FileSystem, FileStat, UriComponents } from '@coggit/core';
 
 export class VscodeFileSystem implements FileSystem {
   async readFile(uri: UriComponents): Promise<string> {

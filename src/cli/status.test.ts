@@ -3,8 +3,8 @@ import * as nodeFs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import type { CoggitProject, SourcePathResolution } from '../core/interfaces';
-import type { CoggitTreeNode, CoggitWorkspaceRoot } from '../core/types';
+import type { CoggitProject, SourcePathResolution } from '@coggit/core';
+import type { CoggitTreeNode, CoggitWorkspaceRoot } from '@coggit/core';
 import { pathToUriComponents } from '../runtime/node/uri';
 import { runStatus } from './status';
 

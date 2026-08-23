@@ -7,7 +7,7 @@ import {
   type StatusOperationResult,
   type StatusPresentationView,
   type StatusTriageView,
-} from '../../core/index.js';
+} from '@coggit/core';
 import {
   createHandbookMaintenanceAction,
   handbookUri,

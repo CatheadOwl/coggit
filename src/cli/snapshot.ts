@@ -1,5 +1,5 @@
-import type { CoggitProject } from '../core/interfaces';
-import { projectSnapshotTree, projectTreeFromSnapshot, snapshotOperation } from '../core';
+import type { CoggitProject } from '@coggit/core';
+import { projectSnapshotTree, projectTreeFromSnapshot, snapshotOperation } from '@coggit/core';
 import { type SnapshotTreeTextOptions } from '../render';
 import { renderSnapshotOperationResult } from './operationDto';
 import { UserFacingError } from './status';

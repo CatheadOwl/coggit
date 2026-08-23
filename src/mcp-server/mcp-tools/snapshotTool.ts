@@ -7,11 +7,11 @@ import {
   projectSnapshotTree,
   projectTreeFromSnapshot,
   snapshotOperation,
-} from '../../core/index.js';
+} from '@coggit/core';
 import type {
   SnapshotOperationResult,
-} from '../../core/index.js';
-import type { CoggitProject } from '../../core/interfaces.js';
+} from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 import { nodeSnapshotTreeText, snapshotTreeText } from '../../format/snapshotFormat.js';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {

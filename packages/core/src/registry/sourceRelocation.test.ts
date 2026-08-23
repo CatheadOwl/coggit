@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 
-import { InMemoryRegistryProvider } from '../../runtime/vscode/adapter/registryFs';
+import { InMemoryRegistryProvider } from './inMemoryRegistryProvider';
 import { Registry } from './index';
 import { applyRegistrySourceRelocations } from './sourceRelocation';
 import type { PathKeyRecord } from '../types';

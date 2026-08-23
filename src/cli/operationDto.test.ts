@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 
-import type { AddOperationResult, ResolveOperationResult, StatusOperationResult } from '../core';
+import type { AddOperationResult, ResolveOperationResult, StatusOperationResult } from '@coggit/core';
 import { renderAddOperationResult, renderResolveOperationResult, renderStatusOperationResult } from './operationDto';
 
 suite('CLI operation DTO surfacing', () => {

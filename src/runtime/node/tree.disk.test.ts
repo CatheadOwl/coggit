@@ -15,9 +15,9 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { createNodeCoggitServices } from '../../runtime/node';
-import { discoverCoggitProjects } from '../project';
-import type { CoggitProject } from '../interfaces';
+import { createNodeCoggitServices } from './index';
+import { discoverCoggitProjects } from '@coggit/core';
+import type { CoggitProject } from '@coggit/core';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

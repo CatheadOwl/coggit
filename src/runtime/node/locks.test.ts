@@ -3,7 +3,8 @@ import * as nodeFs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { ProjectLockError, WatchLeaseError } from '../../core/locks';
+import { ProjectLockError } from '@coggit/core';
+import { WatchLeaseError } from '@coggit/core/internal';
 import {
   NodeProjectLockManager,
   NodeWatchLeaseManager,

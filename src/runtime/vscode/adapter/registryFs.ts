@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import type { RegistryProvider, RegistryFile } from '../../../core/types';
-import type { UriComponents } from '../../../core/interfaces';
-import type { CoggitLogger } from '../../../core/logger';
-import { warnLog } from '../../../core/logger';
+import type { RegistryProvider, RegistryFile } from '@coggit/core';
+import type { UriComponents } from '@coggit/core';
+import type { CoggitLogger } from '@coggit/core';
+import { warnLog } from '@coggit/core';
 
 /**
  * VSCode filesystem adapter for .coggit/registry.json persistence.
@@ -97,28 +97,5 @@ export class VscodeRegistryProvider implements RegistryProvider {
 		} catch {
 			warnLog(this.logger, 'registry.io', 'Failed to write registry backup');
 		}
-	}
-}
-
-/**
- * In-memory registry provider for testing.
- *
- * Stores data as a deep-cloned JSON object so each load/save round-trip
- * produces independent copies (no shared references).
- */
-export class InMemoryRegistryProvider implements RegistryProvider {
-	private data: RegistryFile | null = null;
-
-	async load(): Promise<RegistryFile | null> {
-		return this.data ? JSON.parse(JSON.stringify(this.data)) : null;
-	}
-
-	async save(file: RegistryFile): Promise<void> {
-		this.data = JSON.parse(JSON.stringify(file));
-	}
-
-	/** Test helper: simulate corrupt data to exercise recovery paths. */
-	corrupt(): void {
-		this.data = { schemaVersion: 0, updatedAt: '', entries: {} as any };
 	}
 }

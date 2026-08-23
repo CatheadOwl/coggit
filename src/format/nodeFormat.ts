@@ -1,5 +1,5 @@
-import type { NodeStatusInspection, NodeStatusResult } from '../core/types';
-import { describeObservedStatus, projectStatusPresentation, renderStatusPresentation } from '../core';
+import type { NodeStatusInspection, NodeStatusResult } from '@coggit/core';
+import { describeObservedStatus, projectStatusPresentation, renderStatusPresentation } from '@coggit/core';
 import type { FormatStyle } from './structFormat.js';
 
 // ── Shared: tooltip and clipboard produce the same content structure ─────────

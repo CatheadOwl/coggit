@@ -1,5 +1,5 @@
-import type { CoggitSnapshot, CoggitTreeNode } from '../core/types';
-import { describeObservedStatus } from '../core';
+import type { CoggitSnapshot, CoggitTreeNode } from '@coggit/core';
+import { describeObservedStatus } from '@coggit/core';
 import { formatFileList } from './structFormat.js';
 
 export type SnapshotScope = 'tracked' | 'untracked' | 'all' | 'issues';

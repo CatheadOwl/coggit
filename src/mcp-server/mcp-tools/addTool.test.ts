@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 
-import type { AddOperationResult } from '../../core/index.js';
+import type { AddOperationResult } from '@coggit/core';
 import { __testing__ } from './addTool.js';
 
 const { addText } = __testing__;

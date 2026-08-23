@@ -24,8 +24,8 @@ async function emitMarkdownTextModules(sourceDir, targetDir) {
 
 async function main() {
 	const roots = [
-		['src/core/cognition', 'out/core/cognition'],
-		['src/prompt-assets', 'out/prompt-assets'],
+		['packages/core/src/cognition', 'out/packages/core/src/cognition'],
+		['src/prompt-assets', 'out/src/prompt-assets'],
 	];
 
 	await Promise.all(roots.map(([source, target]) => emitMarkdownTextModules(
