@@ -5,7 +5,7 @@ import * as path from 'node:path';
 
 import type { CoggitProject, SourcePathResolution } from '@coggit/core';
 import type { CoggitTreeNode, CoggitWorkspaceRoot } from '@coggit/core';
-import { pathToUriComponents } from '../runtime/node/uri';
+import { pathToUriComponents } from '@coggit/runtime-node';
 import { runStatus } from './status';
 
 function uri(path: string) {

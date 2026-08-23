@@ -15,9 +15,8 @@ import {
   type WatchLeaseHandle,
   type WatchLeaseManager,
 } from '@coggit/core/internal';
-import { NodeWatchLeaseManager } from '../runtime/node';
-import { createNodeFileWatchObserver } from '../runtime/node/watch';
-import { pathToUriComponents, uriComponentsToPath } from '../runtime/node/uri';
+import { NodeWatchLeaseManager, pathToUriComponents, uriComponentsToPath } from '@coggit/runtime-node';
+import { createNodeFileWatchObserver } from '@coggit/runtime-node/internal';
 import { UserFacingError } from './status';
 
 export interface WatchCliOptions {
@@ -75,8 +74,8 @@ export async function openStrictWatchProject(
  * Start continuous observation for the given projects and emit one line per
  * delivered observation.
  *
- * The watcher is adapter-only and stays a deep import (`runtime/node/watch`),
- * outside the `coggit/runtime-node` v1 surface; the CLI is its first real
+ * The watcher is adapter-only and stays internal (`@coggit/runtime-node/internal`),
+ * outside the `@coggit/runtime-node` v1 surface; the CLI is its first real
  * caller. Each project gets its own observer + host pair so a single project
  * cannot drop the others.
  */

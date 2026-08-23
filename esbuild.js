@@ -75,15 +75,9 @@ async function main() {
 				js: '#!/usr/bin/env node',
 			},
 		}),
-		// SDK library entries — the public `coggit/runtime-node` surface. Node
-		// built-ins (`node:fs`, `node:path`, `node:crypto`) stay external;
-		// everything else bundles into a self-contained CJS file. (`coggit/core`
-		// now lives in the `@coggit/core` package, which builds itself.)
-		esbuild.context({
-			...shared,
-			entryPoints: ['src/runtime/node/index.ts'],
-			outfile: 'dist/runtime-node.js',
-		}),
+		// The SDK library entries now build inside their own workspace
+		// packages (`@coggit/core` and `@coggit/runtime-node`); the remaining
+		// root entries bundle them from their workspace links.
 	]);
 	if (watch) {
 		await Promise.all(contexts.map((ctx) => ctx.watch()));
@@ -99,8 +93,8 @@ async function removeStaleDistOutputs() {
 
 	// Every `.js` / `.js.map` file in dist/ is an esbuild bundle produced by
 	// this script; remove them all up front so orphaned entries (e.g. the
-	// pre-phase-2 `dist/core.js`) never ship. `build:types` only emits `.d.ts`,
-	// so this never touches declaration outputs.
+	// pre-phase-2 `dist/core.js`) never ship. Declaration outputs now live in
+	// `packages/*/dist`, so this never touches them.
 	const entries = await fs.readdir(distDir).catch(() => []);
 	await Promise.all(
 		entries

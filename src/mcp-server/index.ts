@@ -6,7 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { VscodeFileSystem } from '../runtime/vscode/adapter/fs.js';
 import { VscodeConfigProvider } from '../runtime/vscode/adapter/config.js';
 import { VscodeRegistryProvider } from '../runtime/vscode/adapter/registryFs.js';
-import { NodeProjectLockManager } from '../runtime/node/locks.js';
+import { NodeProjectLockManager } from '@coggit/runtime-node';
 import {
   createCoggitServices,
   discoverCoggitProjects,

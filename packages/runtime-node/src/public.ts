@@ -1,10 +1,11 @@
 /**
- * Public SDK surface for `coggit/runtime-node`.
+ * Public SDK surface for `@coggit/runtime-node`.
  *
  * Exposes the reusable Node primitives (fs, config, locks, registry, URI) and
  * the service composition root so non-VS Code runtimes can build on the local
- * filesystem adapters. The watcher observer is adapter-only and stays a deep
- * import (`runtime/node/watch`), outside the v1 reconcile-on-read surface.
+ * filesystem adapters. The watcher observer is adapter-only and lives in
+ * `internal.ts` (the `@coggit/runtime-node/internal` export), outside the v1
+ * reconcile-on-read surface.
  */
 import type { CoggitServices } from '@coggit/core';
 import { createCoggitServices } from '@coggit/core';

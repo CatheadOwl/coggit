@@ -1,0 +1,46 @@
+{
+  "name": "@coggit/runtime-node",
+  "version": "0.2.0",
+  "description": "CogGit Node runtime: local filesystem, config, registry, lock, URI, and service-construction primitives.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CatheadOwl/coggit.git",
+    "directory": "packages/runtime-node"
+  },
+  "main": "./dist/public.js",
+  "types": "./dist/public.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json && node build.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node build.js --watch"
+  },
+  "dependencies": {
+    "@coggit/core": "workspace:*",
+    "@parcel/watcher": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "esbuild": "^0.28.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

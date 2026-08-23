@@ -15,7 +15,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { createNodeCoggitServices } from './index';
+import { createNodeCoggitServices } from './public';
 import { discoverCoggitProjects } from '@coggit/core';
 import type { CoggitProject } from '@coggit/core';
 

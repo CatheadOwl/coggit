@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import type { CoggitProject } from '@coggit/core';
 import type { SourcePathCandidatesExpander } from '@coggit/core';
 import { uriRelativePath } from '@coggit/core';
-import { pathToUriComponents } from '../runtime/node/uri';
+import { pathToUriComponents } from '@coggit/runtime-node';
 
 /**
  * Runtime source-path candidate expander: map a raw CLI input path into the

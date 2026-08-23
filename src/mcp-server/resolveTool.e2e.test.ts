@@ -7,7 +7,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
 import type { RegistryFile } from '@coggit/core';
-import { createNodeCoggitServices } from '../runtime/node/index.js';
+import { createNodeCoggitServices } from '@coggit/runtime-node';
 import { createCoggitMcpServer } from './server.js';
 
 interface McpTestSession {

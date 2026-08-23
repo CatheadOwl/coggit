@@ -1,6 +1,6 @@
 import { Command, InvalidArgumentError, Option } from 'commander';
 
-import { createNodeCoggitServices } from '../runtime/node';
+import { createNodeCoggitServices } from '@coggit/runtime-node';
 import { discoverCoggitProjects, type AddCognitionKind, type CognitionKind } from '@coggit/core';
 import type { SnapshotScope } from '../render';
 import { runAdd } from './add';

@@ -26,7 +26,7 @@ import { createPatternWatcher, type FileChangeCallback, type FileChangeKind } fr
 import { VscodeFileSystem } from '../adapter/fs';
 import { VscodeConfigProvider } from '../adapter/config';
 import { VscodeRegistryProvider } from '../adapter/registryFs';
-import { NodeProjectLockManager } from '../../node/locks';
+import { NodeProjectLockManager } from '@coggit/runtime-node';
 import { fromComponents, toComponents, uriKey } from '../adapter/uri';
 import type { MisplacedTreeEntry } from '../tree/misplacedTreeTypes';
 import { handleSourceRenameFiles } from './sourceRename';

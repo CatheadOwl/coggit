@@ -2,7 +2,7 @@ import * as path from 'node:path';
 
 import { initProject } from '@coggit/core';
 import type { FileSystem } from '@coggit/core';
-import { pathToUriComponents } from '../runtime/node/uri';
+import { pathToUriComponents } from '@coggit/runtime-node';
 import { UserFacingError } from './status';
 
 export interface InitOptions {

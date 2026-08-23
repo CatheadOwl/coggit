@@ -6,7 +6,8 @@
     },
     "include": [
         "src",
-        "packages/core/src"
+        "packages/core/src",
+        "packages/runtime-node/src"
     ],
     "exclude": [
         "node_modules",

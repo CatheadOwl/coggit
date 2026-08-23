@@ -15,7 +15,7 @@ import {
   type WatchHostObservationResult,
   type WatchObservation,
 } from '@coggit/core/internal';
-import { createNodeCoggitServices } from './index';
+import { createNodeCoggitServices } from './public';
 import { pathToUriComponents } from './uri';
 import { createNodeFileWatchObserver } from './watch';
 
