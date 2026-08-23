@@ -23,9 +23,9 @@ export interface PathKeyRecord {
 	verificationTimeMs?: number | null;
 	/** @deprecated Removed from schema v5; retained only for old in-memory callers. */
 	sourceFactHash?: string | null;
-	/** @deprecated Removed from schema v6; retained only for rename detection in-memory. */
+	/** @deprecated Removed from schema v6; retained only for legacy in-memory compatibility. */
 	cognitionBlobHash?: string | null;
-	/** @deprecated Removed from schema v6; retained only for rename detection in-memory. */
+	/** @deprecated Removed from schema v6; retained only for legacy in-memory compatibility. */
 	cognitionLength?: number | null;
 }
 

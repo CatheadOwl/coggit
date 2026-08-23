@@ -265,7 +265,7 @@ suite('project — source rename tracking', () => {
     assert.strictEqual(saved?.entries['watch/'].sourcePath, 'src/watch');
   });
 
-  test('recovers a moved source folder on project open when the rename event was missed', async () => {
+  test('does not auto-rebind sourcePath when source folder moves without rename evidence', async () => {
     const fs = new MockFileSystem();
     fs.addDirectory('/workspace/cognition');
     fs.addDirectory('/workspace/src/vscode/watch');
@@ -286,15 +286,14 @@ suite('project — source rename tracking', () => {
     const project = await openCoggitProject(services, makeRoot());
 
     const saved = await provider.load();
-    assert.strictEqual(saved?.entries['watch/'].sourcePath, 'src/vscode/watch');
+    assert.strictEqual(saved?.entries['watch/'].sourcePath, 'src/watch');
 
-    const misplaced = await project.listMisplacedCognition();
-    assert.strictEqual(misplaced.length, 1);
-    assert.strictEqual(misplaced[0].actualCognitionPath, 'cognition/watch/README.md');
-    assert.strictEqual(misplaced[0].expectedCognitionPath, 'cognition/vscode/watch/README.md');
+    const orphaned = await project.listOrphanedCognition();
+    assert.strictEqual(orphaned.length, 1);
+    assert.strictEqual(orphaned[0].registryKey, 'watch/');
   });
 
-  test('does not recover a moved source folder when basename matching is ambiguous', async () => {
+  test('does not auto-rebind sourcePath when basename match exists without rename evidence', async () => {
     const fs = new MockFileSystem();
     fs.addDirectory('/workspace/cognition');
     fs.addDirectory('/workspace/src/vscode/watch');
@@ -312,10 +311,13 @@ suite('project — source rename tracking', () => {
       new MockConfigProvider(),
       { create: () => provider } satisfies RegistryProviderFactory,
     );
-    await openCoggitProject(services, makeRoot());
+    const project = await openCoggitProject(services, makeRoot());
 
     const saved = await provider.load();
     assert.strictEqual(saved?.entries['watch/'].sourcePath, 'src/watch');
+
+    const orphaned = await project.listOrphanedCognition();
+    assert.strictEqual(orphaned.length, 1);
   });
 
   test('updates one registry sourcePath record when a source file is renamed', async () => {

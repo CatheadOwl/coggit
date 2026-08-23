@@ -1,13 +1,11 @@
 import * as assert from 'node:assert';
 import { REGISTRY_SCHEMA_VERSION, Registry } from './index';
 import { InMemoryRegistryProvider } from './inMemoryRegistryProvider';
+import type { RegistryFile, RegistryProvider } from '../types';
 import { computeBlobHash } from '../hash';
 import {
   scanCognitionDirectory,
-  pairDeletedToAdded,
   reconcileRegistry,
-  type CognitionDirScan,
-  type CognitionFileScanInfo,
 } from './reconcile';
 import type { PathKeyRecord } from '../types';
 import type { FileSystem, FileStat, UriComponents } from '../interfaces';
@@ -91,14 +89,6 @@ function cogUri(path: string): UriComponents {
 
 // ─── Test helpers ───────────────────────────────────────────────────────────
 
-/** Content longer than MIN_RENAME_PAIRING_LENGTH (100 chars) to qualify for rename pairing. */
-function longContent(content: string, minLength = 120): string {
-  while (content.length < minLength) {
-    content += content;
-  }
-  return content.slice(0, minLength);
-}
-
 function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
   return {
     sourcePath: null,
@@ -118,8 +108,20 @@ async function createRegistry(entries: Record<string, PathKeyRecord>): Promise<R
   return registry;
 }
 
-function emptyScan(): CognitionDirScan {
-  return new Map();
+/** Counting provider wrapper to assert save call count. */
+function createCountingProvider() {
+  const inner = new InMemoryRegistryProvider();
+  let saveCount = 0;
+  const provider: RegistryProvider & { saveCount: number; inner: InMemoryRegistryProvider } = {
+    get saveCount() { return saveCount; },
+    get inner() { return inner; },
+    async load() { return inner.load(); },
+    async save(file: RegistryFile) {
+      saveCount++;
+      return inner.save(file);
+    },
+  };
+  return provider;
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -205,103 +207,13 @@ suite('reconcile — scanCognitionDirectory', () => {
   });
 });
 
-suite('reconcile — pairDeletedToAdded', () => {
-  const longA = longContent('content for A');
-  const longB = longContent('content for B');
-  const hashA = computeBlobHash(longA);
-  const hashB = computeBlobHash(longB);
-
-  test('pairs identical content (hash + length match, length > 100)', () => {
-    const added: CognitionDirScan = new Map([
-      ['b', { path: 'b.md', mtimeMs: 1000, contentHash: hashA, contentLength: longA.length }],
-    ]);
-    const deleted = new Map<string, PathKeyRecord>([
-      ['a', makeEntry({ cognitionBlobHash: hashA, cognitionLength: longA.length })],
-    ]);
-
-    const pairs = pairDeletedToAdded(added, deleted);
-    assert.strictEqual(pairs.length, 1);
-    assert.strictEqual(pairs[0].from, 'a');
-    assert.strictEqual(pairs[0].to, 'b');
-  });
-
-  test('skips pairing when content length <= 100 (MIN_RENAME_PAIRING_LENGTH)', () => {
-    const shortContent = 'short';
-    const shortHash = computeBlobHash(shortContent);
-
-    const added: CognitionDirScan = new Map([
-      ['b', { path: 'b.md', mtimeMs: 1000, contentHash: shortHash, contentLength: shortContent.length }],
-    ]);
-    const deleted = new Map<string, PathKeyRecord>([
-      ['a', makeEntry({ cognitionBlobHash: shortHash, cognitionLength: shortContent.length })],
-    ]);
-
-    const pairs = pairDeletedToAdded(added, deleted);
-    assert.strictEqual(pairs.length, 0);
-  });
-
-  test('skips pairing when content hash does not match', () => {
-    const added: CognitionDirScan = new Map([
-      ['b', { path: 'b.md', mtimeMs: 1000, contentHash: hashB, contentLength: longB.length }],
-    ]);
-    const deleted = new Map<string, PathKeyRecord>([
-      ['a', makeEntry({ cognitionBlobHash: hashA, cognitionLength: longA.length })],
-    ]);
-
-    const pairs = pairDeletedToAdded(added, deleted);
-    assert.strictEqual(pairs.length, 0);
-  });
-
-  test('first-match wins: same content, only first added entry paired', () => {
-    const added: CognitionDirScan = new Map([
-      ['c', { path: 'c.md', mtimeMs: 1000, contentHash: hashA, contentLength: longA.length }],
-      ['d', { path: 'd.md', mtimeMs: 1000, contentHash: hashA, contentLength: longA.length }],
-    ]);
-    const deleted = new Map<string, PathKeyRecord>([
-      ['a', makeEntry({ cognitionBlobHash: hashA, cognitionLength: longA.length })],
-      ['b', makeEntry({ cognitionBlobHash: hashB, cognitionLength: longB.length })],
-    ]);
-
-    const pairs = pairDeletedToAdded(added, deleted);
-    assert.strictEqual(pairs.length, 1);
-    assert.strictEqual(pairs[0].from, 'a');
-    assert.strictEqual(pairs[0].to, 'c');
-  });
-
-  test('chain rename: A→B→C only finds B→C, A metadata lost', () => {
-    const hashC = computeBlobHash('content C');
-    const contentC = longContent('content C');
-
-    const added: CognitionDirScan = new Map([
-      ['c', { path: 'c.md', mtimeMs: 1000, contentHash: hashB, contentLength: longB.length }],
-    ]);
-    const deleted = new Map<string, PathKeyRecord>([
-      ['a', makeEntry({ cognitionBlobHash: hashA, cognitionLength: longA.length })],
-      ['b', makeEntry({ cognitionBlobHash: hashB, cognitionLength: longB.length })],
-    ]);
-
-    const pairs = pairDeletedToAdded(added, deleted);
-    // B→C found (B's hash matches C's content), but A→? not found
-    assert.strictEqual(pairs.length, 1);
-    assert.strictEqual(pairs[0].from, 'b');
-    assert.strictEqual(pairs[0].to, 'c');
-  });
-});
-
 suite('reconcile — reconcileRegistry (full integration)', () => {
-  const CONTENT_A = longContent('alpha content');
-  const CONTENT_B = longContent('beta content');
-  const CONTENT_C = longContent('gamma content');
-  const HASH_A = computeBlobHash(CONTENT_A);
-  const HASH_B = computeBlobHash(CONTENT_B);
-  const HASH_C = computeBlobHash(CONTENT_C);
-
   test('added detection: empty registry + 3 cognition files', async () => {
     const registry = await createRegistry({});
     const fs = new MockFileSystem();
-    fs.addFile('/cog/a.ts.md', CONTENT_A);
-    fs.addFile('/cog/sub/b.ts.md', CONTENT_B);
-    fs.addFile('/cog/c.ts.md', CONTENT_C);
+    fs.addFile('/cog/a.ts.md', 'content A');
+    fs.addFile('/cog/sub/b.ts.md', 'content B');
+    fs.addFile('/cog/c.ts.md', 'content C');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
     const diff = await reconcileRegistry(registry, scan);
@@ -311,9 +223,6 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     assert.ok(diff.added.includes('sub/b.ts'));
     assert.ok(diff.added.includes('c.ts'));
     assert.strictEqual(diff.deleted.length, 0);
-    assert.strictEqual(diff.renamed.length, 0);
-    assert.strictEqual(diff.updated.length, 0);
-    assert.strictEqual(diff.unchanged.length, 0);
 
     // Verify entries were added to registry
     assert.ok(registry.hasEntry('a.ts'));
@@ -323,8 +232,8 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
 
   test('deleted detection: registry has entries, no cognition files', async () => {
     const registry = await createRegistry({
-      'a': makeEntry({ cognitionBlobHash: HASH_A, cognitionLength: CONTENT_A.length }),
-      'b': makeEntry({ cognitionBlobHash: HASH_B, cognitionLength: CONTENT_B.length }),
+      'a': makeEntry(),
+      'b': makeEntry(),
     });
     const fs = new MockFileSystem();
     fs.addDirectory('/cog');
@@ -338,147 +247,60 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     assert.strictEqual(diff.added.length, 0);
   });
 
-  test('rename match: same content, length > 100, metadata migrates', async () => {
+  test('cognition move appears as delete + add, no rename tracking', async () => {
     const registry = await createRegistry({
-      'old/path.ts': makeEntry({
-        sourcePath: 'src/old.ts',
-        cognitionBlobHash: HASH_A,
-        cognitionLength: CONTENT_A.length,
-      }),
+      'old/path.ts': makeEntry({ sourcePath: 'src/old.ts' }),
     });
     const fs = new MockFileSystem();
-    fs.addFile('/cog/new/path.ts.md', CONTENT_A);
+    fs.addFile('/cog/new/path.ts.md', 'some content');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
     const diff = await reconcileRegistry(registry, scan);
 
-    assert.strictEqual(diff.renamed.length, 1);
-    assert.strictEqual(diff.renamed[0].from, 'old/path.ts');
-    assert.strictEqual(diff.renamed[0].to, 'new/path.ts');
-
-    // Verify metadata migrated (sourcePath preserved)
-    const entry = registry.getEntry('new/path.ts')!;
-    assert.strictEqual(entry.sourcePath, 'src/old.ts');
-    assert.strictEqual(entry.cognitionBlobHash, HASH_A);
-    assert.strictEqual(entry.cognitionLength, CONTENT_A.length);
-
-    // Old key gone
-    assert.strictEqual(registry.hasEntry('old/path.ts'), false);
+    assert.strictEqual(diff.deleted.length, 1);
+    assert.strictEqual(diff.deleted[0], 'old/path.ts');
+    assert.strictEqual(diff.added.length, 1);
+    assert.strictEqual(diff.added[0], 'new/path.ts');
   });
 
-  test('rename skip: content length <= 100 (false positive protection)', async () => {
-    const shortContent = '# Short';
-    const shortHash = computeBlobHash(shortContent);
-
+  test('intersection produces no structural diff entries', async () => {
     const registry = await createRegistry({
-      'old/path.ts': makeEntry({
-        cognitionBlobHash: shortHash,
-        cognitionLength: shortContent.length,
-      }),
+      'a.ts': makeEntry(),
     });
     const fs = new MockFileSystem();
-    fs.addFile('/cog/new/path.ts.md', shortContent);
+    fs.addFile('/cog/a.ts.md', 'content');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
     const diff = await reconcileRegistry(registry, scan);
 
-    assert.strictEqual(diff.renamed.length, 0);
-    // old/path.ts should be deleted (true deletion) because it wasn't renamed
-    assert.ok(diff.deleted.includes('old/path.ts'));
-  });
-
-  test('rename skip: content hash mismatch', async () => {
-    const registry = await createRegistry({
-      'old/path.ts': makeEntry({
-        cognitionBlobHash: HASH_A,
-        cognitionLength: CONTENT_A.length,
-      }),
-    });
-    const fs = new MockFileSystem();
-    // Different content
-    fs.addFile('/cog/new/path.ts.md', CONTENT_B);
-
-    const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
-    const diff = await reconcileRegistry(registry, scan);
-
-    assert.strictEqual(diff.renamed.length, 0);
-    assert.ok(diff.deleted.includes('old/path.ts'));
-    assert.ok(diff.added.includes('new/path.ts'));
-  });
-
-  test('intersection unchanged (same hash, same length)', async () => {
-    const registry = await createRegistry({
-      'a.ts': makeEntry({
-        cognitionBlobHash: HASH_A,
-        cognitionLength: CONTENT_A.length,
-      }),
-    });
-    const fs = new MockFileSystem();
-    fs.addFile('/cog/a.ts.md', CONTENT_A);
-
-    const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
-    const diff = await reconcileRegistry(registry, scan);
-
-    assert.strictEqual(diff.unchanged.length, 1);
-    assert.strictEqual(diff.unchanged[0], 'a.ts');
-    assert.strictEqual(diff.updated.length, 0);
     assert.strictEqual(diff.added.length, 0);
     assert.strictEqual(diff.deleted.length, 0);
   });
 
-  test('intersection updated (different hash, same key)', async () => {
+  test('first encounter produces no structural diff entries and writes no cache', async () => {
     const registry = await createRegistry({
-      'a.ts': makeEntry({
-        cognitionBlobHash: HASH_A,
-        cognitionLength: CONTENT_A.length,
-      }),
+      'a.ts': makeEntry(),
     });
     const fs = new MockFileSystem();
-    // File still at 'a.ts', but content changed
-    fs.addFile('/cog/a.ts.md', CONTENT_B);
+    fs.addFile('/cog/a.ts.md', 'content');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
     const diff = await reconcileRegistry(registry, scan);
 
-    assert.strictEqual(diff.updated.length, 1);
-    assert.strictEqual(diff.updated[0], 'a.ts');
-    assert.strictEqual(diff.unchanged.length, 0);
+    assert.strictEqual(diff.added.length, 0);
+    assert.strictEqual(diff.deleted.length, 0);
 
-    // Registry should have updated hash cache
-    const entry = registry.getEntry('a.ts')!;
-    assert.strictEqual(entry.cognitionBlobHash, HASH_B);
-    assert.strictEqual(entry.cognitionLength, CONTENT_B.length);
-  });
-
-  test('first encounter does not dirty registry and is reported as unchanged', async () => {
-    const registry = await createRegistry({
-      'a.ts': makeEntry({
-        cognitionBlobHash: null, // No prior hash — first encounter
-        cognitionLength: null,
-      }),
-    });
-    const fs = new MockFileSystem();
-    fs.addFile('/cog/a.ts.md', CONTENT_A);
-
-    const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
-    const diff = await reconcileRegistry(registry, scan);
-
-    // First encounter should be unchanged (not updated)
-    assert.strictEqual(diff.unchanged.length, 1);
-    assert.strictEqual(diff.unchanged[0], 'a.ts');
-    assert.strictEqual(diff.updated.length, 0);
-
-    // Hash cache should NOT be written back — registry stays clean for flush
+    // Entry should only have semantic fields
     const entry = registry.getEntry('a.ts')!;
     assert.strictEqual(entry.cognitionBlobHash ?? null, null);
     assert.strictEqual(entry.cognitionLength ?? null, null);
   });
 
   test('v6 canonical registry with unchanged cognition does not trigger save', async () => {
-    // Seed a canonical v6 registry: only sourcePath, type, accepted — no cache fields
-    const provider = new InMemoryRegistryProvider();
-    await provider.save({
+    const provider = createCountingProvider();
+    await provider.inner.save({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
+      maintenanceNotice: 'This file is auto-maintained CogGit metadata. Ignore routine changes; it is committed so metadata can be located across hosts. Direct reads may be stale; use CogGit commands or MCP tools for authoritative freshness.',
       entries: {
         'a.ts': {
           sourcePath: 'src/a.ts',
@@ -488,21 +310,20 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
       },
     });
     const registry = await Registry.create(provider);
+    const savesAfterCreate = provider.saveCount;
 
     const fs = new MockFileSystem();
-    fs.addFile('/cog/a.ts.md', CONTENT_A);
+    fs.addFile('/cog/a.ts.md', 'content');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
-    const diff = await reconcileRegistry(registry, scan);
-
-    // No updated keys — content hasn't semantically changed
-    assert.strictEqual(diff.updated.length, 0);
-    assert.strictEqual(diff.unchanged.length, 1);
-
-    // Flush should be a no-op: no semantic mutation means no save
+    await reconcileRegistry(registry, scan);
     await registry.flush();
-    const loaded = await provider.load();
+
+    // saveCount should not have increased since Registry.create
+    assert.strictEqual(provider.saveCount, savesAfterCreate);
+
     // The loaded entry should still have no cache fields
+    const loaded = await provider.inner.load();
     const entry = loaded!.entries['a.ts'];
     assert.strictEqual('cognitionBlobHash' in entry, false);
     assert.strictEqual('cognitionLength' in entry, false);
@@ -518,62 +339,22 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
 
     assert.strictEqual(diff.added.length, 0);
     assert.strictEqual(diff.deleted.length, 0);
-    assert.strictEqual(diff.renamed.length, 0);
-    assert.strictEqual(diff.updated.length, 0);
-    assert.strictEqual(diff.unchanged.length, 0);
     assert.strictEqual(diff.stats.totalScanned, 0);
     assert.strictEqual(diff.stats.totalRegistryEntries, 0);
   });
 
-  test('chain rename integrates through full reconcile', async () => {
-    // Registry has entries A and B
-    const registry = await createRegistry({
-      'a.ts': makeEntry({
-        sourcePath: 'src/a.ts',
-        cognitionBlobHash: HASH_A,
-        cognitionLength: CONTENT_A.length,
-      }),
-      'b.ts': makeEntry({
-        sourcePath: 'src/b.ts',
-        cognitionBlobHash: HASH_B,
-        cognitionLength: CONTENT_B.length,
-      }),
-    });
-
-    // On disk: only c.ts.md exists (with B's content). A's content is gone.
-    const fs = new MockFileSystem();
-    fs.addFile('/cog/c.ts.md', CONTENT_B);
-
-    const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
-    const diff = await reconcileRegistry(registry, scan);
-
-    // Only B→C rename should be detected
-    assert.strictEqual(diff.renamed.length, 1);
-    assert.strictEqual(diff.renamed[0].from, 'b.ts');
-    assert.strictEqual(diff.renamed[0].to, 'c.ts');
-
-    // A should be deleted
-    assert.strictEqual(diff.deleted.length, 1);
-    assert.strictEqual(diff.deleted[0], 'a.ts');
-
-    // B's metadata should have migrated to C
-    const entryC = registry.getEntry('c.ts')!;
-    assert.strictEqual(entryC.sourcePath, 'src/b.ts');
-  });
-
   test('stats counters accurate', async () => {
     const registry = await createRegistry({
-      'a.ts': makeEntry({ cognitionBlobHash: HASH_A, cognitionLength: CONTENT_A.length }),
+      'a.ts': makeEntry(),
     });
     const fs = new MockFileSystem();
-    fs.addFile('/cog/a.ts.md', CONTENT_A); // unchanged
-    fs.addFile('/cog/b.ts.md', CONTENT_B); // added
+    fs.addFile('/cog/a.ts.md', 'unchanged');
+    fs.addFile('/cog/b.ts.md', 'added');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
     const diff = await reconcileRegistry(registry, scan);
 
     assert.strictEqual(diff.stats.totalScanned, 2);
     assert.strictEqual(diff.stats.totalRegistryEntries, 1);
-    assert.strictEqual(diff.stats.renamePairsFound, 0);
   });
 });

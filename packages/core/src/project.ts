@@ -467,19 +467,56 @@ export async function openCoggitProject(
 
         // A watcher event may race with a writer that committed the complete
         // registry file.  Discard the mutated runtime and rebuild from the
-        // current provider.  The filesystem is already authoritative for the
-        // rename, so a successful reconcile is sufficient for this event.
+        // current provider.  The filesystem rename is authoritative, so
+        // re-apply the relocation on the freshly reconciled registry.
         runtime = { registry: null, acceptance: null };
         const recovered = await tryReconcileProjectRuntimeInLock(
           services,
           root,
           runtimeEvidence,
         );
-        if (!recovered) {
+        if (!recovered || !recovered.registry) {
           return false;
         }
+
+        const recoveryRelocation = await inferRegistrySourceRelocation(
+          services.fs,
+          oldSourcePath,
+          newSourcePath,
+          newUri,
+        );
+        const recoveryUpdated = applyRegistrySourceRelocations(
+          recovered.registry,
+          [recoveryRelocation],
+          'source-rename',
+        );
+        if (recoveryUpdated) {
+          await recovered.registry.flush();
+          runtime = recovered;
+          return true;
+        }
+
+        const recoveryParentRelocation = await inferRegistrySourceParentRelocation(
+          services.fs,
+          root,
+          oldSourcePath,
+          newSourcePath,
+        );
+        if (!recoveryParentRelocation) {
+          runtime = recovered;
+          return false;
+        }
+
+        const recoveryParentUpdated = applyRegistrySourceRelocations(
+          recovered.registry,
+          [recoveryParentRelocation],
+          'source-rename.parent',
+        );
+        if (recoveryParentUpdated) {
+          await recovered.registry.flush();
+        }
         runtime = recovered;
-        return true;
+        return recoveryParentUpdated;
       }
       },
     ),
@@ -941,71 +978,6 @@ async function resolveRegistrySourceLinks(
 
     if (resolved) {
       continue;
-    }
-
-    const movedSourceUri = await findUniqueMovedSourceCandidate(root, fs, entry);
-    if (!movedSourceUri) {
-      continue;
-    }
-
-    const movedSourcePath = uriRelativePath(root.projectRootUri, movedSourceUri);
-    if (movedSourcePath === undefined) {
-      continue;
-    }
-
-    registry.setEntry(key, {
-      ...entry,
-      sourcePath: movedSourcePath,
-    }, 'resolve-source-links.basename');
-  }
-}
-
-async function findUniqueMovedSourceCandidate(
-  root: CoggitWorkspaceRoot,
-  fs: CoggitServices['fs'],
-  entry: { sourcePath: string | null; type: 'leaf' | 'folder' },
-): Promise<UriComponents | undefined> {
-  if (entry.sourcePath === null) {
-    return undefined;
-  }
-
-  const basename = entry.sourcePath.replace(/\\/g, '/').split('/').filter(Boolean).pop();
-  if (!basename) {
-    return undefined;
-  }
-
-  const matches: UriComponents[] = [];
-  await collectSourceBasenameMatches(root.sourceRootUri, fs, basename, entry.type, matches);
-
-  return matches.length === 1 ? matches[0] : undefined;
-}
-
-async function collectSourceBasenameMatches(
-  dirUri: UriComponents,
-  fs: CoggitServices['fs'],
-  basename: string,
-  type: 'leaf' | 'folder',
-  matches: UriComponents[],
-): Promise<void> {
-  let entries: Array<[string, number]>;
-  try {
-    entries = await fs.readDirectory(dirUri);
-  } catch {
-    return;
-  }
-
-  for (const [name, fileType] of entries) {
-    const childUri = joinUriPath(dirUri, name);
-    const isDirectory = (fileType & 2) !== 0;
-    const isFile = (fileType & 1) !== 0;
-
-    if ((type === 'folder' && isDirectory && name === basename)
-      || (type === 'leaf' && isFile && name === basename)) {
-      matches.push(childUri);
-    }
-
-    if (isDirectory) {
-      await collectSourceBasenameMatches(childUri, fs, basename, type, matches);
     }
   }
 }
