@@ -1,9 +1,8 @@
 {
-  "name": "coggit-vscode",
-  "displayName": "CogGit",
-  "description": "Track source-linked Markdown cognition files with freshness status, evidence, and MCP tools for agent workflows.",
+  "name": "coggit-monorepo",
   "version": "0.2.0",
-  "publisher": "coggit",
+  "private": true,
+  "description": "CogGit monorepo: source-linked Markdown cognition files with freshness status, evidence, and MCP tools for agent workflows.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,265 +12,17 @@
     "url": "https://github.com/CatheadOwl/coggit/issues"
   },
   "homepage": "https://github.com/CatheadOwl/coggit#readme",
-  "icon": "./resources/coggit-marketplace.png",
-  "galleryBanner": {
-    "color": "#27B8D7",
-    "theme": "dark"
-  },
-  "engines": {
-    "vscode": "^1.90.0"
-  },
   "packageManager": "pnpm@11.9.0",
-  "categories": [
-    "Other"
-  ],
-  "keywords": [
-    "cognition",
-    "documentation",
-    "markdown",
-    "mcp",
-    "code-intelligence"
-  ],
-  "activationEvents": [
-    "workspaceContains:**/.coggit/config.yaml"
-  ],
-  "main": "./dist/extension.js",
-  "exports": {
-    ".": "./dist/extension.js",
-    "./package.json": "./package.json"
-  },
-  "contributes": {
-    "configuration": {
-      "title": "CogGit",
-      "properties": {
-        "coggit.logging.level": {
-          "type": "string",
-          "default": "off",
-          "enum": [
-            "off",
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "description": "Controls CogGit diagnostic logging in the CogGit output channel."
-        },
-        "coggit.tree.showOnlyCognized": {
-          "type": "boolean",
-          "default": false,
-          "description": "When enabled, only files and folders tracked by CogGit (with an observed status) are shown in the Ghost Tree. Files without cognition are hidden."
-        },
-        "coggit.tree.fileExtensionFilter": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "description": "List of file extensions to filter the Ghost Tree. Extensions should include the leading dot (e.g. .ts). Empty means no filter (show all files). Edit this list directly in settings.json. Use the filter button in the Ghost Tree title bar to add or remove entries interactively."
-        }
-      }
-    },
-    "mcpServerDefinitionProviders": [
-      {
-        "id": "coggit",
-        "label": "CogGit MCP"
-      }
-    ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "coggit",
-          "title": "CogGit",
-          "icon": "./resources/coggit-activity.svg"
-        }
-      ]
-    },
-    "views": {
-      "coggit": [
-        {
-          "id": "coggit.ghostExplorer",
-          "name": "Ghost Tree",
-          "icon": "./resources/coggit-activity.svg"
-        },
-        {
-          "id": "coggit.orphanExplorer",
-          "name": "Orphans",
-          "icon": "./resources/coggit-activity.svg"
-        },
-        {
-          "id": "coggit.misplacedExplorer",
-          "name": "Misplaced",
-          "icon": "./resources/coggit-activity.svg"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "coggit.refresh",
-        "title": "Refresh CogGit Ghost Tree",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "coggit.initProject",
-        "title": "Initialize CogGit Project"
-      },
-      {
-        "command": "coggit.initProjectWithPicker",
-        "title": "Init CogGit — Choose Directory..."
-      },
-      {
-        "command": "coggit.configureMcp",
-        "title": "Configure CogGit MCP in .mcp.json",
-        "icon": "$(plug)"
-      },
-      {
-        "command": "coggit.createCognitionFile",
-        "title": "Create Cognition File"
-      },
-      {
-        "command": "coggit.createCognitionFolderReadme",
-        "title": "Create Cognition README"
-      },
-      {
-        "command": "coggit.openCognitionFile",
-        "title": "Open Cognition File"
-      },
-      {
-        "command": "coggit.openSourceFile",
-        "title": "Open Source File"
-      },
-      {
-        "command": "coggit.setFileFilter",
-        "title": "Set File Extension Filter",
-        "icon": "$(filter)"
-      },
-      {
-        "command": "coggit.toggleCognizedOnly",
-        "title": "Toggle: Show Only Cognized Files",
-        "icon": "$(eye)"
-      },
-      {
-        "command": "coggit.copyNodeStatus",
-        "title": "Copy Status"
-      },
-      {
-        "command": "coggit.moveMisplacedCognition",
-        "title": "Move to Expected Place"
-      },
-      {
-        "command": "coggit.moveAllMisplacedCognition",
-        "title": "Move All to Expected Places",
-        "icon": "$(sync)"
-      },
-      {
-        "command": "coggit.copyMisplacedInfo",
-        "title": "Copy Info"
-      }
-    ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "coggit.refresh",
-          "when": "view == coggit.ghostExplorer || view == coggit.orphanExplorer || view == coggit.misplacedExplorer",
-          "group": "navigation"
-        },
-        {
-          "command": "coggit.setFileFilter",
-          "when": "view == coggit.ghostExplorer",
-          "group": "navigation"
-        },
-        {
-          "command": "coggit.toggleCognizedOnly",
-          "when": "view == coggit.ghostExplorer",
-          "group": "navigation"
-        },
-        {
-          "command": "coggit.configureMcp",
-          "when": "view == coggit.ghostExplorer && coggit.mcpConfigNeedsAction",
-          "group": "navigation"
-        },
-        {
-          "command": "coggit.moveAllMisplacedCognition",
-          "when": "view == coggit.misplacedExplorer",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "coggit.createCognitionFile",
-          "when": "view == coggit.ghostExplorer && viewItem == coggitFileUntracked",
-          "group": "1_modification"
-        },
-        {
-          "command": "coggit.createCognitionFolderReadme",
-          "when": "view == coggit.ghostExplorer && (viewItem == coggitRootUntracked || viewItem == coggitFolderUntracked)",
-          "group": "1_modification"
-        },
-        {
-          "command": "coggit.openCognitionFile",
-          "when": "(view == coggit.ghostExplorer || view == coggit.orphanExplorer) && (viewItem == coggitFilePresent || viewItem == coggitFolderPresent || viewItem == coggitRootPresent || viewItem == coggitOrphaned)",
-          "group": "navigation"
-        },
-        {
-          "command": "coggit.openSourceFile",
-          "when": "view == coggit.ghostExplorer || view == coggit.misplacedExplorer",
-          "group": "navigation"
-        },
-        {
-          "command": "coggit.moveMisplacedCognition",
-          "when": "view == coggit.misplacedExplorer && (viewItem == misplacedCognition || viewItem == misplacedCognitionFailed)",
-          "group": "1_modification"
-        },
-        {
-          "command": "coggit.copyMisplacedInfo",
-          "when": "view == coggit.misplacedExplorer",
-          "group": "5_copynavigation"
-        }
-      ]
-    },
-    "viewsWelcome": [
-      {
-        "view": "coggit.ghostExplorer",
-        "contents": "CogGit is not yet initialized in this workspace.\n\nCogGit pairs source code with a cognition layer — Markdown files that capture design intent, contracts, and invariants.\n\n[$(target) Initialize Project — Quick Setup](command:coggit.initProject)\n[$(folder-opened) Initialize Project — Choose Directory](command:coggit.initProjectWithPicker)"
-      },
-      {
-        "view": "coggit.orphanExplorer",
-        "contents": "No orphaned cognition files found.\nCognition files whose source has been deleted appear here.\n[Refresh](command:coggit.refresh)"
-      },
-      {
-        "view": "coggit.misplacedExplorer",
-        "contents": "No misplaced cognition files found.\nCognition files whose actual path doesn't match the expected mirror path appear here.\n[Refresh](command:coggit.refresh)"
-      }
-    ]
-  },
   "scripts": {
-    "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run build:core && pnpm run build:runtime-node && pnpm run build:format && pnpm run build:mcp && pnpm run build:mcp-runtime-support && pnpm run build:cli && pnpm run check-types && pnpm run lint && node esbuild.js",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run build:core && pnpm run build:runtime-node && pnpm run build:format && pnpm run build:mcp && pnpm run build:mcp-runtime-support && pnpm run build:cli && pnpm run check-types && pnpm run lint && node esbuild.js --production",
-    "build:core": "pnpm --filter @coggit/core build",
-    "build:runtime-node": "pnpm --filter @coggit/runtime-node build",
-    "build:format": "pnpm --filter @coggit/format build",
-    "build:mcp": "pnpm --filter @coggit/mcp build",
-    "build:mcp-runtime-support": "pnpm --filter @coggit/mcp-runtime-support build",
-    "build:cli": "pnpm --filter coggit build",
+    "build": "pnpm -r run build",
+    "compile": "pnpm run build && pnpm run check-types && pnpm run lint",
+    "package": "pnpm run build && pnpm run check-types && pnpm run lint && pnpm --filter coggit-vscode run package",
+    "check-types": "pnpm -r run check-types",
+    "lint": "eslint packages/vscode/src packages/core/src packages/runtime-node/src packages/format/src packages/mcp/src packages/mcp-runtime-support/src packages/cli/src",
     "test:compile": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\" && tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
-    "test:watch": "tsc -p . -w --outDir out",
-    "pretest": "pnpm run test:compile && pnpm run compile && pnpm run lint",
-    "check-types": "pnpm run check-types:root && pnpm run check-types:core && pnpm run check-types:runtime-node && pnpm run check-types:format && pnpm run check-types:mcp && pnpm run check-types:mcp-runtime-support && pnpm run check-types:cli",
-    "check-types:root": "tsc --noEmit",
-    "check-types:core": "pnpm --filter @coggit/core check-types",
-    "check-types:runtime-node": "pnpm --filter @coggit/runtime-node check-types",
-    "check-types:format": "pnpm --filter @coggit/format check-types",
-    "check-types:mcp": "pnpm --filter @coggit/mcp check-types",
-    "check-types:mcp-runtime-support": "pnpm --filter @coggit/mcp-runtime-support check-types",
-    "check-types:cli": "pnpm --filter coggit check-types",
-    "lint": "eslint src packages/core/src packages/runtime-node/src packages/format/src packages/mcp/src packages/mcp-runtime-support/src packages/cli/src",
-    "test": "vscode-test",
-    "package:vsix": "npx --yes @vscode/vsce package --out dist/coggit.vsix",
-    "publish:marketplace": "npx --yes @vscode/vsce publish"
+    "test:watch": "tsc -p tsconfig.test.json -w --outDir out",
+    "pretest": "pnpm run test:compile && pnpm run compile",
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@coggit/core": "workspace:*",
@@ -287,9 +38,7 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
     "commander": "^12.1.0",
-    "esbuild": "^0.28.1",
     "eslint": "^10.5.0",
-    "npm-run-all": "^4.1.5",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
     "yaml": "^2.8.1",
@@ -298,8 +47,5 @@
   "overrides": {
     "diff": "^8.0.4",
     "serialize-javascript": "^7.0.6"
-  },
-  "vsce": {
-    "dependencies": false
   }
 }

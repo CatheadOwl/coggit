@@ -1,7 +1,6 @@
 const esbuild = require("esbuild");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const packageJson = require("./package.json");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -40,21 +39,24 @@ async function main() {
 			'.md': 'text',
 		},
 		logLevel: 'silent',
-		define: {
-			__COGGIT_PACKAGE_VERSION__: JSON.stringify(packageJson.version),
-		},
 		plugins: [
 			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,
 		],
 	};
 	const contexts = await Promise.all([
+		// The extension host only reaches the VS Code surface; everything else
+		// (@coggit/core, runtime-node, format, mcp-runtime-support) is bundled.
 		esbuild.context({
 			...shared,
 			entryPoints: ['src/extension.ts'],
 			outfile: 'dist/extension.js',
 			external: ['vscode'],
 		}),
+		// Self-contained MCP stdio payload the extension copies into the user
+		// runtime via `ensureMcpRuntime`. It must bundle @coggit/mcp and its
+		// runtime deps (@coggit/core, @coggit/runtime-node) because the copied
+		// runtime directory has no @coggit/* installed.
 		esbuild.context({
 			...shared,
 			entryPoints: ['src/mcp-stdio/main.ts'],
@@ -63,9 +65,6 @@ async function main() {
 				js: '#!/usr/bin/env node',
 			},
 		}),
-		// The CLI and SDK library entries now build inside their own workspace
-		// packages (`coggit`, `@coggit/core`, `@coggit/runtime-node`); the
-		// remaining root entries bundle them from their workspace links.
 	]);
 	if (watch) {
 		await Promise.all(contexts.map((ctx) => ctx.watch()));
@@ -80,9 +79,7 @@ async function removeStaleDistOutputs() {
 	await fs.rm(path.join(distDir, 'prompts'), { recursive: true, force: true });
 
 	// Every `.js` / `.js.map` file in dist/ is an esbuild bundle produced by
-	// this script; remove them all up front so orphaned entries (e.g. the
-	// pre-phase-2 `dist/core.js`) never ship. Declaration outputs now live in
-	// `packages/*/dist`, so this never touches them.
+	// this script; remove them all up front so orphaned entries never ship.
 	const entries = await fs.readdir(distDir).catch(() => []);
 	await Promise.all(
 		entries
