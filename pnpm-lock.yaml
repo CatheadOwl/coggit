@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@parcel/watcher':
-        specifier: ^2.6.0
-        version: 2.6.0
-      commander:
-        specifier: ^12.1.0
-        version: 12.1.0
     devDependencies:
       '@coggit/core':
         specifier: workspace:*
@@ -32,7 +25,10 @@ importers:
         version: link:packages/runtime-node
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
-        version: 1.29.0(zod@4.4.3)
+        version: 1.29.0(supports-color@8.1.1)(zod@4.4.3)
+      '@parcel/watcher':
+        specifier: ^2.6.0
+        version: 2.6.0
       '@types/mocha':
         specifier: ^10.0.10
         version: 10.0.10
@@ -48,6 +44,9 @@ importers:
       '@vscode/test-electron':
         specifier: ^3.0.0
         version: 3.0.0(supports-color@8.1.1)
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
       esbuild:
         specifier: ^0.28.1
         version: 0.28.1
@@ -69,6 +68,43 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/cli:
+    dependencies:
+      '@coggit/core':
+        specifier: workspace:*
+        version: link:../core
+      '@coggit/runtime-node':
+        specifier: workspace:*
+        version: link:../runtime-node
+      '@parcel/watcher':
+        specifier: ^2.6.0
+        version: 2.6.0
+    devDependencies:
+      '@coggit/format':
+        specifier: workspace:*
+        version: link:../format
+      '@coggit/mcp':
+        specifier: workspace:*
+        version: link:../mcp
+      '@coggit/mcp-runtime-support':
+        specifier: workspace:*
+        version: link:../mcp-runtime-support
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
+      '@types/node':
+        specifier: 24.x
+        version: 24.13.2
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      esbuild:
+        specifier: ^0.28.1
+        version: 0.28.1
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/core:
     devDependencies:
@@ -120,7 +156,7 @@ importers:
         version: link:../format
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
-        version: 1.29.0(zod@4.4.3)
+        version: 1.29.0(supports-color@8.1.1)(zod@4.4.3)
       '@types/mocha':
         specifier: ^10.0.10
         version: 10.0.10
@@ -2219,7 +2255,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.14
 
-  '@modelcontextprotocol/sdk@1.29.0(zod@4.4.3)':
+  '@modelcontextprotocol/sdk@1.29.0(supports-color@8.1.1)(zod@4.4.3)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.29)
       ajv: 8.20.0
@@ -2229,8 +2265,8 @@ snapshots:
       cross-spawn: 7.0.6
       eventsource: 3.0.7
       eventsource-parser: 3.1.0
-      express: 5.2.1
-      express-rate-limit: 8.5.2(express@5.2.1)
+      express: 5.2.1(supports-color@8.1.1)
+      express-rate-limit: 8.5.2(express@5.2.1(supports-color@8.1.1))
       hono: 4.12.29
       jose: 6.2.3
       json-schema-typed: 8.0.2
@@ -2513,7 +2549,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  body-parser@2.3.0:
+  body-parser@2.3.0(supports-color@8.1.1):
     dependencies:
       bytes: 3.1.2
       content-type: 2.1.0
@@ -2935,15 +2971,15 @@ snapshots:
     dependencies:
       eventsource-parser: 3.1.0
 
-  express-rate-limit@8.5.2(express@5.2.1):
+  express-rate-limit@8.5.2(express@5.2.1(supports-color@8.1.1)):
     dependencies:
-      express: 5.2.1
+      express: 5.2.1(supports-color@8.1.1)
       ip-address: 10.2.0
 
-  express@5.2.1:
+  express@5.2.1(supports-color@8.1.1):
     dependencies:
       accepts: 2.0.0
-      body-parser: 2.3.0
+      body-parser: 2.3.0(supports-color@8.1.1)
       content-disposition: 1.1.0
       content-type: 1.0.5
       cookie: 0.7.1
@@ -2953,7 +2989,7 @@ snapshots:
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
-      finalhandler: 2.1.1
+      finalhandler: 2.1.1(supports-color@8.1.1)
       fresh: 2.0.0
       http-errors: 2.0.1
       merge-descriptors: 2.0.0
@@ -2964,8 +3000,8 @@ snapshots:
       proxy-addr: 2.0.7
       qs: 6.15.3
       range-parser: 1.3.0
-      router: 2.2.0
-      send: 1.2.1
+      router: 2.2.0(supports-color@8.1.1)
+      send: 1.2.1(supports-color@8.1.1)
       serve-static: 2.2.1
       statuses: 2.0.2
       type-is: 2.1.0
@@ -2989,7 +3025,7 @@ snapshots:
     dependencies:
       flat-cache: 4.0.0
 
-  finalhandler@2.1.1:
+  finalhandler@2.1.1(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       encodeurl: 2.0.0
@@ -3678,7 +3714,7 @@ snapshots:
     dependencies:
       glob: 10.5.0
 
-  router@2.2.0:
+  router@2.2.0(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       depd: 2.0.0
@@ -3719,7 +3755,7 @@ snapshots:
 
   semver@7.8.5: {}
 
-  send@1.2.1:
+  send@1.2.1(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       encodeurl: 2.0.0
@@ -3744,7 +3780,7 @@ snapshots:
       encodeurl: 2.0.0
       escape-html: 1.0.3
       parseurl: 1.3.3
-      send: 1.2.1
+      send: 1.2.1(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 

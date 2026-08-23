@@ -1,0 +1,41 @@
+{
+  "name": "coggit",
+  "version": "0.2.0",
+  "description": "CogGit CLI: source/cognition freshness status, snapshot, routes, and MCP install from the command line.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CatheadOwl/coggit.git",
+    "directory": "packages/cli"
+  },
+  "bin": {
+    "coggit": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm run clean && node build.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node build.js --watch"
+  },
+  "dependencies": {
+    "@coggit/core": "workspace:*",
+    "@coggit/runtime-node": "workspace:*",
+    "@parcel/watcher": "^2.6.0"
+  },
+  "devDependencies": {
+    "@coggit/format": "workspace:*",
+    "@coggit/mcp": "workspace:*",
+    "@coggit/mcp-runtime-support": "workspace:*",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "commander": "^12.1.0",
+    "esbuild": "^0.28.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

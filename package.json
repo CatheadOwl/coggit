@@ -1,5 +1,5 @@
 {
-  "name": "coggit",
+  "name": "coggit-vscode",
   "displayName": "CogGit",
   "description": "Track source-linked Markdown cognition files with freshness status, evidence, and MCP tools for agent workflows.",
   "version": "0.2.0",
@@ -39,9 +39,6 @@
   "exports": {
     ".": "./dist/extension.js",
     "./package.json": "./package.json"
-  },
-  "bin": {
-    "coggit": "./dist/cli.js"
   },
   "contributes": {
     "configuration": {
@@ -249,27 +246,29 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run build:core && pnpm run build:runtime-node && pnpm run build:format && pnpm run build:mcp && pnpm run build:mcp-runtime-support && pnpm run check-types && pnpm run lint && node esbuild.js",
+    "compile": "pnpm run build:core && pnpm run build:runtime-node && pnpm run build:format && pnpm run build:mcp && pnpm run build:mcp-runtime-support && pnpm run build:cli && pnpm run check-types && pnpm run lint && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run build:core && pnpm run build:runtime-node && pnpm run build:format && pnpm run build:mcp && pnpm run build:mcp-runtime-support && pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "package": "pnpm run build:core && pnpm run build:runtime-node && pnpm run build:format && pnpm run build:mcp && pnpm run build:mcp-runtime-support && pnpm run build:cli && pnpm run check-types && pnpm run lint && node esbuild.js --production",
     "build:core": "pnpm --filter @coggit/core build",
     "build:runtime-node": "pnpm --filter @coggit/runtime-node build",
     "build:format": "pnpm --filter @coggit/format build",
     "build:mcp": "pnpm --filter @coggit/mcp build",
     "build:mcp-runtime-support": "pnpm --filter @coggit/mcp-runtime-support build",
+    "build:cli": "pnpm --filter coggit build",
     "test:compile": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\" && tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
     "test:watch": "tsc -p . -w --outDir out",
     "pretest": "pnpm run test:compile && pnpm run compile && pnpm run lint",
-    "check-types": "pnpm run check-types:root && pnpm run check-types:core && pnpm run check-types:runtime-node && pnpm run check-types:format && pnpm run check-types:mcp && pnpm run check-types:mcp-runtime-support",
+    "check-types": "pnpm run check-types:root && pnpm run check-types:core && pnpm run check-types:runtime-node && pnpm run check-types:format && pnpm run check-types:mcp && pnpm run check-types:mcp-runtime-support && pnpm run check-types:cli",
     "check-types:root": "tsc --noEmit",
     "check-types:core": "pnpm --filter @coggit/core check-types",
     "check-types:runtime-node": "pnpm --filter @coggit/runtime-node check-types",
     "check-types:format": "pnpm --filter @coggit/format check-types",
     "check-types:mcp": "pnpm --filter @coggit/mcp check-types",
     "check-types:mcp-runtime-support": "pnpm --filter @coggit/mcp-runtime-support check-types",
-    "lint": "eslint src packages/core/src packages/runtime-node/src packages/format/src packages/mcp/src packages/mcp-runtime-support/src",
+    "check-types:cli": "pnpm --filter coggit check-types",
+    "lint": "eslint src packages/core/src packages/runtime-node/src packages/format/src packages/mcp/src packages/mcp-runtime-support/src packages/cli/src",
     "test": "vscode-test",
     "package:vsix": "npx --yes @vscode/vsce package --out dist/coggit.vsix",
     "publish:marketplace": "npx --yes @vscode/vsce publish"
@@ -281,11 +280,13 @@
     "@coggit/mcp": "workspace:*",
     "@coggit/mcp-runtime-support": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@parcel/watcher": "^2.6.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "@types/vscode": "1.90.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
+    "commander": "^12.1.0",
     "esbuild": "^0.28.1",
     "eslint": "^10.5.0",
     "npm-run-all": "^4.1.5",
@@ -297,10 +298,6 @@
   "overrides": {
     "diff": "^8.0.4",
     "serialize-javascript": "^7.0.6"
-  },
-  "dependencies": {
-    "@parcel/watcher": "^2.6.0",
-    "commander": "^12.1.0"
   },
   "vsce": {
     "dependencies": false

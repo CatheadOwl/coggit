@@ -9,7 +9,8 @@
         "packages/core/src",
         "packages/runtime-node/src",
         "packages/mcp/src",
-        "packages/mcp-runtime-support/src"
+        "packages/mcp-runtime-support/src",
+        "packages/cli/src"
     ],
     "exclude": [
         "node_modules",

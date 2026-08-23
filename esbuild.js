@@ -57,27 +57,15 @@ async function main() {
 		}),
 		esbuild.context({
 			...shared,
-			entryPoints: ['src/cli/main.ts'],
-			outfile: 'dist/cli.js',
-			banner: {
-				js: '#!/usr/bin/env node',
-			},
-			// @parcel/watcher resolves its native platform binary through a
-			// dynamic require, so it must stay external (ADR 0014 distribution
-			// model). It is a runtime dependency, not bundled into the CLI.
-			external: ['@parcel/watcher'],
-		}),
-		esbuild.context({
-			...shared,
 			entryPoints: ['src/mcp-stdio/main.ts'],
 			outfile: 'dist/mcp-stdio.js',
 			banner: {
 				js: '#!/usr/bin/env node',
 			},
 		}),
-		// The SDK library entries now build inside their own workspace
-		// packages (`@coggit/core` and `@coggit/runtime-node`); the remaining
-		// root entries bundle them from their workspace links.
+		// The CLI and SDK library entries now build inside their own workspace
+		// packages (`coggit`, `@coggit/core`, `@coggit/runtime-node`); the
+		// remaining root entries bundle them from their workspace links.
 	]);
 	if (watch) {
 		await Promise.all(contexts.map((ctx) => ctx.watch()));
