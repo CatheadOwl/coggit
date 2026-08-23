@@ -257,7 +257,7 @@
     "package": "pnpm run build:core && pnpm run build:runtime-node && pnpm run check-types && pnpm run lint && node esbuild.js --production",
     "build:core": "pnpm --filter @coggit/core build",
     "build:runtime-node": "pnpm --filter @coggit/runtime-node build",
-    "test:compile": "tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
+    "test:compile": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\" && tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
     "test:watch": "tsc -p . -w --outDir out",
     "pretest": "pnpm run test:compile && pnpm run compile && pnpm run lint",
     "check-types": "pnpm run check-types:root && pnpm run check-types:core && pnpm run check-types:runtime-node",
