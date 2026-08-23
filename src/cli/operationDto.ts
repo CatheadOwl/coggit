@@ -8,8 +8,8 @@ import {
   type StatusOperationResult,
 } from '@coggit/core';
 import {
-  renderNodeSnapshotTreeText,
-  renderSnapshotTreeText,
+  nodeSnapshotTreeText,
+  snapshotTreeText,
   type SnapshotTreeTextOptions,
 } from '@coggit/format';
 import { formatTimestamp } from '@coggit/core/internal';
@@ -37,11 +37,11 @@ export function renderSnapshotOperationResult(
   }
 
   if (result.node) {
-    return renderNodeSnapshotTreeText(result.node, withCliDefaultScope(options));
+    return nodeSnapshotTreeText(result.node, withCliDefaultScope(options));
   }
 
   if (result.snapshot && hasSnapshotTreeOptions(options)) {
-    return renderSnapshotTreeText(result.snapshot, withCliDefaultScope(options));
+    return snapshotTreeText(result.snapshot, withCliDefaultScope(options));
   }
 
   const projectLabels = result.projects.map((project) => project.label).join(', ') || '(none)';

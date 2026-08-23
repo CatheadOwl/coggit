@@ -1,14 +1,14 @@
-// Unified format layer — consumable by VSCode UI, MCP, CLI, and clipboard.
+// Shared presentation format layer — consumable by VS Code UI, MCP, CLI, and clipboard.
 //
-// Every renderer is a pure function: data → formatted string or
-// VSCode-native decoration object.
-// To add a new output target, create a new renderer file and re-export here.
+// Every formatter is a pure function: data → formatted string.
+// To add a new output target, create a new formatter file and re-export here.
 
-// High-level renderers
+// High-level text formatters
 export { tooltipText, clipboardText, tooltipNodeStatusText, clipboardNodeStatusText } from './nodeFormat.js';
 export { buildMisplacedInfoText } from './misplacedInfoText.js';
 export { nodeTooltip, nodeClipboardStatusText } from './nodePresentation.js';
 export { snapshotTreeText, nodeSnapshotTreeText, listText } from './snapshotFormat.js';
+export type { SnapshotScope, SnapshotTreeTextOptions } from './snapshotFormat.js';
 export { routesContentText } from './routesFormat.js';
 export type { RoutesTextSurface } from './routesFormat.js';
 
