@@ -1,6 +1,6 @@
 import type { CoggitProject } from '@coggit/core';
 import { projectSnapshotTree, projectTreeFromSnapshot, snapshotOperation } from '@coggit/core';
-import { type SnapshotTreeTextOptions } from '../render';
+import { type SnapshotTreeTextOptions } from '@coggit/format';
 import { renderSnapshotOperationResult } from './operationDto';
 import { UserFacingError } from './status';
 import { defaultSourcePathInput, sourcePathCandidates } from './util';

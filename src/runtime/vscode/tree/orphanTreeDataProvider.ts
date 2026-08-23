@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type { CoggitTreeNode } from '@coggit/core';
-import { nodeTooltip } from '../../../format/nodePresentation';
+import { nodeTooltip } from '@coggit/format';
 import { toCoggitResourceUri } from '../adapter/resourceMapper';
 import { fromComponents } from '../adapter/uri';
 

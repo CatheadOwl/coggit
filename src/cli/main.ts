@@ -2,7 +2,7 @@ import { Command, InvalidArgumentError, Option } from 'commander';
 
 import { createNodeCoggitServices } from '@coggit/runtime-node';
 import { discoverCoggitProjects, type AddCognitionKind, type CognitionKind } from '@coggit/core';
-import type { SnapshotScope } from '../render';
+import type { SnapshotScope } from '@coggit/format';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
 import { runInit, type InitOptions } from './init';

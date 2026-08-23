@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type { MisplacedTreeEntry } from './misplacedTreeTypes';
-import { buildMisplacedInfoText } from '../../../format/misplacedInfoText';
+import { buildMisplacedInfoText } from '@coggit/format';
 
 /**
  * Tree data provider for misplaced cognition files —

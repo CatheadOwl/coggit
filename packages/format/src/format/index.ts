@@ -7,7 +7,8 @@
 // High-level renderers
 export { tooltipText, clipboardText, tooltipNodeStatusText, clipboardNodeStatusText } from './nodeFormat.js';
 export { buildMisplacedInfoText } from './misplacedInfoText.js';
-export { snapshotTreeText, listText } from './snapshotFormat.js';
+export { nodeTooltip, nodeClipboardStatusText } from './nodePresentation.js';
+export { snapshotTreeText, nodeSnapshotTreeText, listText } from './snapshotFormat.js';
 export { routesContentText } from './routesFormat.js';
 export type { RoutesTextSurface } from './routesFormat.js';
 

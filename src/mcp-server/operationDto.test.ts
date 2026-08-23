@@ -12,7 +12,7 @@ import type {
 import { selectRoutesBySourcePath } from '@coggit/core';
 import { applyRoutesFilters, suggestRoutePathHints } from '@coggit/core/internal';
 import type { TreeProjectionNode } from '@coggit/core/internal';
-import { clipboardNodeStatusText } from '../format/nodeFormat.js';
+import { clipboardNodeStatusText } from '@coggit/format';
 import {
   addOperationOutputSchema,
   addStructuredContent,

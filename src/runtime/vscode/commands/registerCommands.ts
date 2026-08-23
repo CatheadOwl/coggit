@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
 import type { CoggitTreeNode } from '@coggit/core';
-import { nodeClipboardStatusText } from '../../../format/nodePresentation.js';
-import { buildMisplacedInfoText } from '../../../format/misplacedInfoText.js';
+import { nodeClipboardStatusText } from '@coggit/format';
+import { buildMisplacedInfoText } from '@coggit/format';
 import type { CoggitModel } from '../plugin/model';
 import { CoggitTreeDataProvider } from '../tree/coggitTreeDataProvider';
 import type { MisplacedTreeDataProvider } from '../tree/misplacedTreeDataProvider';

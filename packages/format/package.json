@@ -1,0 +1,40 @@
+{
+  "name": "@coggit/format",
+  "version": "0.2.0",
+  "description": "CogGit shared presentation: tree/snapshot/status text formatting and render wrappers.",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CatheadOwl/coggit.git",
+    "directory": "packages/format"
+  },
+  "main": "./dist/public.js",
+  "types": "./dist/public.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json && node build.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node build.js --watch"
+  },
+  "devDependencies": {
+    "@coggit/core": "workspace:*",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "esbuild": "^0.28.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

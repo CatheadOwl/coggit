@@ -12,7 +12,7 @@ import type {
   SnapshotOperationResult,
 } from '@coggit/core';
 import type { CoggitProject } from '@coggit/core';
-import { nodeSnapshotTreeText, snapshotTreeText } from '../../format/snapshotFormat.js';
+import { nodeSnapshotTreeText, snapshotTreeText } from '@coggit/format';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import {
   snapshotMcpView,

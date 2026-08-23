@@ -11,7 +11,7 @@ import {
   renderNodeSnapshotTreeText,
   renderSnapshotTreeText,
   type SnapshotTreeTextOptions,
-} from '../render';
+} from '@coggit/format';
 import { formatTimestamp } from '@coggit/core/internal';
 
 export { renderPathMissText };

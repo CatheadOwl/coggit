@@ -24,6 +24,9 @@ importers:
       '@coggit/core':
         specifier: workspace:*
         version: link:packages/core
+      '@coggit/format':
+        specifier: workspace:*
+        version: link:packages/format
       '@coggit/runtime-node':
         specifier: workspace:*
         version: link:packages/runtime-node
@@ -78,6 +81,24 @@ importers:
       yaml:
         specifier: ^2.8.1
         version: 2.9.0
+
+  packages/format:
+    devDependencies:
+      '@coggit/core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
+      '@types/node':
+        specifier: 24.x
+        version: 24.13.2
+      esbuild:
+        specifier: ^0.28.1
+        version: 0.28.1
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/runtime-node:
     dependencies:

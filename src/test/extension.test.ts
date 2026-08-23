@@ -4,9 +4,9 @@ import * as vscode from 'vscode';
 
 import { collectSubtreeIssues, countSubtreeIssues, computeRuntimeStatus, projectStatusResultToNodeStatus, querySubtreeIssues } from '@coggit/core';
 import { statusTesting } from '@coggit/core/internal';
-import { clipboardText, tooltipText } from '../format/nodeFormat.js';
-import { snapshotTreeText } from '../format/snapshotFormat.js';
-import { nodeClipboardStatusText, nodeTooltip } from '../format/nodePresentation.js';
+import { clipboardText, tooltipText } from '@coggit/format';
+import { snapshotTreeText } from '@coggit/format';
+import { nodeClipboardStatusText, nodeTooltip } from '@coggit/format';
 import { renderStatusAgentInspectionText } from '@coggit/core';
 import { CoggitTreeDataProvider } from '../runtime/vscode/tree/coggitTreeDataProvider';
 import { gitignoreTesting } from '@coggit/core/internal';

@@ -8,7 +8,7 @@ import {
   toRoutesStructuredOutput,
 } from '@coggit/core';
 import type { CoggitProject } from '@coggit/core';
-import { routesContentText } from '../../format/index.js';
+import { routesContentText } from '@coggit/format';
 import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
 import { routesOperationOutputSchema } from '../operationDto/index.js';
 

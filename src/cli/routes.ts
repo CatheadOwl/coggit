@@ -3,7 +3,7 @@ import {
   routesOperation,
 } from '@coggit/core';
 import type { CoggitProject } from '@coggit/core';
-import { routesContentText } from '../format';
+import { routesContentText } from '@coggit/format';
 import { UserFacingError } from './status';
 
 export type RoutesFormat = 'flat' | 'tree';
