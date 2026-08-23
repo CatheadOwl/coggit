@@ -9,13 +9,6 @@ function makeEntry(sourcePath: string | null): PathKeyRecord {
   return {
     sourcePath,
     type: 'leaf',
-    sourceFactMtimeMs: null,
-    cognitionMtimeMs: null,
-    verificationTimeMs: null,
-    createdAt: null,
-    sourceFactHash: null,
-    cognitionBlobHash: null,
-    cognitionLength: null,
   };
 }
 

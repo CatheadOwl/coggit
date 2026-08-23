@@ -75,7 +75,6 @@ export async function addCognition(
     const entry: PathKeyRecord = {
       sourcePath: sourceProjectPath,
       type: kind === 'skeleton' ? 'folder' : 'leaf',
-      createdAt: existing?.createdAt ?? new Date().toISOString(),
       accepted: existing?.accepted ?? null,
       cognitionBlobHash: existing?.cognitionBlobHash ?? null,
       cognitionLength: existing?.cognitionLength ?? null,

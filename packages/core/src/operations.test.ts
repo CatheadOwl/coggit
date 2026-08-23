@@ -177,9 +177,8 @@ async function makeProject(fs: MockFileSystem, registry?: CountingRegistryProvid
 function registryFile(entries: RegistryFile['entries']): RegistryFile {
   return {
     schemaVersion: 2,
-    updatedAt: '2026-07-21T00:00:00.000Z',
     entries,
-  };
+  } as RegistryFile;
 }
 
 suite('core operations', () => {
@@ -655,7 +654,7 @@ suite('core operations', () => {
         ...file.entries,
         'tracked.ts': {
           ...file.entries['tracked.ts'],
-          createdAt: '2026-07-26T07:08:09.000Z',
+          type: 'folder' as const,
         },
       },
     }));
@@ -666,8 +665,8 @@ suite('core operations', () => {
     assert.strictEqual(review.error?.code, 'registry-changed');
     assert.strictEqual(registry.current()?.entries['tracked.ts']?.accepted, null);
     assert.strictEqual(
-      registry.current()?.entries['tracked.ts']?.createdAt,
-      '2026-07-26T07:08:09.000Z',
+      registry.current()?.entries['tracked.ts']?.type,
+      'folder',
     );
     const status = await statusOperation([project], 'tracked.ts');
     assert.strictEqual(status.status, 'stale');

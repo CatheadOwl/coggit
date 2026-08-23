@@ -11,7 +11,7 @@ export interface PathKeyRecord {
 	sourcePath: string | null;
 	/** Cognition type, matching config template definition. */
 	type: 'leaf' | 'folder';
-	/** ISO datetime of entry creation. */
+	/** ISO datetime of entry creation. @deprecated Removed from schema v6; retained only for old in-memory callers. */
 	createdAt?: string | null;
 	/** Accepted source/cognition provenance relationship. */
 	accepted?: AcceptedPair | null;
@@ -23,9 +23,9 @@ export interface PathKeyRecord {
 	verificationTimeMs?: number | null;
 	/** @deprecated Removed from schema v5; retained only for old in-memory callers. */
 	sourceFactHash?: string | null;
-	/** SHA256 hex hash of cognition file content, cached for rename detection across reconcile runs. */
+	/** @deprecated Removed from schema v6; retained only for rename detection in-memory. */
 	cognitionBlobHash?: string | null;
-	/** Content length in characters, cached for rename detection across reconcile runs. */
+	/** @deprecated Removed from schema v6; retained only for rename detection in-memory. */
 	cognitionLength?: number | null;
 }
 
@@ -34,7 +34,6 @@ export interface RegistryFile {
 	schemaVersion: number;
 	/** Human-facing note for agents and contributors inspecting this generated metadata. */
 	maintenanceNotice?: string;
-	updatedAt: string;
 	entries: Record<string, PathKeyRecord>;
 }
 

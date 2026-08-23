@@ -13,10 +13,7 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
   return {
     sourcePath: 'src/test.ts',
     type: 'leaf',
-    createdAt: new Date().toISOString(),
     accepted: null,
-    cognitionBlobHash: null,
-    cognitionLength: null,
     ...overrides,
   };
 }
@@ -25,10 +22,7 @@ function makeFolderEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord 
   return {
     sourcePath: 'src',
     type: 'folder',
-    createdAt: new Date().toISOString(),
     accepted: null,
-    cognitionBlobHash: null,
-    cognitionLength: null,
     ...overrides,
   };
 }
@@ -47,7 +41,6 @@ suite('Registry — create', () => {
     // Seed data through the provider
     await provider.save({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
-      updatedAt: new Date().toISOString(),
       entries: { 'src/foo': entry },
     });
 
@@ -60,7 +53,6 @@ suite('Registry — create', () => {
     const provider = new InMemoryRegistryProvider();
     await provider.save({
       schemaVersion: 0, // Mismatch — expected 1
-      updatedAt: new Date().toISOString(),
       entries: { 'src/foo': makeEntry() },
     });
 
@@ -74,7 +66,6 @@ suite('Registry — create', () => {
     const provider = new InMemoryRegistryProvider();
     await provider.save({
       schemaVersion: REGISTRY_SCHEMA_VERSION + 1,
-      updatedAt: new Date().toISOString(),
       entries: { 'src/foo': makeEntry() },
     });
 
@@ -95,7 +86,6 @@ suite('Registry — create', () => {
     const provider = new InMemoryRegistryProvider();
     await provider.save({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
-      updatedAt: new Date().toISOString(),
       entries: {},
     });
 
@@ -106,18 +96,20 @@ suite('Registry — create', () => {
     assert.strictEqual(loaded?.maintenanceNotice, REGISTRY_MAINTENANCE_NOTICE);
   });
 
-  test('normalizes v5 entries by dropping obsolete freshness fields', async () => {
+  test('normalizes v6 entries by stripping createdAt, cognitionBlobHash, cognitionLength', async () => {
     const provider = new InMemoryRegistryProvider();
     await provider.save({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
       maintenanceNotice: REGISTRY_MAINTENANCE_NOTICE,
-      updatedAt: new Date().toISOString(),
       entries: {
         'src/foo': {
           ...makeEntry({
             sourceFactMtimeMs: 1000,
             cognitionMtimeMs: 2000,
             verificationTimeMs: 3000,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            cognitionBlobHash: 'somehash',
+            cognitionLength: 42,
           }),
           verifiedAt: '2026-01-01T00:00:00.000Z',
           verifiedSourceBlob: 'old-hash-baseline',
@@ -130,12 +122,18 @@ suite('Registry — create', () => {
     assert.strictEqual(entry.sourceFactMtimeMs, undefined);
     assert.strictEqual(entry.cognitionMtimeMs, undefined);
     assert.strictEqual(entry.verificationTimeMs, undefined);
+    assert.strictEqual('createdAt' in entry, false);
+    assert.strictEqual('cognitionBlobHash' in entry, false);
+    assert.strictEqual('cognitionLength' in entry, false);
     assert.strictEqual('verifiedAt' in entry, false);
     assert.strictEqual('verifiedSourceBlob' in entry, false);
 
     await registry.flush();
     const loaded = await provider.load();
     const persisted = loaded!.entries['src/foo'];
+    assert.strictEqual('createdAt' in persisted, false);
+    assert.strictEqual('cognitionBlobHash' in persisted, false);
+    assert.strictEqual('cognitionLength' in persisted, false);
     assert.strictEqual('verifiedAt' in persisted, false);
     assert.strictEqual('verifiedSourceBlob' in persisted, false);
   });
@@ -221,18 +219,57 @@ suite('Registry — dirty flag and flush', () => {
     assert.strictEqual(loaded, null);
   });
 
-  test('flush updates updatedAt timestamp', async () => {
+  test('flush without semantic mutation does not create timestamp-only diffs', async () => {
     const provider = new InMemoryRegistryProvider();
     const registry = await Registry.create(provider);
 
     registry.setEntry('a', makeEntry());
-    const beforeFlush = Date.now();
     await registry.flush();
 
     const loaded = await provider.load();
     assert.ok(loaded !== null);
-    const updatedAt = new Date(loaded!.updatedAt).getTime();
-    assert.ok(updatedAt >= beforeFlush, 'updatedAt should be set during flush');
+    assert.strictEqual(loaded!.schemaVersion, REGISTRY_SCHEMA_VERSION);
+    assert.strictEqual(loaded!.maintenanceNotice, REGISTRY_MAINTENANCE_NOTICE);
+    assert.ok(loaded!.entries['a']);
+  });
+
+  test('v5 to v6 semantic migration preserves entries', async () => {
+    const provider = new InMemoryRegistryProvider();
+    const accepted = {
+      source: `sha256:v1:${'a'.repeat(64)}` as const,
+      cognition: `sha256:v1:${'b'.repeat(64)}` as const,
+    };
+    await provider.save({
+      schemaVersion: 5, // v5 data
+      maintenanceNotice: REGISTRY_MAINTENANCE_NOTICE,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      entries: {
+        'src/foo': {
+          sourcePath: 'src/foo.ts',
+          type: 'leaf',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          accepted,
+          cognitionBlobHash: 'somehash',
+          cognitionLength: 100,
+        },
+      },
+    } as any);
+
+    const registry = await Registry.create(provider);
+    assert.strictEqual(registry.hasEntry('src/foo'), true);
+    const entry = registry.getEntry('src/foo')!;
+    assert.strictEqual(entry.sourcePath, 'src/foo.ts');
+    assert.strictEqual(entry.type, 'leaf');
+    assert.deepStrictEqual(entry.accepted, accepted);
+    assert.strictEqual('createdAt' in entry, false);
+    assert.strictEqual('cognitionBlobHash' in entry, false);
+    assert.strictEqual('cognitionLength' in entry, false);
+
+    await registry.flush();
+    const loaded = await provider.load();
+    assert.strictEqual(loaded!.schemaVersion, REGISTRY_SCHEMA_VERSION);
+    assert.strictEqual('updatedAt' in loaded!, false);
+    assert.strictEqual('createdAt' in loaded!.entries['src/foo'], false);
   });
 
   test('multiple mutations and single flush persists all changes', async () => {
@@ -539,8 +576,8 @@ suite('Registry — persistence round-trip', () => {
     const loaded = registry2.getEntry('src/foo');
     assert.strictEqual(loaded?.sourcePath, 'src/foo.ts');
     assert.strictEqual(loaded?.verificationTimeMs, undefined);
-    assert.strictEqual(loaded?.cognitionBlobHash, 'coghash');
-    assert.strictEqual(loaded?.cognitionLength, 250);
+    assert.strictEqual(loaded?.cognitionBlobHash, undefined);
+    assert.strictEqual(loaded?.cognitionLength, undefined);
   });
 
   test('folder entries persist correctly', async () => {

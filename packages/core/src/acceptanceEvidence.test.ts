@@ -158,7 +158,6 @@ async function makeCase() {
   fs.addFile('/workspace/cognition/tracked.ts.md', cognition);
   const provider = new MemoryRegistryProvider({
     schemaVersion: REGISTRY_SCHEMA_VERSION,
-    updatedAt: '2026-07-26T00:00:00.000Z',
     entries: { 'tracked.ts': entry(source, cognition) },
   });
   const services = createCoggitServices(
@@ -283,7 +282,6 @@ suite('runtime acceptance evidence', () => {
     fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nTODO');
     const provider = new MemoryRegistryProvider({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
-      updatedAt: '2026-07-26T00:00:00.000Z',
       entries: {
         'tracked.ts': {
           sourcePath: 'src/tracked.ts',
@@ -326,7 +324,6 @@ suite('runtime acceptance evidence', () => {
     fs.addFile('/workspace/cognition/tracked.ts.md', '# tracked\n\nplaceholder');
     const provider = new MemoryRegistryProvider({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
-      updatedAt: '2026-07-26T00:00:00.000Z',
       entries: {
         'folder/': {
           sourcePath: 'src/folder',

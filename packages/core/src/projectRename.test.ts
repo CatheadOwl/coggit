@@ -145,13 +145,6 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
   return {
     sourcePath: 'src/new/foo.ts',
     type: 'leaf',
-    sourceFactMtimeMs: null,
-    cognitionMtimeMs: null,
-    verificationTimeMs: null,
-    createdAt: null,
-    sourceFactHash: null,
-    cognitionBlobHash: null,
-    cognitionLength: null,
     ...overrides,
   };
 }
@@ -159,7 +152,6 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
 function makeRegistryFile(entries: Record<string, PathKeyRecord>): RegistryFile {
   return {
     schemaVersion: REGISTRY_SCHEMA_VERSION,
-    updatedAt: '2026-07-14T00:00:00.000Z',
     entries,
   };
 }
@@ -385,7 +377,7 @@ suite('project — source rename tracking', () => {
         ...file.entries,
         'other.ts': {
           ...file.entries['other.ts'],
-          createdAt: '2026-07-26T01:02:03.000Z',
+          type: 'folder' as const,
         },
       },
     }));
@@ -398,7 +390,7 @@ suite('project — source rename tracking', () => {
     assert.strictEqual(changed, true);
     const saved = await provider.load();
     assert.strictEqual(saved?.entries['watch/readme.ts'].sourcePath, 'src/vscode/watch/readme.ts');
-    assert.strictEqual(saved?.entries['other.ts'].createdAt, '2026-07-26T01:02:03.000Z');
+    assert.strictEqual(saved?.entries['other.ts'].type, 'folder');
   });
 
   test('does not update registry sourcePath when rename leaves source root', async () => {
@@ -474,7 +466,7 @@ suite('project — source rename tracking', () => {
         ...file.entries,
         'other.ts': {
           ...file.entries['other.ts'],
-          createdAt: '2026-07-26T04:05:06.000Z',
+          type: 'folder' as const,
         },
       },
     }));
@@ -487,7 +479,7 @@ suite('project — source rename tracking', () => {
     assert.deepStrictEqual(await project.listMisplacedCognition(), []);
     const saved = await provider.load();
     assert.strictEqual(saved?.entries['new/foo.ts'].sourcePath, 'src/new/foo.ts');
-    assert.strictEqual(saved?.entries['other.ts'].createdAt, '2026-07-26T04:05:06.000Z');
+    assert.strictEqual(saved?.entries['other.ts'].type, 'folder');
   });
 
   test('does not persist a directory observation before acceptance', async () => {

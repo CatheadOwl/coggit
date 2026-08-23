@@ -103,24 +103,19 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
   return {
     sourcePath: null,
     type: 'leaf',
-    createdAt: new Date().toISOString(),
     accepted: null,
-    cognitionBlobHash: null,
-    cognitionLength: null,
     ...overrides,
   };
 }
 
 async function createRegistry(entries: Record<string, PathKeyRecord>): Promise<Registry> {
   const provider = new InMemoryRegistryProvider();
-  if (Object.keys(entries).length > 0) {
-    await provider.save({
-      schemaVersion: REGISTRY_SCHEMA_VERSION,
-      updatedAt: new Date().toISOString(),
-      entries,
-    });
+  const registry = await Registry.create(provider);
+  // Seed entries directly in-memory to preserve hash cache fields for reconcile
+  for (const [key, entry] of Object.entries(entries)) {
+    registry.setEntry(key, entry);
   }
-  return Registry.create(provider);
+  return registry;
 }
 
 function emptyScan(): CognitionDirScan {
@@ -347,7 +342,6 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     const registry = await createRegistry({
       'old/path.ts': makeEntry({
         sourcePath: 'src/old.ts',
-        verificationTimeMs: 1710000000000,
         cognitionBlobHash: HASH_A,
         cognitionLength: CONTENT_A.length,
       }),
@@ -365,7 +359,6 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     // Verify metadata migrated (sourcePath preserved)
     const entry = registry.getEntry('new/path.ts')!;
     assert.strictEqual(entry.sourcePath, 'src/old.ts');
-    assert.strictEqual(entry.verificationTimeMs, undefined);
     assert.strictEqual(entry.cognitionBlobHash, HASH_A);
     assert.strictEqual(entry.cognitionLength, CONTENT_A.length);
 
@@ -457,7 +450,7 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     assert.strictEqual(entry.cognitionLength, CONTENT_B.length);
   });
 
-  test('first encounter populates hash cache without marking updated', async () => {
+  test('first encounter does not dirty registry and is reported as unchanged', async () => {
     const registry = await createRegistry({
       'a.ts': makeEntry({
         cognitionBlobHash: null, // No prior hash — first encounter
@@ -475,10 +468,44 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     assert.strictEqual(diff.unchanged[0], 'a.ts');
     assert.strictEqual(diff.updated.length, 0);
 
-    // But hash cache should be populated now
+    // Hash cache should NOT be written back — registry stays clean for flush
     const entry = registry.getEntry('a.ts')!;
-    assert.strictEqual(entry.cognitionBlobHash, HASH_A);
-    assert.strictEqual(entry.cognitionLength, CONTENT_A.length);
+    assert.strictEqual(entry.cognitionBlobHash ?? null, null);
+    assert.strictEqual(entry.cognitionLength ?? null, null);
+  });
+
+  test('v6 canonical registry with unchanged cognition does not trigger save', async () => {
+    // Seed a canonical v6 registry: only sourcePath, type, accepted — no cache fields
+    const provider = new InMemoryRegistryProvider();
+    await provider.save({
+      schemaVersion: REGISTRY_SCHEMA_VERSION,
+      entries: {
+        'a.ts': {
+          sourcePath: 'src/a.ts',
+          type: 'leaf',
+          accepted: null,
+        },
+      },
+    });
+    const registry = await Registry.create(provider);
+
+    const fs = new MockFileSystem();
+    fs.addFile('/cog/a.ts.md', CONTENT_A);
+
+    const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
+    const diff = await reconcileRegistry(registry, scan);
+
+    // No updated keys — content hasn't semantically changed
+    assert.strictEqual(diff.updated.length, 0);
+    assert.strictEqual(diff.unchanged.length, 1);
+
+    // Flush should be a no-op: no semantic mutation means no save
+    await registry.flush();
+    const loaded = await provider.load();
+    // The loaded entry should still have no cache fields
+    const entry = loaded!.entries['a.ts'];
+    assert.strictEqual('cognitionBlobHash' in entry, false);
+    assert.strictEqual('cognitionLength' in entry, false);
   });
 
   test('empty registry + empty cognition directory = empty diff', async () => {
@@ -503,13 +530,11 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     const registry = await createRegistry({
       'a.ts': makeEntry({
         sourcePath: 'src/a.ts',
-        verificationTimeMs: 1710000000000,
         cognitionBlobHash: HASH_A,
         cognitionLength: CONTENT_A.length,
       }),
       'b.ts': makeEntry({
         sourcePath: 'src/b.ts',
-        verificationTimeMs: 1710000001000,
         cognitionBlobHash: HASH_B,
         cognitionLength: CONTENT_B.length,
       }),
@@ -534,7 +559,6 @@ suite('reconcile — reconcileRegistry (full integration)', () => {
     // B's metadata should have migrated to C
     const entryC = registry.getEntry('c.ts')!;
     assert.strictEqual(entryC.sourcePath, 'src/b.ts');
-    assert.strictEqual(entryC.verificationTimeMs, undefined);
   });
 
   test('stats counters accurate', async () => {

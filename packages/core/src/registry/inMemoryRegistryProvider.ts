@@ -23,6 +23,6 @@ export class InMemoryRegistryProvider implements RegistryProvider {
 
 	/** Test helper: simulate corrupt data to exercise recovery paths. */
 	corrupt(): void {
-		this.data = { schemaVersion: 0, updatedAt: '', entries: {} as any };
+		this.data = { schemaVersion: 0, entries: {} as any };
 	}
 }

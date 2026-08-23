@@ -130,13 +130,6 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
   return {
     sourcePath: 'src/new/foo.ts',
     type: 'leaf',
-    sourceFactMtimeMs: null,
-    cognitionMtimeMs: null,
-    verificationTimeMs: null,
-    createdAt: null,
-    sourceFactHash: null,
-    cognitionBlobHash: null,
-    cognitionLength: null,
     ...overrides,
   };
 }
@@ -144,7 +137,6 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
 function makeRegistryFile(entries: Record<string, PathKeyRecord>): RegistryFile {
   return {
     schemaVersion: REGISTRY_SCHEMA_VERSION,
-    updatedAt: '2026-07-14T00:00:00.000Z',
     entries,
   };
 }

@@ -7,7 +7,8 @@ import type {
 import { createHash } from 'node:crypto';
 import { debugLog, nullCoggitLogger, warnLog, type CoggitLogger } from '../logger';
 
-export const REGISTRY_SCHEMA_VERSION = 5;
+export const REGISTRY_SCHEMA_VERSION = 6;
+const PREVIOUS_SCHEMA_VERSION = 5;
 export const REGISTRY_MAINTENANCE_NOTICE = 'This file is auto-maintained CogGit metadata. Ignore routine changes; it is committed so metadata can be located across hosts. Direct reads may be stale; use CogGit commands or MCP tools for authoritative freshness.';
 const REGISTRY_TRACE_CATEGORY = 'registry.trace';
 
@@ -86,8 +87,16 @@ export class Registry {
 			);
 		}
 
-		// Schema version mismatch -- clean rebuild
+		// Schema version mismatch -- v5→v6 semantic migration or clean rebuild
 		if (loaded.schemaVersion !== REGISTRY_SCHEMA_VERSION) {
+			if (loaded.schemaVersion === PREVIOUS_SCHEMA_VERSION) {
+				warnLog(logger, 'registry.io', 'Migrating registry from v5 to v6', {
+					actualSchemaVersion: loaded.schemaVersion,
+					expectedSchemaVersion: REGISTRY_SCHEMA_VERSION,
+				});
+				const migrated = migrateV5ToV6(loaded);
+				return new Registry(provider, migrated, logger, true, computeRegistryRevision(loaded));
+			}
 			warnLog(logger, 'registry.io', 'Registry schema version mismatch; rebuilding', {
 				actualSchemaVersion: loaded.schemaVersion,
 				expectedSchemaVersion: REGISTRY_SCHEMA_VERSION,
@@ -270,7 +279,6 @@ export class Registry {
 			throw new RegistryRevisionMismatchError(this.revision, actualRevision);
 		}
 
-		this.file.updatedAt = new Date().toISOString();
 		const normalized = normalizeRegistryFile(this.file).file;
 		this.file = normalized;
 		await this.provider.save(normalized);
@@ -324,8 +332,23 @@ function createEmptyRegistryFile(): RegistryFile {
 	return {
 		schemaVersion: REGISTRY_SCHEMA_VERSION,
 		maintenanceNotice: REGISTRY_MAINTENANCE_NOTICE,
-		updatedAt: new Date().toISOString(),
 		entries: {},
+	};
+}
+
+function migrateV5ToV6(loaded: RegistryFile): RegistryFile {
+	const entries: Record<string, PathKeyRecord> = {};
+	for (const [key, entry] of Object.entries(loaded.entries)) {
+		entries[key] = {
+			sourcePath: entry.sourcePath ?? null,
+			type: entry.type,
+			accepted: normalizeAcceptedPair(entry.accepted),
+		};
+	}
+	return {
+		schemaVersion: REGISTRY_SCHEMA_VERSION,
+		maintenanceNotice: loaded.maintenanceNotice ?? REGISTRY_MAINTENANCE_NOTICE,
+		entries,
 	};
 }
 
@@ -336,7 +359,6 @@ function normalizeRegistryFile(file: RegistryFile): { file: RegistryFile; change
 		file: {
 			schemaVersion: file.schemaVersion,
 			maintenanceNotice: REGISTRY_MAINTENANCE_NOTICE,
-			updatedAt: file.updatedAt,
 			entries,
 		},
 		changed: file.maintenanceNotice !== REGISTRY_MAINTENANCE_NOTICE || entriesChanged,
@@ -355,10 +377,7 @@ function normalizePathKeyRecord(entry: PathKeyRecord): PathKeyRecord {
 	return {
 		sourcePath: entry.sourcePath ?? null,
 		type: entry.type,
-		createdAt: entry.createdAt ?? null,
 		accepted: normalizeAcceptedPair(entry.accepted),
-		cognitionBlobHash: entry.cognitionBlobHash ?? null,
-		cognitionLength: entry.cognitionLength ?? null,
 	};
 }
 

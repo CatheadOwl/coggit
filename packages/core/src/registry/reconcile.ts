@@ -301,7 +301,9 @@ export async function reconcileRegistry(
 	const deletedWithHash = new Map<string, PathKeyRecord>();
 	for (const key of deletedKeys) {
 		const entry = registryEntries[key];
-		if (entry && entry.cognitionBlobHash !== null && entry.cognitionLength !== null) {
+		// Use loose inequality to treat both null and undefined as "no prior cache"
+		// eslint-disable-next-line eqeqeq
+		if (entry && entry.cognitionBlobHash != null && entry.cognitionLength != null) {
 			deletedWithHash.set(key, entry);
 		}
 	}
@@ -362,7 +364,6 @@ export async function reconcileRegistry(
 		registry.setEntry(key, {
 			sourcePath: null,
 			type: inferType(key),
-			createdAt: new Date().toISOString(),
 			accepted: null,
 			cognitionBlobHash: info.contentHash,
 			cognitionLength: info.contentLength,
@@ -378,9 +379,12 @@ export async function reconcileRegistry(
 		const scanInfo = scanResult.get(key)!;
 		const existingEntry = registryEntries[key];
 
+		// Use loose inequality to treat both null and undefined as "no prior cache"
+		/* eslint-disable eqeqeq */
 		const hasPriorHash =
-			existingEntry.cognitionBlobHash !== null &&
-			existingEntry.cognitionLength !== null;
+			existingEntry.cognitionBlobHash != null &&
+			existingEntry.cognitionLength != null;
+		/* eslint-enable eqeqeq */
 
 		const hashChanged =
 			existingEntry.cognitionBlobHash !== scanInfo.contentHash ||
@@ -395,14 +399,6 @@ export async function reconcileRegistry(
 			}, 'reconcile.update');
 			updatedKeys.push(key);
 		} else {
-			// Populate hash cache on first encounter (no prior hash)
-			if (!hasPriorHash) {
-				registry.setEntry(key, {
-					...existingEntry,
-					cognitionBlobHash: scanInfo.contentHash,
-					cognitionLength: scanInfo.contentLength,
-				}, 'reconcile.populate-hash-cache');
-			}
 			unchangedKeys.push(key);
 		}
 	}

@@ -7,7 +7,6 @@ import { REGISTRY_SCHEMA_VERSION } from '@coggit/core/internal';
 function makeFile(entries: Record<string, any> = {}): RegistryFile {
   return {
     schemaVersion: REGISTRY_SCHEMA_VERSION,
-    updatedAt: new Date().toISOString(),
     entries,
   };
 }
@@ -22,10 +21,7 @@ suite('InMemoryRegistryProvider — round-trip', () => {
         sourceFactMtimeMs: null,
         cognitionMtimeMs: null,
         verificationTimeMs: null,
-        createdAt: '2026-01-01T00:00:00.000Z',
         sourceFactHash: null,
-        cognitionBlobHash: null,
-        cognitionLength: null,
       },
     });
 
@@ -87,10 +83,7 @@ suite('InMemoryRegistryProvider — corrupt', () => {
         sourceFactMtimeMs: null,
         cognitionMtimeMs: null,
         verificationTimeMs: null,
-        createdAt: null,
         sourceFactHash: null,
-        cognitionBlobHash: null,
-        cognitionLength: null,
       },
     }));
 
@@ -112,10 +105,7 @@ suite('InMemoryRegistryProvider — deep clone isolation', () => {
         sourceFactMtimeMs: null,
         cognitionMtimeMs: null,
         verificationTimeMs: null,
-        createdAt: '2026-01-01T00:00:00.000Z',
         sourceFactHash: null,
-        cognitionBlobHash: null,
-        cognitionLength: null,
       },
     }));
 
@@ -143,10 +133,7 @@ suite('InMemoryRegistryProvider — deep clone isolation', () => {
       sourceFactMtimeMs: null,
       cognitionMtimeMs: null,
       verificationTimeMs: null,
-      createdAt: '2026-01-01T00:00:00.000Z',
       sourceFactHash: null,
-      cognitionBlobHash: null,
-      cognitionLength: null,
     };
 
     await provider.save(makeFile({ 'src/foo': originalEntry }));
@@ -168,10 +155,7 @@ suite('InMemoryRegistryProvider — deep clone isolation', () => {
       sourceFactMtimeMs: null,
       cognitionMtimeMs: null,
       verificationTimeMs: null,
-      createdAt: '2026-01-01T00:00:00.000Z',
       sourceFactHash: null,
-      cognitionBlobHash: null,
-      cognitionLength: null,
     };
 
     const file = makeFile({ 'src/dynamic': entry });

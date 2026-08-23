@@ -36,10 +36,7 @@ function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
 	return {
 		sourcePath: 'src/missing.ts',
 		type: 'leaf',
-		createdAt: null,
 		accepted: null,
-		cognitionBlobHash: null,
-		cognitionLength: null,
 		...overrides,
 	};
 }
