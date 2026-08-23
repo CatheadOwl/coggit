@@ -27,7 +27,7 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
-	await removeLegacyMcpPromptOutput();
+	await removeStaleDistOutputs();
 
 	const shared = {
 		bundle: true,
@@ -93,8 +93,20 @@ async function main() {
 	}
 }
 
-async function removeLegacyMcpPromptOutput() {
-	await fs.rm(path.join(__dirname, 'dist', 'prompts'), { recursive: true, force: true });
+async function removeStaleDistOutputs() {
+	const distDir = path.join(__dirname, 'dist');
+	await fs.rm(path.join(distDir, 'prompts'), { recursive: true, force: true });
+
+	// Every `.js` / `.js.map` file in dist/ is an esbuild bundle produced by
+	// this script; remove them all up front so orphaned entries (e.g. the
+	// pre-phase-2 `dist/core.js`) never ship. `build:types` only emits `.d.ts`,
+	// so this never touches declaration outputs.
+	const entries = await fs.readdir(distDir).catch(() => []);
+	await Promise.all(
+		entries
+			.filter((name) => name.endsWith('.js') || name.endsWith('.js.map'))
+			.map((name) => fs.rm(path.join(distDir, name), { force: true })),
+	);
 }
 
 main().catch(e => {
