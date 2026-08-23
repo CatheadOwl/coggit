@@ -1,0 +1,48 @@
+{
+  "name": "@coggit/mcp",
+  "version": "0.2.0",
+  "description": "CogGit MCP runtime: protocol registration, stdio entry, and prompt/tool assets.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CatheadOwl/coggit.git",
+    "directory": "packages/mcp"
+  },
+  "main": "./dist/public.js",
+  "types": "./dist/public.d.ts",
+  "bin": {
+    "coggit-mcp": "./dist/mcp-stdio.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json && node build.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node build.js --watch"
+  },
+  "dependencies": {
+    "@coggit/core": "workspace:*",
+    "@coggit/runtime-node": "workspace:*"
+  },
+  "devDependencies": {
+    "@coggit/format": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "esbuild": "^0.28.1",
+    "typescript": "^6.0.3",
+    "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

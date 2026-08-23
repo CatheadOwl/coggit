@@ -9,7 +9,7 @@ import {
 } from '@coggit/core';
 import type { StatusOperationResult } from '@coggit/core';
 import type { CoggitProject } from '@coggit/core';
-import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
+import { MCP_TOOL_SURFACES } from '../promptAssets.js';
 import {
   handbookResourceLink,
   statusMcpView,

@@ -8,12 +8,14 @@
         "src",
         "packages/core/src",
         "packages/runtime-node/src",
+        "packages/mcp/src",
         "packages/mcp-runtime-support/src"
     ],
     "exclude": [
         "node_modules",
         "dist",
         "out",
-        "packages/core/src/markdown.d.ts"
+        "packages/core/src/markdown.d.ts",
+        "packages/mcp/src/markdown.d.ts"
     ]
 }

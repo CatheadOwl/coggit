@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import type { CoggitProject, CoggitServices } from '@coggit/core';
-import { MCP_PROMPT_ASSETS, MCP_SERVER_INSTRUCTIONS } from '../promptAssets.js';
+import { MCP_PROMPT_ASSETS, MCP_SERVER_INSTRUCTIONS } from './promptAssets.js';
 import { registerPromptAssets } from './prompt-loader.js';
 import { createCoggitProjectCache } from './project-cache.js';
 import { registerResources } from './resources.js';

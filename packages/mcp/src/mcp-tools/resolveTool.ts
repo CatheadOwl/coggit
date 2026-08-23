@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { renderPathMissText, resolveOperation } from '@coggit/core';
 import type { ResolveOperationResult } from '@coggit/core';
 import type { CoggitProject } from '@coggit/core';
-import { MCP_TOOL_SURFACES } from '../../promptAssets.js';
+import { MCP_TOOL_SURFACES } from '../promptAssets.js';
 import {
   resolveOperationOutputSchema,
   resolveStructuredContent,
