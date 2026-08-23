@@ -7,7 +7,8 @@
     "include": [
         "src",
         "packages/core/src",
-        "packages/runtime-node/src"
+        "packages/runtime-node/src",
+        "packages/mcp-runtime-support/src"
     ],
     "exclude": [
         "node_modules",

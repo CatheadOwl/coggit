@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 
-import { ensureMcpRuntime } from '../runtime-support/mcp/userMcpRuntime.js';
+import { ensureMcpRuntime } from '@coggit/mcp-runtime-support';
 import { UserFacingError } from './status';
 
 export interface McpInstallOptions {

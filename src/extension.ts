@@ -16,7 +16,7 @@ import { createVscodeCoggitLogger } from './runtime/vscode/adapter/logger';
 import {
 	ensureMcpRuntime as installMcpRuntime,
 	getMcpLauncherPath,
-} from './runtime-support/mcp/userMcpRuntime.js';
+} from '@coggit/mcp-runtime-support';
 import type { CoggitLogger } from '@coggit/core';
 
 type McpExperienceState =
