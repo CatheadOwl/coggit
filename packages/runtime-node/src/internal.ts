@@ -14,17 +14,22 @@ export {
 } from './config';
 export {
   NodeProjectLockManager,
-  NodeWatchLeaseManager,
   projectWriteLockPath,
-  watchLeaseLockPath,
   type NodeProjectLockManagerOptions,
-  type NodeWatchLeaseManagerOptions,
 } from './locks';
 export { NodeRegistryProviderFactory, NodeRegistryProvider } from './registry';
 export { pathToUriComponents, uriComponentsToPath } from './uri';
 
 // ─── Internal-only surface (monorepo consumers via `@coggit/runtime-node/internal`) ───
+// Watch authority is adapter/CLI-private (v1 is reconcile-on-read): the lease
+// manager + lock path and the @parcel/watcher observer stay off the public `.`
+// export.
 
+export {
+  NodeWatchLeaseManager,
+  watchLeaseLockPath,
+  type NodeWatchLeaseManagerOptions,
+} from './locks';
 export {
   createNodeFileWatchObserver,
   type NodeFileWatchObserverOptions,

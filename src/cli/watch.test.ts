@@ -15,7 +15,8 @@ import {
   type WatchLeaseHandle,
   type WatchLeaseManager,
 } from '@coggit/core/internal';
-import { createNodeCoggitServices, pathToUriComponents, uriComponentsToPath, watchLeaseLockPath } from '@coggit/runtime-node';
+import { createNodeCoggitServices, pathToUriComponents, uriComponentsToPath } from '@coggit/runtime-node';
+import { watchLeaseLockPath } from '@coggit/runtime-node/internal';
 import { openStrictWatchProject, startWatchSession } from './watch';
 
 class FakeWatchLeaseHandle implements WatchLeaseHandle {

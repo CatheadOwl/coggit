@@ -3,9 +3,9 @@
  *
  * Exposes the reusable Node primitives (fs, config, locks, registry, URI) and
  * the service composition root so non-VS Code runtimes can build on the local
- * filesystem adapters. The watcher observer is adapter-only and lives in
- * `internal.ts` (the `@coggit/runtime-node/internal` export), outside the v1
- * reconcile-on-read surface.
+ * filesystem adapters. The watcher observer and watch-lease primitives are
+ * adapter/CLI-private and live in `internal.ts` (the `@coggit/runtime-node/internal`
+ * export), outside the v1 reconcile-on-read surface.
  */
 import type { CoggitServices } from '@coggit/core';
 import { createCoggitServices } from '@coggit/core';
@@ -39,11 +39,8 @@ export { NodeFileSystem } from './fs';
 export { NodeConfigProvider } from './config';
 export {
   NodeProjectLockManager,
-  NodeWatchLeaseManager,
   projectWriteLockPath,
-  watchLeaseLockPath,
   type NodeProjectLockManagerOptions,
-  type NodeWatchLeaseManagerOptions,
 } from './locks';
 export { NodeRegistryProviderFactory, NodeRegistryProvider } from './registry';
 export { pathToUriComponents, uriComponentsToPath } from './uri';

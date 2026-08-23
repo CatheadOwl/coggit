@@ -15,8 +15,8 @@ import {
   type WatchLeaseHandle,
   type WatchLeaseManager,
 } from '@coggit/core/internal';
-import { NodeWatchLeaseManager, pathToUriComponents, uriComponentsToPath } from '@coggit/runtime-node';
-import { createNodeFileWatchObserver } from '@coggit/runtime-node/internal';
+import { pathToUriComponents, uriComponentsToPath } from '@coggit/runtime-node';
+import { createNodeFileWatchObserver, NodeWatchLeaseManager } from '@coggit/runtime-node/internal';
 import { UserFacingError } from './status';
 
 export interface WatchCliOptions {
