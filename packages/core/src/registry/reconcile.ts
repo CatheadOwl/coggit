@@ -19,17 +19,9 @@
 
 import type { FileSystem, UriComponents } from '../interfaces';
 import { Registry } from './index';
+import { discoverCognitionEntries } from '../cognitionDiscovery';
 import { computeBlobHash } from '../hash';
-import { cognitionPathToKey, isTrackedCognitionFile } from '../identity';
 import type { PathKeyRecord } from '../types';
-import { joinUriPath, uriRelativePath } from '../uri-utils';
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-const FILE_TYPE_FILE = 1;
-const FILE_TYPE_DIRECTORY = 2;
-
-// ─── Types ──────────────────────────────────────────────────────────────────
 
 /**
  * Scan-specific info for a cognition file found on disk.
@@ -73,10 +65,10 @@ export interface ReconcileDiff {
 
 /**
  * Walk the cognition directory tree recursively and collect structured info for
- * every `.md` file.
+ * every source-paired cognition file.
  *
  * - Computes registry keys via `cognitionPathToKey`
- * - Skips non-`.md` files and unreadable entries
+ * - Skips free-form markdown, non-`.md` files, and unreadable entries
  * - Reads file content and computes a SHA256 content hash via `computeBlobHash`
  *
  * @param fs               Platform filesystem abstraction
@@ -88,73 +80,28 @@ export async function scanCognitionDirectory(
 	cognitionRootUri: UriComponents,
 ): Promise<CognitionDirScan> {
 	const result: CognitionDirScan = new Map();
-	await walkDir(fs, cognitionRootUri, cognitionRootUri, result);
-	return result;
-}
+	const discovery = await discoverCognitionEntries(fs, cognitionRootUri);
 
-/**
- * Recursively walk a directory, collecting `.md` file info into `result`.
- *
- * @param fs      Platform filesystem abstraction
- * @param rootUri The cognition root (used to compute relative paths)
- * @param dirUri  The current directory to walk
- * @param result  Accumulator map
- */
-async function walkDir(
-	fs: FileSystem,
-	rootUri: UriComponents,
-	dirUri: UriComponents,
-	result: CognitionDirScan,
-): Promise<void> {
-	let entries: Array<[string, number]>;
-	try {
-		entries = await fs.readDirectory(dirUri);
-	} catch {
-		// Directory missing or unreadable — safe to skip
-		return;
-	}
-
-	for (const [name, type] of entries) {
-		const childUri = joinUriPath(dirUri, name);
-
-		if (type & FILE_TYPE_DIRECTORY) {
-			await walkDir(fs, rootUri, childUri, result);
-			continue;
-		}
-
-		if (!(type & FILE_TYPE_FILE) || !name.endsWith('.md')) {
-			continue;
-		}
-
-		const relativePath = uriRelativePath(rootUri, childUri);
-		if (!relativePath) {
-			continue;
-		}
-
-		// Free-form cognition documents (CODE_MAP.md, MODULES.md, etc.) are not
-		// source-paired and do not participate in registry tracking.
-		if (!isTrackedCognitionFile(relativePath)) {
-			continue;
-		}
-
-		const [content, fileStat] = await safeReadFile(fs, childUri);
+	for (const entry of discovery.values()) {
+		const [content, fileStat] = await safeReadFile(fs, entry.cognitionUri);
 		if (content === null) {
 			continue;
 		}
 
-		const key = cognitionPathToKey(relativePath);
 		const contentHash = computeBlobHash(content);
 		const contentLength = content.length;
 		const mtimeMs = fileStat?.mtimeMs ?? 0;
 
 		// Avoid overwriting entries that would produce duplicate keys (last file wins)
-		result.set(key, {
-			path: relativePath,
+		result.set(entry.registryKey, {
+			path: entry.cognitionPath,
 			mtimeMs,
 			contentHash,
 			contentLength,
 		});
 	}
+
+	return result;
 }
 
 /**

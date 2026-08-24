@@ -180,6 +180,7 @@ export type {
   CoggitSnapshot,
   CoggitTreeNode,
   CoggitWorkspaceRoot,
+  CognitionDiscoveryEntry,
   CognitionCoveragePresence,
   LocatedStatusIssue,
   MisplacedCognitionEntry,
@@ -188,6 +189,7 @@ export type {
   NodeStatusTriageEntry,
   ObservedStatus,
   OrphanedCognitionEntry,
+  SourceCandidateState,
   StrayCognitionEntry,
 } from './types';
 export { discoverWorkspaceRoots, readWorkspaceRoot } from './workspace';

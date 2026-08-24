@@ -1,18 +1,15 @@
 import type { FileSystem } from './interfaces';
+import { discoverCognitionEntries } from './cognitionDiscovery';
 import type {
 	CoggitWorkspaceRoot,
 	OrphanedCognitionEntry,
 	PathKeyRecord,
 	StrayCognitionEntry,
 } from './types';
-import { cognitionPathToKey, isTrackedCognitionFile, keyToCognitionPath } from './identity';
-import { inferSourceUriCandidatesFromCognitionUri } from './mapping';
+import { keyToCognitionPath } from './identity';
 import { isIgnoredSourceStructureEntry } from './sourceStructureIgnore';
 import { joinUriPath, uriRelativePath } from './uri-utils';
 export { detectMisplacedCognitionEntries } from './layout';
-
-const FILE_TYPE_FILE = 1;
-const FILE_TYPE_DIRECTORY = 2;
 
 export async function detectOrphanedCognitionEntries(
 	root: CoggitWorkspaceRoot,
@@ -55,66 +52,18 @@ export async function detectStrayCognitionEntries(
 	fs: FileSystem,
 	entries: Record<string, PathKeyRecord>,
 ): Promise<StrayCognitionEntry[]> {
-	const stray: StrayCognitionEntry[] = [];
 	const knownKeys = new Set(Object.keys(entries));
+	const discovery = await discoverCognitionEntries(fs, root.cognitionRootUri, {
+		sourceRootUri: root.sourceRootUri,
+		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
+	});
 
-	try {
-		await walkCognitionDir(root.cognitionRootUri, root, fs, knownKeys, stray);
-	} catch {
-		// The cognition root may not exist yet.
-	}
-
-	return stray;
-}
-
-async function walkCognitionDir(
-	dirUri: Parameters<typeof joinUriPath>[0],
-	root: CoggitWorkspaceRoot,
-	fs: FileSystem,
-	knownKeys: ReadonlySet<string>,
-	stray: StrayCognitionEntry[],
-): Promise<void> {
-	const entries = await fs.readDirectory(dirUri).catch(() => []);
-
-	for (const [name, type] of entries) {
-		const childUri = joinUriPath(dirUri, name);
-		const isDirectory = (type & FILE_TYPE_DIRECTORY) !== 0;
-
-		if (isIgnoredSourceStructureEntry(name, isDirectory)) {
-			continue;
-		}
-
-		if (isDirectory) {
-			await walkCognitionDir(childUri, root, fs, knownKeys, stray);
-			continue;
-		}
-
-		if ((type & FILE_TYPE_FILE) === 0 || !name.endsWith('.md')) {
-			continue;
-		}
-
-		const cognitionRootPath = uriRelativePath(root.cognitionRootUri, childUri);
-		if (cognitionRootPath === undefined || !isTrackedCognitionFile(cognitionRootPath)) {
-			continue;
-		}
-
-		const registryKey = cognitionPathToKey(cognitionRootPath);
-		if (knownKeys.has(registryKey)) {
-			continue;
-		}
-
-		stray.push({
-			registryKey,
-			type: cognitionRootPath.endsWith('README.md') ? 'folder' : 'leaf',
-			cognitionPath: projectRelativePath(root, childUri),
-			cognitionUri: childUri,
-			sourceCandidateUris: inferSourceUriCandidatesFromCognitionUri(
-				childUri,
-				root.sourceRootUri,
-				root.cognitionRootUri,
-			),
-		});
-	}
+	return [...discovery.values()]
+		.filter((entry) => !knownKeys.has(entry.registryKey))
+		.map((entry) => ({
+			...entry,
+			cognitionPath: projectRelativePath(root, entry.cognitionUri),
+		}));
 }
 
 function hasIgnoredSourceStructureSegment(sourcePath: string): boolean {

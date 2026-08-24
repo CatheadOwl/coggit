@@ -1,6 +1,17 @@
 import type { UriComponents, UriKey, WorkspaceFolderInfo } from './interfaces';
 import type { NodeStatusResult, ObservedStatus } from './statusTypes';
 
+export type SourceCandidateState = 'some-exist' | 'all-missing' | 'ambiguous' | 'unchecked';
+
+export interface CognitionDiscoveryEntry {
+	registryKey: string;
+	type: 'leaf' | 'folder';
+	cognitionPath: string;
+	cognitionUri: UriComponents;
+	sourceCandidateUris: UriComponents[];
+	sourceCandidateState?: SourceCandidateState;
+}
+
 export interface MisplacedCognitionEntry {
 	registryKey: string;
 	type: 'leaf' | 'folder';
@@ -21,13 +32,7 @@ export interface OrphanedCognitionEntry {
 	cognitionUri: UriComponents;
 }
 
-export interface StrayCognitionEntry {
-	registryKey: string;
-	type: 'leaf' | 'folder';
-	cognitionPath: string;
-	cognitionUri: UriComponents;
-	sourceCandidateUris: UriComponents[];
-}
+export interface StrayCognitionEntry extends CognitionDiscoveryEntry {}
 
 export type CoggitNodeKind = 'root' | 'folder' | 'file' | 'error';
 
