@@ -35,6 +35,8 @@ import { computeSourceFactIdentity } from '../hash';
 import { toRelativeUriPath } from '../mapping';
 import type { AcceptedPair } from '../registryTypes';
 
+export { isTemplateContent } from './evidence';
+
 export function projectStatusResultToNodeStatus(status: StatusResult): NodeStatusResult {
 	return {
 		observedStatus: status.observedStatus,
