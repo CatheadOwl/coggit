@@ -108,6 +108,16 @@ export type {
   StatusPresentationIssue,
   StatusPresentationView,
 } from './statusPresentation';
+export {
+  projectMaintenancePresentation,
+  renderMaintenancePresentation,
+} from './maintenancePresentation';
+export type {
+  MaintenanceIssueCode,
+  MaintenancePresentationFormat,
+  MaintenancePresentationItem,
+  MaintenancePresentationView,
+} from './maintenancePresentation';
 export { projectStatusTriage } from './statusTriage';
 export type {
   StatusTriageEntry,
