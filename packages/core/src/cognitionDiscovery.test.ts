@@ -153,4 +153,21 @@ suite('cognition discovery', () => {
 		assert.strictEqual(result.get('existing.ts')?.sourceCandidateState, 'some-exist');
 		assert.strictEqual(result.get('missing.ts')?.sourceCandidateState, 'all-missing');
 	});
+
+	test('reports unchecked when no source candidate is inferrable', async () => {
+		const fs = new DiscoveryTestFileSystem();
+		fs.addFile('/workspace/cognition/.hidden.ts.md');
+
+		const result = await discoverCognitionEntries(
+			fs,
+			uri('/workspace/cognition'),
+			{
+				sourceRootUri: uri('/workspace/src'),
+				checkSourceCandidates: true,
+			},
+		);
+
+		assert.deepStrictEqual(result.get('.hidden.ts')?.sourceCandidateUris, []);
+		assert.strictEqual(result.get('.hidden.ts')?.sourceCandidateState, 'unchecked');
+	});
 });

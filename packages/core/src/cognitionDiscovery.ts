@@ -67,7 +67,7 @@ async function walkCognitionDir(
 			cognitionUri: childUri,
 			sourceCandidateUris,
 			sourceCandidateState: options.checkSourceCandidates
-				? await checkSourceCandidateState(fs, sourceCandidateUris)
+				? await checkSourceCandidateState(fs, childUri, options.sourceRootUri, rootUri)
 				: 'unchecked',
 		});
 	}
@@ -79,10 +79,19 @@ function inferTypeFromCognitionPath(cognitionPath: string): 'leaf' | 'folder' {
 
 async function checkSourceCandidateState(
 	fs: FileSystem,
-	candidates: UriComponents[],
+	cognitionUri: UriComponents,
+	sourceRootUri: UriComponents | undefined,
+	cognitionRootUri: UriComponents,
 ): Promise<SourceCandidateState> {
+	if (!sourceRootUri) {
+		return 'unchecked';
+	}
+
+	// No inferrable candidate means the existence check cannot run; that is
+	// not evidence that the source is missing.
+	const candidates = inferSourceUriCandidatesFromCognitionUri(cognitionUri, sourceRootUri, cognitionRootUri);
 	if (candidates.length === 0) {
-		return 'all-missing';
+		return 'unchecked';
 	}
 	if (candidates.length > 1) {
 		return 'ambiguous';
