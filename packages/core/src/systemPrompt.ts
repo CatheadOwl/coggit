@@ -53,3 +53,5 @@ export function getCoggitSystemPrompt(
 //     from the `standard` form via the existing `MCP_TOOL_NAMES` /
 //     `handbookUri` mapping instead of owning the text; the CLI may expose the
 //     forms through an `instructions` command or handbook entry.
+//   Full spec, draft text, and neutral→MCP re-addressing mapping:
+//   TODO/FR/20260824-surface-neutral-standard-system-prompt.md.
