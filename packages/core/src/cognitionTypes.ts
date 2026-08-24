@@ -1,5 +1,5 @@
 import type { CoggitOperationAction, CoggitProjectContext } from './operationTypes';
-import type { ObservedStatus } from './statusTypes';
+import type { ObservedStatus } from './status/statusTypes';
 
 export type CognitionDocumentKind = 'leaf' | 'folder';
 

@@ -30,7 +30,7 @@ import {
 	synthesizeStatus,
 	SYNC_COGNITION_ACTION_LABEL,
 	SYNC_FOLDER_README_ACTION_LABEL,
-} from '../evidence';
+} from './evidence';
 import { computeSourceFactIdentity } from '../hash';
 import { toRelativeUriPath } from '../mapping';
 import type { AcceptedPair } from '../registryTypes';

@@ -1,14 +1,14 @@
 import * as assert from 'node:assert';
 
-import type { UriComponents } from './interfaces';
+import type { UriComponents } from '../interfaces';
 import type {
   CoggitNodeKind,
   CoggitTreeNode,
   CoggitWorkspaceRoot,
   NodeStatusResult,
   StatusIssue,
-} from './types';
-import { inspectNodeStatus } from './status';
+} from '../types';
+import { inspectNodeStatus } from './index';
 import { projectStatusTriage } from './statusTriage';
 import {
   SYNC_COGNITION_ACTION_LABEL,

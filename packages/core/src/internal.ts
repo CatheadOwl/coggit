@@ -126,7 +126,7 @@ export {
   projectStatusAgentPresentation,
   renderStatusAgentInspectionText,
   renderStatusAgentPresentation,
-} from './statusAgentPresentation';
+} from './status/statusAgentPresentation';
 export type {
   StatusAgentActionLegendEntry,
   StatusAgentActionRole,
@@ -134,18 +134,18 @@ export type {
   StatusAgentIssueRow,
   StatusAgentPresentation,
   StatusAgentSeverityLevel,
-} from './statusAgentPresentation';
+} from './status/statusAgentPresentation';
 export {
   projectStatusMissPresentation,
   projectStatusPresentation,
   renderStatusPresentation,
-} from './statusPresentation';
+} from './status/statusPresentation';
 export type {
   StatusMissPresentation,
   StatusPresentationFormat,
   StatusPresentationIssue,
   StatusPresentationView,
-} from './statusPresentation';
+} from './status/statusPresentation';
 export {
   projectMaintenancePresentation,
   renderMaintenancePresentation,
@@ -156,11 +156,11 @@ export type {
   MaintenancePresentationItem,
   MaintenancePresentationView,
 } from './maintenancePresentation';
-export { projectStatusTriage } from './statusTriage';
+export { projectStatusTriage } from './status/statusTriage';
 export type {
   StatusTriageEntry,
   StatusTriageView,
-} from './statusTriage';
+} from './status/statusTriage';
 export {
   normalizeSourcePathInput,
   toCognitionFileUri,
@@ -288,7 +288,7 @@ export type {
   EvidenceDiagnostic,
   StatusContext,
   StatusIssue,
-} from './statusTypes';
+} from './status/statusTypes';
 export type {
   CoggitConfig,
   CoggitNodeKind,

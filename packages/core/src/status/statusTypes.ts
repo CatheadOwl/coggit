@@ -1,7 +1,7 @@
-import type { UriComponents } from './interfaces';
-import type { CoggitOperationAction } from './operationTypes';
-import type { CoggitNodeKind } from './snapshotTypes';
-import type { AcceptedPair } from './registryTypes';
+import type { UriComponents } from '../interfaces';
+import type { CoggitOperationAction } from '../operationTypes';
+import type { CoggitNodeKind } from '../snapshotTypes';
+import type { AcceptedPair } from '../registryTypes';
 
 export type ObservedStatus = 'fresh' | 'stale' | 'conflict';
 

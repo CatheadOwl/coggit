@@ -1,8 +1,8 @@
 import * as assert from 'assert';
 
-import { computeRuntimeStatus, describeObservedStatus } from './status';
-import { computeCognitionIdentity, computeSourceFactIdentity } from './hash';
-import type { ObservedStatus } from './types';
+import { computeRuntimeStatus, describeObservedStatus } from './index';
+import { computeCognitionIdentity, computeSourceFactIdentity } from '../hash';
+import type { ObservedStatus } from '../types';
 
 suite('runtime status adapter', () => {
 	test('computes runtime status with URI evidence identities', () => {

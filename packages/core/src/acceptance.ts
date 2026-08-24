@@ -1,6 +1,6 @@
 import type { AcceptanceStore } from './interfaces';
 import type { AcceptedPair } from './registryTypes';
-import { isTemplateContent } from './evidence';
+import { isTemplateContent } from './status/evidence';
 import { computeCognitionIdentity } from './hash';
 
 export interface AcceptCurrentPairResult {

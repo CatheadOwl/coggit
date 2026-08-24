@@ -8,7 +8,7 @@ import {
 	isTemplateContent,
 	synthesizeStatus,
 } from './evidence';
-import type { CognitionFileInfo, Evidence, ObservedStatus, Reason, SourceFileInfo } from './types';
+import type { CognitionFileInfo, Evidence, ObservedStatus, Reason, SourceFileInfo } from '../types';
 
 suite('evidence template detection', () => {
 	test('returns true for null content', () => {

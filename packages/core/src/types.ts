@@ -26,7 +26,7 @@ export type {
 	CognitionFileInfo,
 	LinkCheckResult,
 	StatusContext,
-} from './statusTypes';
+} from './status/statusTypes';
 
 export type {
 	SnapshotOperationScope,

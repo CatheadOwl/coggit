@@ -1,5 +1,5 @@
 import type { UriComponents, UriKey, WorkspaceFolderInfo } from './interfaces';
-import type { NodeStatusResult, ObservedStatus } from './statusTypes';
+import type { NodeStatusResult, ObservedStatus } from './status/statusTypes';
 
 export type SourceCandidateState = 'some-exist' | 'all-missing' | 'ambiguous' | 'unchecked';
 

@@ -1,5 +1,5 @@
-import type { CoggitOperationAction } from './operationTypes';
-import type { CoggitNodeKind } from './snapshotTypes';
+import type { CoggitOperationAction } from '../operationTypes';
+import type { CoggitNodeKind } from '../snapshotTypes';
 import type { NodeStatusInspection } from './statusTypes';
 import {
   mapStatusPresentationIssues,

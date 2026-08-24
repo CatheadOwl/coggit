@@ -13,9 +13,9 @@ import type {
 	StatusIssue,
 	TextMetrics,
 	SourceFactKind,
-} from './types';
-import { computeCognitionIdentity, computeSourceFactIdentity } from './hash';
-import { latestAcceptedTime } from './time';
+} from '../types';
+import { computeCognitionIdentity, computeSourceFactIdentity } from '../hash';
+import { latestAcceptedTime } from '../time';
 
 // ─── Evidence Collection ──────────────────────────────────────────────────────────────────
 

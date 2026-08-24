@@ -4,7 +4,7 @@ import type {
   NodeStatusInspection,
   ObservedStatus,
 } from './statusTypes';
-import { describeObservedStatus } from './status';
+import { describeObservedStatus } from './index';
 
 export type StatusPresentationFormat = 'text' | 'markdown';
 

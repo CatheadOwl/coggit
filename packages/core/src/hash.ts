@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { SourceFactKind } from './statusTypes';
+import type { SourceFactKind } from './status/statusTypes';
 
 export type ContentIdentity = `sha256:v1:${string}`;
 

@@ -1,10 +1,10 @@
-import type { CoggitOperationAction } from './operationTypes';
+import type { CoggitOperationAction } from '../operationTypes';
 import type {
   EvidenceDiagnostic,
   LocatedStatusIssue,
   NodeStatusInspection,
 } from './statusTypes';
-import { describeObservedStatus } from './status';
+import { describeObservedStatus } from './index';
 
 export type StatusAgentActionRole = 'recommended' | 'optional-on-demand' | 'diagnostic';
 export type StatusAgentSeverityLevel = 'INFO' | 'WARN' | 'ERROR';
