@@ -174,8 +174,11 @@ export interface CoggitProject {
   /**
    * Aggregate maintenance diagnostics from a single core-owned entry point.
    * Runs after project freshness, so registry-backed and scan-backed slices
-   * share one reconciled view. CI and adapters must consume this surface
-   * instead of reinterpreting registry JSON.
+   * share one reconciled view. The stray slice is a raw/pre-reconcile
+   * compatibility view and is expected to be empty in ordinary freshened
+   * flows, because reconcile auto-registers source-paired cognition.
+   * CI and adapters must consume this surface instead of reinterpreting
+   * registry JSON.
    */
   listMaintenanceDiagnostics(): Promise<MaintenanceDiagnostic[]>;
   /**

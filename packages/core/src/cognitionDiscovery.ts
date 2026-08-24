@@ -67,9 +67,7 @@ async function walkCognitionDir(
 			cognitionPath,
 			cognitionUri: childUri,
 			sourceCandidateUris,
-			// Folder cognition candidates are directories, whose existence is
-			// almost always true and carries no diagnostic signal.
-			sourceCandidateState: options.checkSourceCandidates && cognitionType === 'leaf'
+			sourceCandidateState: options.checkSourceCandidates
 				? await checkSourceCandidateState(fs, childUri, options.sourceRootUri, rootUri)
 				: 'unchecked',
 		});
