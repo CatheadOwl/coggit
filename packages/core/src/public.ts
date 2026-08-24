@@ -63,6 +63,8 @@ export type {
   RegistryInitFailurePolicy,
 } from './project';
 export { getCognitionHandbook, getCognitionTemplate } from './cognition';
+export { getCoggitSystemPrompt, MINIMAL_SYSTEM_PROMPT } from './systemPrompt';
+export type { CoggitSystemPrompt, CoggitSystemPromptKind } from './systemPrompt';
 export {
   applyTreeDepth,
   projectSnapshotTree,
