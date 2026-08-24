@@ -12,7 +12,7 @@
     "url": "https://github.com/CatheadOwl/coggit/issues"
   },
   "homepage": "https://github.com/CatheadOwl/coggit#readme",
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@11.22.0",
   "scripts": {
     "build": "pnpm -r run build",
     "compile": "pnpm run build && pnpm run check-types && pnpm run lint",
