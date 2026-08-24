@@ -26,7 +26,7 @@ import {
   pathMissMessage,
   suggestPathHints,
 } from './pathHints';
-import { projectContext as projectContextFromProject } from './projectContext';
+import { projectContext as projectContextFromProject } from './project';
 
 export type {
   CoggitOperationAction,

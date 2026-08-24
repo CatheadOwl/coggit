@@ -1,6 +1,6 @@
-import { joinUriPath } from './uri-utils';
-import type { FileSystem, UriComponents } from './interfaces';
-import { BOOTSTRAP_README_FOR_EMPTY_COGNITION_LAYER } from './cognition/templates';
+import { joinUriPath } from '../uri-utils';
+import type { FileSystem, UriComponents } from '../interfaces';
+import { BOOTSTRAP_README_FOR_EMPTY_COGNITION_LAYER } from '../cognition/templates';
 
 const DEFAULT_SOURCE_ROOT = 'src';
 const DEFAULT_COGNITION_ROOT = 'src_cognition';

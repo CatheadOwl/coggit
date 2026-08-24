@@ -1,5 +1,5 @@
-import type { CoggitSnapshot } from './types';
-import type { ConfigProvider, FileSystem } from './interfaces';
+import type { CoggitSnapshot } from '../types';
+import type { ConfigProvider, FileSystem } from '../interfaces';
 import { createCoggitServices, discoverCoggitProjects, buildSnapshotFromProjects } from './project';
 
 /**

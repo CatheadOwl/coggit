@@ -5,11 +5,11 @@ import type {
   FileSystem,
   RegistryProviderFactory,
   UriComponents,
-} from './interfaces';
-import type { CoggitWorkspaceRoot, PathKeyRecord, RegistryFile } from './types';
+} from '../interfaces';
+import type { CoggitWorkspaceRoot, PathKeyRecord, RegistryFile } from '../types';
 import { createCoggitServices, openCoggitProject } from './project';
-import { REGISTRY_SCHEMA_VERSION } from './registry/index';
-import { computeBlobHash } from './hash';
+import { REGISTRY_SCHEMA_VERSION } from '../registry/index';
+import { computeBlobHash } from '../hash';
 
 interface MockFileEntry {
   isDirectory: boolean;

@@ -1,7 +1,7 @@
-import type { CoggitProject } from './interfaces';
-import type { CoggitProjectContext, CoggitWorkspaceRoot } from './types';
-import { toRelativeUriPath } from './mapping';
-import { uriKey } from './uri-utils';
+import type { CoggitProject } from '../interfaces';
+import type { CoggitProjectContext, CoggitWorkspaceRoot } from '../types';
+import { toRelativeUriPath } from '../mapping';
+import { uriKey } from '../uri-utils';
 
 export function projectContextFromRoot(root: CoggitWorkspaceRoot): CoggitProjectContext {
 	return {

@@ -7,7 +7,7 @@ import type {
 	FileSystem,
 	UriComponents,
 	WorkspaceFolderInfo,
-} from './interfaces';
+} from '../interfaces';
 
 suite('discoverWorkspaceRoots', () => {
 	function uri(p: string): UriComponents {

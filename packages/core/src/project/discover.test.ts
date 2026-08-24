@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 
 import { findProjectRoot } from './discover';
-import type { FileStat, FileSystem, UriComponents } from './interfaces';
+import type { FileStat, FileSystem, UriComponents } from '../interfaces';
 
 suite('root discovery', () => {
 	class MockFs implements FileSystem {

@@ -1,47 +1,47 @@
-import type { AcceptanceStore, CoggitProject, CoggitServices, ResolveResult, SourcePathResolution, UriComponents } from './interfaces';
-import type { CoggitLogger } from './logger';
-import { warnLog } from './logger';
-import type { AcceptedPair, CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, PathKeyRecord } from './types';
-import { cognitionPathToKey, keyToCognitionPath, sourcePathToKey } from './identity';
-import { computeCognitionIdentity, computeSourceFactIdentity } from './hash';
-import { joinUriPath, uriKey, uriRelativePath } from './uri-utils';
+import type { AcceptanceStore, CoggitProject, CoggitServices, ResolveResult, SourcePathResolution, UriComponents } from '../interfaces';
+import type { CoggitLogger } from '../logger';
+import { warnLog } from '../logger';
+import type { AcceptedPair, CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, PathKeyRecord } from '../types';
+import { cognitionPathToKey, keyToCognitionPath, sourcePathToKey } from '../identity';
+import { computeCognitionIdentity, computeSourceFactIdentity } from '../hash';
+import { joinUriPath, uriKey, uriRelativePath } from '../uri-utils';
 import {
   Registry,
   RegistryRevisionMismatchError,
-} from './registry/index';
-import { scanCognitionDirectory, reconcileRegistry } from './registry/reconcile';
-import { discoverCognitionEntries } from './cognitionDiscovery';
+} from '../registry/index';
+import { scanCognitionDirectory, reconcileRegistry } from '../registry/reconcile';
+import { discoverCognitionEntries } from '../cognitionDiscovery';
 import { discoverWorkspaceRoots } from './workspace';
-import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey } from './snapshot';
-import { buildCognitionRoutes } from './cognitionRoutes';
-import { noOpProjectLockManager } from './locks';
+import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey } from '../snapshot';
+import { buildCognitionRoutes } from '../cognitionRoutes';
+import { noOpProjectLockManager } from '../locks';
 import {
   detectMisplacedCognitionEntries,
   detectOrphanedCognitionEntries,
   detectStrayCognitionEntries,
   detectUnboundCognitionEntries,
-} from './maintenance';
+} from '../maintenance';
 import {
   inferSourceUriCandidatesFromCognitionUri,
   normalizeSourcePathInput,
   toCognitionFileUri,
   toCognitionFolderReadmeUri,
   toRelativeUriPath,
-} from './mapping';
-import { loadGitignoreRules, isIgnoredByGitignoreRules } from './gitignore';
-import { directoryEntryFingerprint } from './directoryEntrySourceFact';
-import { isIgnoredSourceStructureEntry } from './sourceStructureIgnore';
+} from '../mapping';
+import { loadGitignoreRules, isIgnoredByGitignoreRules } from '../gitignore';
+import { directoryEntryFingerprint } from '../directoryEntrySourceFact';
+import { isIgnoredSourceStructureEntry } from '../sourceStructureIgnore';
 import {
   addCognition,
   getCognitionHandbook,
   getCognitionTemplate,
-} from './cognition';
+} from '../cognition';
 import {
   applyRegistrySourceRelocations,
   type RegistrySourceRelocation,
-} from './registry/sourceRelocation';
+} from '../registry/sourceRelocation';
 import { projectContextFromRoot } from './projectContext';
-import { acceptCurrentPair } from './acceptance';
+import { acceptCurrentPair } from '../acceptance';
 
 interface ProjectRuntime {
   readonly registry: Registry | null;

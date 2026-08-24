@@ -1,5 +1,5 @@
-export { initProject } from './init';
-export { findProjectRoot } from './discover';
+export { initProject } from './project';
+export { findProjectRoot } from './project';
 export {
   RuntimeAcceptanceEvidence,
   createCoggitServices,
@@ -7,7 +7,7 @@ export {
   openCoggitProject,
   buildSnapshotFromProjects,
 } from './project';
-export { projectContextFromRoot } from './projectContext';
+export { projectContextFromRoot } from './project';
 export {
   noOpProjectLockManager,
   ProjectLockError,
@@ -227,8 +227,8 @@ export type {
   StrayCognitionEntry,
   UnboundCognitionEntry,
 } from './types';
-export { discoverWorkspaceRoots, readWorkspaceRoot } from './workspace';
-export { buildSnapshot } from './buildSnapshot';
+export { discoverWorkspaceRoots, readWorkspaceRoot } from './project';
+export { buildSnapshot } from './project';
 
 // ─── Internal-only surface (monorepo consumers via `@coggit/core/internal`) ───
 // These symbols are deliberately absent from `public.ts`: they are either

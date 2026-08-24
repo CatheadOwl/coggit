@@ -1,11 +1,11 @@
 import { parse as parseYaml } from 'yaml';
 
-import type { CoggitConfig, CoggitWorkspaceRoot } from './types';
-import type { ConfigProvider, FileSystem, UriComponents, WorkspaceFolderInfo } from './interfaces';
-import type { CoggitLogger } from './logger';
-import { errorLog, warnLog } from './logger';
-import { resolveConfigRoots, toRelativeUriPath } from './mapping';
-import { formatUri, joinUriPath, uriBasename, uriKey } from './uri-utils';
+import type { CoggitConfig, CoggitWorkspaceRoot } from '../types';
+import type { ConfigProvider, FileSystem, UriComponents, WorkspaceFolderInfo } from '../interfaces';
+import type { CoggitLogger } from '../logger';
+import { errorLog, warnLog } from '../logger';
+import { resolveConfigRoots, toRelativeUriPath } from '../mapping';
+import { formatUri, joinUriPath, uriBasename, uriKey } from '../uri-utils';
 
 export async function discoverWorkspaceRoots(
   fs: FileSystem,

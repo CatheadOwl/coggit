@@ -1,6 +1,6 @@
-import type { FileSystem, UriComponents } from './interfaces';
-import { dirname } from './path-utils';
-import { joinUriPath } from './uri-utils';
+import type { FileSystem, UriComponents } from '../interfaces';
+import { dirname } from '../path-utils';
+import { joinUriPath } from '../uri-utils';
 
 /**
  * Result of a successful `findProjectRoot` call.

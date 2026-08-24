@@ -6,8 +6,8 @@ import type {
   FileSystem,
   RegistryProviderFactory,
   UriComponents,
-} from './interfaces';
-import type { CoggitWorkspaceRoot, RegistryFile } from './types';
+} from '../interfaces';
+import type { CoggitWorkspaceRoot, RegistryFile } from '../types';
 
 function uri(path: string): UriComponents {
   return { scheme: 'test', authority: '', path, query: '', fragment: '' };

@@ -1,14 +1,14 @@
 import * as assert from 'node:assert';
 import { createCoggitServices, openCoggitProject } from './project';
-import type { ProjectLockContext, ProjectLockManager } from './locks';
+import type { ProjectLockContext, ProjectLockManager } from '../locks';
 import type {
   ConfigProvider,
   FileStat,
   FileSystem,
   RegistryProviderFactory,
   UriComponents,
-} from './interfaces';
-import type { CoggitWorkspaceRoot, RegistryFile } from './types';
+} from '../interfaces';
+import type { CoggitWorkspaceRoot, RegistryFile } from '../types';
 
 function uri(path: string): UriComponents {
   return { scheme: 'test', authority: '', path, query: '', fragment: '' };
