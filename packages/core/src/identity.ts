@@ -1,8 +1,10 @@
 /**
- * Pure path/URI-to-key conversion functions for the coggit registry.
+ * Pure path/URI-to-key conversion functions for the CogGit registry.
  *
- * Keys are relative paths (without file extension) used as stable identifiers
- * in .coggit/registry.json. No IO, no state -- just string transformations.
+ * Registry keys are cognition-root-derived identities used in
+ * .coggit/registry.json. They are path-shaped keys, not general source paths.
+ * See docs/registry-path-contract.md for registry/tool path anchors.
+ * No IO, no state -- just string transformations.
  */
 
 /** Minimum content length (in chars) for rename pairing to avoid false positives on empty template skeletons. */

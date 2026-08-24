@@ -5,9 +5,17 @@ export interface AcceptedPair {
 	cognition: ContentIdentity;
 }
 
-/** A single path-keyed record in .coggit/registry.json. */
+/**
+ * A single cognition-keyed record in .coggit/registry.json.
+ *
+ * Path anchors are specified in docs/registry-path-contract.md.
+ */
 export interface PathKeyRecord {
-	/** Source file or folder path, relative to project root. */
+	/**
+	 * Bound source file or folder path, relative to the CogGit project root
+	 * (the directory containing .coggit/). This is registry storage, not the
+	 * source-root-relative path used by tool-facing operation DTOs.
+	 */
 	sourcePath: string | null;
 	/** Cognition type, matching config template definition. */
 	type: 'leaf' | 'folder';
@@ -34,6 +42,7 @@ export interface RegistryFile {
 	schemaVersion: number;
 	/** Human-facing note for agents and contributors inspecting this generated metadata. */
 	maintenanceNotice?: string;
+	/** Map from cognition registry key to persisted source/cognition metadata. */
 	entries: Record<string, PathKeyRecord>;
 }
 
