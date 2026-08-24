@@ -175,7 +175,7 @@ suite('cognition discovery', () => {
 
 	test('reports unchecked when no source candidate is inferrable', async () => {
 		const fs = new DiscoveryTestFileSystem();
-		fs.addFile('/workspace/cognition/.hidden.ts.md');
+		fs.addFile('/workspace/cognition/.hidden.md');
 
 		const result = await discoverCognitionEntries(
 			fs,
@@ -186,7 +186,32 @@ suite('cognition discovery', () => {
 			},
 		);
 
-		assert.deepStrictEqual(result.get('.hidden.ts')?.sourceCandidateUris, []);
-		assert.strictEqual(result.get('.hidden.ts')?.sourceCandidateState, 'unchecked');
+		assert.deepStrictEqual(result.get('.hidden')?.sourceCandidateUris, []);
+		assert.strictEqual(result.get('.hidden')?.sourceCandidateState, 'unchecked');
+	});
+
+	test('infers dotfile source candidates when an extension follows the leading dot', async () => {
+		const fs = new DiscoveryTestFileSystem();
+		fs.addFile('/workspace/cognition/.eslintrc.js.md');
+		fs.addFile('/workspace/cognition/.gone.rc.js.md');
+		fs.addFile('/workspace/src/.eslintrc.js');
+
+		const result = await discoverCognitionEntries(
+			fs,
+			uri('/workspace/cognition'),
+			{
+				sourceRootUri: uri('/workspace/src'),
+				checkSourceCandidates: true,
+			},
+		);
+
+		const kept = result.get('.eslintrc.js');
+		const gone = result.get('.gone.rc.js');
+		assert.deepStrictEqual(
+			kept?.sourceCandidateUris.map((candidate) => candidate.path),
+			['/workspace/src/.eslintrc.js'],
+		);
+		assert.strictEqual(kept?.sourceCandidateState, 'some-exist');
+		assert.strictEqual(gone?.sourceCandidateState, 'all-missing');
 	});
 });

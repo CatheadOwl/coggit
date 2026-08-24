@@ -1,5 +1,5 @@
 import type { FileSystem } from './interfaces';
-import { discoverCognitionEntries } from './cognitionDiscovery';
+import { discoverCognitionEntries, type CognitionDiscovery } from './cognitionDiscovery';
 import type {
 	CoggitWorkspaceRoot,
 	OrphanedCognitionEntry,
@@ -52,14 +52,15 @@ export async function detectStrayCognitionEntries(
 	root: CoggitWorkspaceRoot,
 	fs: FileSystem,
 	entries: Record<string, PathKeyRecord>,
+	discovery?: CognitionDiscovery,
 ): Promise<StrayCognitionEntry[]> {
 	const knownKeys = new Set(Object.keys(entries));
-	const discovery = await discoverCognitionEntries(fs, root.cognitionRootUri, {
+	const resolved = discovery ?? await discoverCognitionEntries(fs, root.cognitionRootUri, {
 		sourceRootUri: root.sourceRootUri,
 		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
 	});
 
-	return [...discovery.values()]
+	return [...resolved.values()]
 		.filter((entry) => !knownKeys.has(entry.registryKey))
 		.map((entry) => ({
 			...entry,
@@ -71,14 +72,15 @@ export async function detectUnboundCognitionEntries(
 	root: CoggitWorkspaceRoot,
 	fs: FileSystem,
 	entries: Record<string, PathKeyRecord>,
+	discovery?: CognitionDiscovery,
 ): Promise<UnboundCognitionEntry[]> {
-	const discovery = await discoverCognitionEntries(fs, root.cognitionRootUri, {
+	const resolved = discovery ?? await discoverCognitionEntries(fs, root.cognitionRootUri, {
 		sourceRootUri: root.sourceRootUri,
 		checkSourceCandidates: true,
 		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
 	});
 
-	return [...discovery.values()]
+	return [...resolved.values()]
 		.filter((entry) => entries[entry.registryKey]?.sourcePath === null)
 		.map((entry) => ({
 			...entry,

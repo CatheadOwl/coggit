@@ -10,6 +10,7 @@ import {
   RegistryRevisionMismatchError,
 } from './registry/index';
 import { scanCognitionDirectory, reconcileRegistry } from './registry/reconcile';
+import { discoverCognitionEntries } from './cognitionDiscovery';
 import { discoverWorkspaceRoots } from './workspace';
 import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey } from './snapshot';
 import { buildCognitionRoutes } from './cognitionRoutes';
@@ -335,11 +336,18 @@ export async function openCoggitProject(
     listMaintenanceDiagnostics: async () => {
     	await ensureRuntimeFresh();
     	const entries = runtime.registry?.getAllEntries() ?? {};
+    	// One shared discovery scan keeps the slices mutually consistent and
+    	// avoids walking the cognition root twice.
+    	const discovery = await discoverCognitionEntries(services.fs, root.cognitionRootUri, {
+    		sourceRootUri: root.sourceRootUri,
+    		checkSourceCandidates: true,
+    		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
+    	});
     	const [orphaned, misplaced, stray, unbound] = await Promise.all([
     		detectOrphanedCognitionEntries(root, services.fs, entries),
     		detectMisplacedCognitionEntries(root, services.fs, entries),
-    		detectStrayCognitionEntries(root, services.fs, entries),
-    		detectUnboundCognitionEntries(root, services.fs, entries),
+    		detectStrayCognitionEntries(root, services.fs, entries, discovery),
+    		detectUnboundCognitionEntries(root, services.fs, entries, discovery),
     	]);
     	return [
     		...orphaned.map((entry) => ({ kind: 'orphaned', entry }) as const),

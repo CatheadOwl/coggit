@@ -7,6 +7,7 @@ import {
 	detectStrayCognitionEntries,
 	detectUnboundCognitionEntries,
 } from './maintenance';
+import { discoverCognitionEntries } from './cognitionDiscovery';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;
@@ -218,5 +219,29 @@ suite('maintenance diagnostics', () => {
 		);
 
 		assert.deepStrictEqual(result, []);
+	});
+
+	test('shared discovery avoids rescanning the cognition root', async () => {
+		const fs = new MaintenanceTestFileSystem();
+		fs.addFile('/workspace/cognition/real/missing.ts.md', 'cognition');
+
+		const discovery = await discoverCognitionEntries(fs, uri('/workspace/cognition'), {
+			sourceRootUri: uri('/workspace/src'),
+			checkSourceCandidates: true,
+		});
+		const callsAfterDiscovery = fs.readDirectoryCalls.length;
+		const entries = { 'real/missing.ts': makeEntry({ sourcePath: null }) };
+
+		const stray = await detectStrayCognitionEntries(makeRoot(), fs, entries, discovery);
+		const unbound = await detectUnboundCognitionEntries(
+			makeRoot(),
+			fs,
+			entries,
+			discovery,
+		);
+
+		assert.strictEqual(fs.readDirectoryCalls.length, callsAfterDiscovery);
+		assert.deepStrictEqual(stray.map((entry) => entry.registryKey), []);
+		assert.deepStrictEqual(unbound.map((entry) => entry.registryKey), ['real/missing.ts']);
 	});
 });

@@ -241,9 +241,14 @@ export function inferSourceUriCandidatesFromCognitionUri(
   }
 
   // Standalone docs (e.g. MODULES.md) have no source-extension pattern.
-  // Only files named <source>.<ext>.md are paired cognition files.
+  // Only files named <source>.<ext>.md are paired cognition files. Dotfile
+  // sources (e.g. .eslintrc.js) stay paired when an extension follows the
+  // leading dot.
   const basename = withoutExt.split('/').pop() || withoutExt;
-  if (!basename.includes('.') || basename.startsWith('.')) {
+  const hasSourceExtension = basename.startsWith('.')
+    ? basename.slice(1).includes('.')
+    : basename.includes('.');
+  if (!hasSourceExtension) {
     return [];
   }
 
