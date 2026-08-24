@@ -120,6 +120,7 @@ export {
   detectMisplacedCognitionEntries,
   detectOrphanedCognitionEntries,
   detectStrayCognitionEntries,
+  detectUnboundCognitionEntries,
 } from './maintenance';
 export {
   describeObservedStatus,
@@ -183,6 +184,7 @@ export type {
   CognitionDiscoveryEntry,
   CognitionCoveragePresence,
   LocatedStatusIssue,
+  MaintenanceDiagnostic,
   MisplacedCognitionEntry,
   NodeStatusInspection,
   NodeStatusResult,
@@ -191,6 +193,7 @@ export type {
   OrphanedCognitionEntry,
   SourceCandidateState,
   StrayCognitionEntry,
+  UnboundCognitionEntry,
 } from './types';
 export { discoverWorkspaceRoots, readWorkspaceRoot } from './workspace';
 export { buildSnapshot } from './buildSnapshot';

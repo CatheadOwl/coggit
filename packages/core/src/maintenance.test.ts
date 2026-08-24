@@ -5,6 +5,7 @@ import type { CoggitWorkspaceRoot, PathKeyRecord } from './types';
 import {
 	detectOrphanedCognitionEntries,
 	detectStrayCognitionEntries,
+	detectUnboundCognitionEntries,
 } from './maintenance';
 
 const FILE_TYPE_FILE = 1;
@@ -170,6 +171,50 @@ suite('maintenance diagnostics', () => {
 			makeRoot(),
 			fs,
 			{ 'real/missing.ts': makeEntry({ sourcePath: 'src/real/missing.ts' }) },
+		);
+
+		assert.deepStrictEqual(result, []);
+	});
+
+	test('reports registry entries without source binding as unbound', async () => {
+		const fs = new MaintenanceTestFileSystem();
+		fs.addFile('/workspace/cognition/rebound.ts.md', 'cognition');
+		fs.addFile('/workspace/cognition/gone.ts.md', 'cognition');
+		fs.addFile('/workspace/src/rebound.ts', 'source');
+
+		const result = await detectUnboundCognitionEntries(
+			makeRoot(),
+			fs,
+			{
+				'rebound.ts': makeEntry({ sourcePath: null }),
+				'gone.ts': makeEntry({ sourcePath: null }),
+			},
+		);
+
+		assert.deepStrictEqual(
+			result.map((entry) => entry.registryKey).sort(),
+			['gone.ts', 'rebound.ts'],
+		);
+		const rebound = result.find((entry) => entry.registryKey === 'rebound.ts');
+		const gone = result.find((entry) => entry.registryKey === 'gone.ts');
+		assert.strictEqual(rebound?.sourceCandidateState, 'some-exist');
+		assert.strictEqual(gone?.sourceCandidateState, 'all-missing');
+		assert.strictEqual(gone?.cognitionPath, 'cognition/gone.ts.md');
+	});
+
+	test('does not report bound or unregistered cognition as unbound', async () => {
+		const fs = new MaintenanceTestFileSystem();
+		fs.addFile('/workspace/cognition/bound.ts.md', 'cognition');
+		fs.addFile('/workspace/cognition/orphaned.ts.md', 'cognition');
+		fs.addFile('/workspace/cognition/unregistered.ts.md', 'cognition');
+
+		const result = await detectUnboundCognitionEntries(
+			makeRoot(),
+			fs,
+			{
+				'bound.ts': makeEntry({ sourcePath: 'src/bound.ts' }),
+				'orphaned.ts': makeEntry({ sourcePath: 'src/deleted.ts' }),
+			},
 		);
 
 		assert.deepStrictEqual(result, []);

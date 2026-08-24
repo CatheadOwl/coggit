@@ -11,9 +11,11 @@ import type {
   CoggitWorkspaceRoot,
   CognitionRoutes,
   AcceptedPair,
+  MaintenanceDiagnostic,
   MisplacedCognitionEntry,
   OrphanedCognitionEntry,
   StrayCognitionEntry,
+  UnboundCognitionEntry,
   RegistryProvider,
 } from './types';
 import type { BuildCognitionRoutesOptions } from './cognitionRoutes';
@@ -168,6 +170,14 @@ export interface CoggitProject {
   listOrphanedCognition(): Promise<OrphanedCognitionEntry[]>;
   listMisplacedCognition(): Promise<MisplacedCognitionEntry[]>;
   listStrayCognition(): Promise<StrayCognitionEntry[]>;
+  listUnboundCognition(): Promise<UnboundCognitionEntry[]>;
+  /**
+   * Aggregate maintenance diagnostics from a single core-owned entry point.
+   * Runs after project freshness, so registry-backed and scan-backed slices
+   * share one reconciled view. CI and adapters must consume this surface
+   * instead of reinterpreting registry JSON.
+   */
+  listMaintenanceDiagnostics(): Promise<MaintenanceDiagnostic[]>;
   /**
    * Move a misplaced cognition file to its expected location.
    * Updates both the file system and registry.

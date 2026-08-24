@@ -5,6 +5,7 @@ import type {
 	OrphanedCognitionEntry,
 	PathKeyRecord,
 	StrayCognitionEntry,
+	UnboundCognitionEntry,
 } from './types';
 import { keyToCognitionPath } from './identity';
 import { isIgnoredSourceStructureEntry } from './sourceStructureIgnore';
@@ -60,6 +61,25 @@ export async function detectStrayCognitionEntries(
 
 	return [...discovery.values()]
 		.filter((entry) => !knownKeys.has(entry.registryKey))
+		.map((entry) => ({
+			...entry,
+			cognitionPath: projectRelativePath(root, entry.cognitionUri),
+		}));
+}
+
+export async function detectUnboundCognitionEntries(
+	root: CoggitWorkspaceRoot,
+	fs: FileSystem,
+	entries: Record<string, PathKeyRecord>,
+): Promise<UnboundCognitionEntry[]> {
+	const discovery = await discoverCognitionEntries(fs, root.cognitionRootUri, {
+		sourceRootUri: root.sourceRootUri,
+		checkSourceCandidates: true,
+		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
+	});
+
+	return [...discovery.values()]
+		.filter((entry) => entries[entry.registryKey]?.sourcePath === null)
 		.map((entry) => ({
 			...entry,
 			cognitionPath: projectRelativePath(root, entry.cognitionUri),

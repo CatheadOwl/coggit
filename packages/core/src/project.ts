@@ -18,6 +18,7 @@ import {
   detectMisplacedCognitionEntries,
   detectOrphanedCognitionEntries,
   detectStrayCognitionEntries,
+  detectUnboundCognitionEntries,
 } from './maintenance';
 import {
   inferSourceUriCandidatesFromCognitionUri,
@@ -330,6 +331,23 @@ export async function openCoggitProject(
     listOrphanedCognition: async () => listRegistryMaintenance(detectOrphanedCognitionEntries),
     listMisplacedCognition: async () => listRegistryMaintenance(detectMisplacedCognitionEntries),
     listStrayCognition: async () => listRegistryMaintenance(detectStrayCognitionEntries),
+    listUnboundCognition: async () => listRegistryMaintenance(detectUnboundCognitionEntries),
+    listMaintenanceDiagnostics: async () => {
+    	await ensureRuntimeFresh();
+    	const entries = runtime.registry?.getAllEntries() ?? {};
+    	const [orphaned, misplaced, stray, unbound] = await Promise.all([
+    		detectOrphanedCognitionEntries(root, services.fs, entries),
+    		detectMisplacedCognitionEntries(root, services.fs, entries),
+    		detectStrayCognitionEntries(root, services.fs, entries),
+    		detectUnboundCognitionEntries(root, services.fs, entries),
+    	]);
+    	return [
+    		...orphaned.map((entry) => ({ kind: 'orphaned', entry }) as const),
+    		...misplaced.map((entry) => ({ kind: 'misplaced', entry }) as const),
+    		...stray.map((entry) => ({ kind: 'stray', entry }) as const),
+    		...unbound.map((entry) => ({ kind: 'unbound', entry }) as const),
+    	];
+    },
     moveCognitionToExpected: async (entry) => withProjectWriteLock(
       services,
       root,

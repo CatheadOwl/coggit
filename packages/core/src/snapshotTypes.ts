@@ -34,6 +34,14 @@ export interface OrphanedCognitionEntry {
 
 export interface StrayCognitionEntry extends CognitionDiscoveryEntry {}
 
+export interface UnboundCognitionEntry extends CognitionDiscoveryEntry {}
+
+export type MaintenanceDiagnostic =
+	| { kind: 'orphaned'; entry: OrphanedCognitionEntry }
+	| { kind: 'misplaced'; entry: MisplacedCognitionEntry }
+	| { kind: 'stray'; entry: StrayCognitionEntry }
+	| { kind: 'unbound'; entry: UnboundCognitionEntry };
+
 export type CoggitNodeKind = 'root' | 'folder' | 'file' | 'error';
 
 export interface MappingIndex {

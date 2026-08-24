@@ -60,13 +60,16 @@ async function walkCognitionDir(
 			: [];
 
 		const registryKey = cognitionPathToKey(cognitionPath);
+		const cognitionType = inferTypeFromCognitionPath(cognitionPath);
 		result.set(registryKey, {
 			registryKey,
-			type: inferTypeFromCognitionPath(cognitionPath),
+			type: cognitionType,
 			cognitionPath,
 			cognitionUri: childUri,
 			sourceCandidateUris,
-			sourceCandidateState: options.checkSourceCandidates
+			// Folder cognition candidates are directories, whose existence is
+			// almost always true and carries no diagnostic signal.
+			sourceCandidateState: options.checkSourceCandidates && cognitionType === 'leaf'
 				? await checkSourceCandidateState(fs, childUri, options.sourceRootUri, rootUri)
 				: 'unchecked',
 		});

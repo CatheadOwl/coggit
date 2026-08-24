@@ -154,6 +154,25 @@ suite('cognition discovery', () => {
 		assert.strictEqual(result.get('missing.ts')?.sourceCandidateState, 'all-missing');
 	});
 
+	test('keeps folder cognition candidate state unchecked', async () => {
+		const fs = new DiscoveryTestFileSystem();
+		fs.addFile('/workspace/cognition/pkg/README.md');
+		fs.addDirectory('/workspace/src/pkg');
+
+		const result = await discoverCognitionEntries(
+			fs,
+			uri('/workspace/cognition'),
+			{
+				sourceRootUri: uri('/workspace/src'),
+				checkSourceCandidates: true,
+			},
+		);
+
+		const entry = result.get('pkg/');
+		assert.strictEqual(entry?.type, 'folder');
+		assert.strictEqual(entry?.sourceCandidateState, 'unchecked');
+	});
+
 	test('reports unchecked when no source candidate is inferrable', async () => {
 		const fs = new DiscoveryTestFileSystem();
 		fs.addFile('/workspace/cognition/.hidden.ts.md');

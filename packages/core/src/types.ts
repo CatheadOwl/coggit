@@ -65,6 +65,8 @@ export type {
 	MisplacedCognitionEntry,
 	OrphanedCognitionEntry,
 	StrayCognitionEntry,
+	UnboundCognitionEntry,
+	MaintenanceDiagnostic,
 	CognitionDiscoveryEntry,
 	SourceCandidateState,
 	CoggitNodeKind,

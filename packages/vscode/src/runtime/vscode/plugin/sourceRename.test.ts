@@ -8,6 +8,8 @@ import type {
 	MisplacedCognitionEntry,
 	OrphanedCognitionEntry,
 	StrayCognitionEntry,
+	MaintenanceDiagnostic,
+	UnboundCognitionEntry,
 } from '@coggit/core';
 import { handleSourceRenameFiles } from './sourceRename';
 
@@ -95,6 +97,8 @@ function makeProject(
 		listOrphanedCognition: async (): Promise<OrphanedCognitionEntry[]> => [],
 		listMisplacedCognition: async (): Promise<MisplacedCognitionEntry[]> => [],
 		listStrayCognition: async (): Promise<StrayCognitionEntry[]> => [],
+		listUnboundCognition: async (): Promise<UnboundCognitionEntry[]> => [],
+		listMaintenanceDiagnostics: async (): Promise<MaintenanceDiagnostic[]> => [],
 		moveCognitionToExpected: async (): Promise<string | undefined> => undefined,
 		applySourceRename,
 		recordSourceChange: async () => false,
