@@ -154,7 +154,7 @@ suite('cognition discovery', () => {
 		assert.strictEqual(result.get('missing.ts')?.sourceCandidateState, 'all-missing');
 	});
 
-	test('checks folder cognition candidate against the mirrored directory', async () => {
+	test('keeps folder cognition candidate state unchecked', async () => {
 		const fs = new DiscoveryTestFileSystem();
 		fs.addFile('/workspace/cognition/kept/README.md');
 		fs.addFile('/workspace/cognition/gone/README.md');
@@ -169,8 +169,9 @@ suite('cognition discovery', () => {
 			},
 		);
 
-		assert.strictEqual(result.get('kept/')?.sourceCandidateState, 'some-exist');
-		assert.strictEqual(result.get('gone/')?.sourceCandidateState, 'all-missing');
+		assert.strictEqual(result.get('kept/')?.type, 'folder');
+		assert.strictEqual(result.get('kept/')?.sourceCandidateState, 'unchecked');
+		assert.strictEqual(result.get('gone/')?.sourceCandidateState, 'unchecked');
 	});
 
 	test('reports unchecked when no source candidate is inferrable', async () => {

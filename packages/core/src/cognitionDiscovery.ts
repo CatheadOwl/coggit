@@ -67,7 +67,10 @@ async function walkCognitionDir(
 			cognitionPath,
 			cognitionUri: childUri,
 			sourceCandidateUris,
-			sourceCandidateState: options.checkSourceCandidates
+			// Folder cognition skips candidate checks per the maintenance spec:
+			// bound folders with deleted sources surface as orphaned, and an
+			// unbound folder candidate state would be speculative.
+			sourceCandidateState: options.checkSourceCandidates && cognitionType === 'leaf'
 				? await checkSourceCandidateState(fs, childUri, options.sourceRootUri, rootUri)
 				: 'unchecked',
 		});
