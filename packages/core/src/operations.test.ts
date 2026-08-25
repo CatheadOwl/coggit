@@ -8,7 +8,7 @@ import type {
 } from './interfaces';
 import type { CoggitWorkspaceRoot, RegistryFile } from './types';
 import { computeBlobHash } from './hash';
-import { openCoggitProject } from './project';
+import { buildSnapshotFromProjects, openCoggitProject } from './project';
 import {
   addOperation,
   handbookCatalog,
@@ -344,6 +344,60 @@ suite('core operations', () => {
       label: 'Fill in cognition content',
       sourcePath: 'stale.ts',
     }]);
+  });
+
+  test('status with a pre-built snapshot matches the rebuild path', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
+    fs.addFile(
+      '/workspace/cognition/stale.ts.md',
+      '# stale\n\nThis cognition describes earlier source behavior in enough detail.',
+      1000,
+    );
+    const project = await makeProject(fs);
+
+    const snapshot = await buildSnapshotFromProjects([project]);
+    const rebuilt = await statusOperation([project], 'stale.ts');
+    const reused = await statusOperation([project], 'stale.ts', { snapshot });
+
+    const projectable = (result: typeof rebuilt) => ({
+      found: result.found,
+      sourcePath: result.sourcePath,
+      cognitionPath: result.cognitionPath,
+      status: result.status,
+      ownStatus: result.ownStatus,
+      descendantStatus: result.descendantStatus,
+      issueCount: result.issueCount,
+      issueCodes: result.issues.map((issue) => issue.code),
+      suggestedActions: result.suggestedActions,
+      handbookId: result.handbookId,
+      pathHints: result.pathHints,
+    });
+
+    assert.deepStrictEqual(projectable(reused), projectable(rebuilt));
+  });
+
+  test('status with a pre-built snapshot does not re-read the tree', async () => {
+    const fs = new MockFileSystem();
+    fs.addFile('/workspace/src/stale.ts', 'export const stale = 1;', 2000);
+    fs.addFile(
+      '/workspace/cognition/stale.ts.md',
+      '# stale\n\nThis cognition describes earlier source behavior in enough detail.',
+      1000,
+    );
+    const project = await makeProject(fs);
+
+    const snapshot = await buildSnapshotFromProjects([project]);
+    const reads: string[] = [];
+    fs.setAfterReadHook((path) => reads.push(path));
+
+    const result = await statusOperation([project], 'stale.ts', { snapshot });
+
+    assert.strictEqual(result.found, true);
+    assert.strictEqual(result.status, 'stale');
+    // Snapshot reuse resolves and inspects from the already-built tree without
+    // reading source or cognition files again.
+    assert.deepStrictEqual(reads, []);
   });
 
   test('status does not synthesize a resolve next step for descendant-only stale', async () => {

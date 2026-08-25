@@ -1421,22 +1421,39 @@ async function resolveProjectNode(
     acceptance: runtime.acceptance,
   });
   await runtime.registry?.flush();
+  return resolveNodeInSnapshot(snapshot, root, sourcePath);
+}
+
+/**
+ * Resolve a source path against an already-built snapshot, scoped to one
+ * project root. Shared by `resolveProjectNode` (which builds the snapshot
+ * first) and `statusOperation`'s snapshot-reuse path (which receives a
+ * pre-built combined snapshot from `buildSnapshotFromProjects`).
+ */
+export function resolveNodeInSnapshot(
+  snapshot: CoggitSnapshot,
+  root: CoggitWorkspaceRoot,
+  sourcePath: string,
+): SourcePathResolution {
   const normalizedPath = normalizeSourcePathInput(sourcePath, {
     projectRootUri: root.projectRootUri,
     sourceRootUri: root.sourceRootUri,
   });
 
   if (normalizedPath === '.') {
-    return { node: snapshot.roots[0], normalizedPath };
+    const rootNode = snapshot.roots.find((node) => node.root.id === root.id);
+    return { node: rootNode, normalizedPath };
   }
-  const node = findNodeByPath(snapshot.allNodes, normalizedPath);
+
+  const scopedNodes = snapshot.allNodes.filter((node) => node.root.id === root.id);
+  const node = findNodeByPath(scopedNodes, normalizedPath);
   if (node) {
     return { node, normalizedPath };
   }
   return {
     node: undefined,
     normalizedPath,
-    candidatePaths: snapshot.allNodes.map((candidate) => candidate.relativePath),
+    candidatePaths: scopedNodes.map((candidate) => candidate.relativePath),
   };
 }
 

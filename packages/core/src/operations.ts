@@ -17,7 +17,7 @@ import type {
   CognitionRoutesEntry,
   CognitionDocumentDiagnostic,
 } from './types';
-import { buildSnapshotFromProjects, ResolveAcceptanceError } from './project';
+import { buildSnapshotFromProjects, ResolveAcceptanceError, resolveNodeInSnapshot } from './project';
 import { inspectNodeStatus, querySubtreeIssues } from './status';
 import { toRelativeUriPath } from './mapping';
 import {
@@ -285,6 +285,7 @@ async function resolveSourcePathWithHits(
   projects: readonly CoggitProject[],
   sourcePath: string,
   expandCandidates: SourcePathCandidatesExpander = identitySourcePathCandidates,
+  snapshot?: CoggitSnapshot,
 ): Promise<{
   match: { project: CoggitProject; node: CoggitTreeNode } | undefined;
   pathHints: string[];
@@ -293,7 +294,9 @@ async function resolveSourcePathWithHits(
   let normalizedPath: string | undefined;
   for (const project of projects) {
     for (const candidate of expandCandidates(project, sourcePath)) {
-      const resolution: SourcePathResolution = await project.resolveSourcePath(candidate);
+      const resolution: SourcePathResolution = snapshot
+        ? resolveNodeInSnapshot(snapshot, project.root, candidate)
+        : await project.resolveSourcePath(candidate);
       if (resolution.node) {
         return { match: { project, node: resolution.node }, pathHints: [] };
       }
@@ -383,6 +386,14 @@ export async function snapshotOperation(
 export interface StatusOperationOptions {
   sourcePathCandidates?: SourcePathCandidatesExpander;
   issueVisibility?: StatusIssueVisibility;
+  /**
+   * Optional pre-built combined snapshot (from `buildSnapshotFromProjects`).
+   * When provided, `statusOperation` resolves `sourcePath` against it instead
+   * of rebuilding the tree per project. The caller owns snapshot freshness:
+   * pass a snapshot built in the same turn as the mutation that precedes it;
+   * do not reuse a snapshot across writes (reconcile-on-read semantics).
+   */
+  snapshot?: CoggitSnapshot;
 }
 
 export async function statusOperation(
@@ -394,6 +405,7 @@ export async function statusOperation(
     projects,
     sourcePath,
     options.sourcePathCandidates,
+    options.snapshot,
   );
   if (!match) {
     return {

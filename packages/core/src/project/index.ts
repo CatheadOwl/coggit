@@ -6,6 +6,7 @@ export {
   openCoggitProject,
   buildSnapshotFromProjects,
   parentUri,
+  resolveNodeInSnapshot,
 } from './project';
 export type {
   CoggitProjectDiscoveryOptions,
