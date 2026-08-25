@@ -65,7 +65,7 @@ export interface LocatedStatusIssue {
 	 *  `createErrorNode`); mirrors `CoggitTreeNode.cognitionUri`. */
 	cognitionUri?: UriComponents;
 	/**
-	 * Expected paired cognition path, cognition-root-relative. Non-null for any
+	 * Expected paired cognition path, project-root-relative. Non-null for any
 	 * real node (derived from the node's `cognitionUri`); `null` only for nodes
 	 * with no `cognitionUri`. This is the *expected* target path — it does not
 	 * assert that the document exists. Null is encoded as `null` (not
@@ -73,6 +73,7 @@ export interface LocatedStatusIssue {
 	 * fields share one meaning, so they share one null encoding.
 	 */
 	cognitionPath: string | null;
+	/** Project-root-relative source path of the issue-bearing node. */
 	relativePath: string;
 	hasPairedCognition?: boolean;
 	issue: StatusIssue;
@@ -176,10 +177,10 @@ export interface StatusResult {
  * `StatusTriageView`.
  */
 export interface NodeStatusTriageEntry {
-	/** Source-root-relative path of the issue-bearing node. */
+	/** Project-root-relative path of the issue-bearing node. */
 	sourcePath: string;
 	/**
-	 * Expected paired cognition path, cognition-root-relative; same expected-path
+	 * Expected paired cognition path, project-root-relative; same expected-path
 	 * semantics and null encoding as `NodeStatusInspection.cognitionPath`.
 	 */
 	cognitionPath: string | null;
@@ -202,9 +203,10 @@ export interface NodeStatusTriageEntry {
 }
 
 export interface NodeStatusInspection {
+	/** Project-root-relative source path of the inspected node. */
 	sourcePath: string;
 	/**
-	 * Expected paired cognition path, cognition-root-relative; `null` only when
+	 * Expected paired cognition path, project-root-relative; `null` only when
 	 * the node has no expected cognition URI. This is the *expected* target
 	 * path, not an existence check — pair it with `cognitionPresence`.
 	 */

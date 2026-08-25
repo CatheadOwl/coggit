@@ -174,7 +174,7 @@ suite('cognition discovery', () => {
 		assert.strictEqual(result.get('gone/')?.sourceCandidateState, 'unchecked');
 	});
 
-	test('reports unchecked when no source candidate is inferrable', async () => {
+	test('skips dotfile cognition without a source extension as untracked', async () => {
 		const fs = new DiscoveryTestFileSystem();
 		fs.addFile('/workspace/cognition/.hidden.md');
 
@@ -187,8 +187,9 @@ suite('cognition discovery', () => {
 			},
 		);
 
-		assert.deepStrictEqual(result.get('.hidden')?.sourceCandidateUris, []);
-		assert.strictEqual(result.get('.hidden')?.sourceCandidateState, 'unchecked');
+		// A dotfile without a source-like extension (e.g. `.hidden.md`) is a
+		// free-form document, not a paired leaf cognition, so it is skipped.
+		assert.deepStrictEqual([...result.keys()], []);
 	});
 
 	test('infers dotfile source candidates when an extension follows the leading dot', async () => {

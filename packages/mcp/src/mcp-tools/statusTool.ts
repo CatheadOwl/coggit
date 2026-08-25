@@ -31,7 +31,7 @@ export function registerStatusTool(
         sourcePath: z
           .string()
           .optional()
-          .describe('Source-root-relative path, e.g. src/main.ts or src/app. Defaults to root when not provided. Do not pass an absolute filesystem path.'),
+          .describe('Project-root-relative path, e.g. src/main.ts or src/app. Defaults to the source root when not provided. Do not pass an absolute filesystem path.'),
       },
       outputSchema: statusOperationOutputSchema,
       annotations: { readOnlyHint: true, openWorldHint: false },

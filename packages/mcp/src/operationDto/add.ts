@@ -4,6 +4,7 @@ import { ADD_OPERATION_ERROR_CODES } from '@coggit/core';
 import type { AddOperationResult, CognitionKind } from '@coggit/core';
 import {
   createHandbookMaintenanceAction,
+  externalPathOrNull,
   handbookUri,
   mcpMaintenanceNextActionSchema,
   operationActionSchema,
@@ -17,7 +18,9 @@ export const addOperationOutputSchema = {
   created: z.boolean().nullable(),
   kind: z.enum(['leaf', 'skeleton']).nullable(),
   sourcePath: z.string(),
+  sourceUri: z.string().nullable(),
   cognitionPath: z.string().nullable(),
+  cognitionUri: z.string().nullable(),
   handbookUri: z.string().nullable(),
   project: projectContextSchema.nullable(),
   error: z.object({
@@ -47,7 +50,9 @@ export function addStructuredContent(result: AddOperationResult): {
   created: boolean | null;
   kind: CognitionKind | null;
   sourcePath: string;
+  sourceUri: string | null;
   cognitionPath: string | null;
+  cognitionUri: string | null;
   handbookUri: string | null;
   project: z.infer<typeof projectContextSchema> | null;
   error: AddOperationResult['error'];
@@ -62,7 +67,9 @@ export function addStructuredContent(result: AddOperationResult): {
     created: result.created,
     kind: result.kind,
     sourcePath: result.sourcePath,
+    sourceUri: externalPathOrNull(result.sourceUri),
     cognitionPath: result.cognitionPath,
+    cognitionUri: externalPathOrNull(result.cognitionUri),
     handbookUri: result.handbookId ? handbookUri(result.handbookId) : null,
     project: result.project ? toMcpProjectContext(result.project) : null,
     error: result.error,

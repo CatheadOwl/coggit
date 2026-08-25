@@ -9,7 +9,9 @@ function successResult(): ResolveOperationResult {
   return {
     success: true,
     sourcePath: 'src/main.ts',
+    sourceUri: null,
     cognitionPath: 'src/main.ts.md',
+    cognitionUri: null,
     project: null,
     sourceKey: 'src/main.ts',
     verificationTimeMs: 1710000000000,
@@ -23,7 +25,9 @@ function missResult(): ResolveOperationResult {
   return {
     success: false,
     sourcePath: 'src/missing.ts',
+    sourceUri: null,
     cognitionPath: null,
+    cognitionUri: null,
     project: null,
     sourceKey: null,
     verificationTimeMs: null,
@@ -38,7 +42,9 @@ function failureResult(): ResolveOperationResult {
   return {
     success: false,
     sourcePath: 'src/main.ts',
+    sourceUri: null,
     cognitionPath: null,
+    cognitionUri: null,
     project: null,
     sourceKey: null,
     verificationTimeMs: null,

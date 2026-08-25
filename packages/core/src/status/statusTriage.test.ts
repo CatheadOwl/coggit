@@ -121,8 +121,8 @@ suite('status subtree triage', () => {
     ));
 
     assert.deepStrictEqual(inspection.triage, [{
-      sourcePath: 'src/stale.ts',
-      cognitionPath: 'src/stale.ts.md',
+      sourcePath: 'src/src/stale.ts',
+      cognitionPath: 'cognition/src/stale.ts.md',
       nodeKind: 'file',
       relation: 'descendant',
       issues: [{
@@ -130,8 +130,8 @@ suite('status subtree triage', () => {
         nodeKind: 'file',
         sourceUri: uri('/workspace/src/src/stale.ts'),
         cognitionUri: uri('/workspace/cognition/src/stale.ts.md'),
-        cognitionPath: 'src/stale.ts.md',
-        relativePath: 'src/stale.ts',
+        cognitionPath: 'cognition/src/stale.ts.md',
+        relativePath: 'src/src/stale.ts',
         hasPairedCognition: true,
         issue: staleIssue(SYNC_COGNITION_ACTION_LABEL),
       }],
@@ -139,12 +139,12 @@ suite('status subtree triage', () => {
         code: 'sync-cognition-with-source',
         label: SYNC_COGNITION_ACTION_LABEL,
         handbookId: 'leaf',
-        sourcePath: 'src/stale.ts',
+        sourcePath: 'src/src/stale.ts',
       }, {
         code: 'resolve-stale-cognition',
         label: 'After syncing, accept the pair as reviewed',
         operation: 'resolve',
-        sourcePath: 'src/stale.ts',
+        sourcePath: 'src/src/stale.ts',
       }],
     }]);
   });
@@ -183,7 +183,7 @@ suite('status subtree triage', () => {
     ));
     // The descendant entry carries its own re-scoped pair.
     assert.strictEqual(descendant.relation, 'descendant');
-    assert.deepStrictEqual(descendant.actions.map((action) => action.sourcePath), ['src/stale.ts', 'src/stale.ts']);
+    assert.deepStrictEqual(descendant.actions.map((action) => action.sourcePath), ['src/src/stale.ts', 'src/src/stale.ts']);
   });
 
   test('maps a stale folder descendant to the skeleton handbook and folder sync label', () => {
@@ -215,7 +215,7 @@ suite('status subtree triage', () => {
       code: 'sync-cognition-with-source',
       label: SYNC_FOLDER_README_ACTION_LABEL,
       handbookId: 'skeleton',
-      sourcePath: 'src/feature',
+      sourcePath: 'src/src/feature',
     });
   });
 
@@ -288,7 +288,7 @@ suite('status subtree triage', () => {
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
-      sourcePath: 'src/missing.ts',
+      sourcePath: 'src/src/missing.ts',
     });
   });
 
@@ -310,8 +310,8 @@ suite('status subtree triage', () => {
     assert.strictEqual(entry.relation, 'descendant');
     // Issues reuse the serializable presentation shape.
     assert.deepStrictEqual(entry.issues, [{
-      sourcePath: 'src/stale.ts',
-      cognitionPath: 'src/stale.ts.md',
+      sourcePath: 'src/src/stale.ts',
+      cognitionPath: 'cognition/src/stale.ts.md',
       severity: 'warning',
       message: 'Stale cognition.',
       suggestedActions: [SYNC_COGNITION_ACTION_LABEL],

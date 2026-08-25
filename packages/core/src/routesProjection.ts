@@ -1,6 +1,5 @@
 import type { CognitionRoutesEntry, RoutesProjectionNode } from './types.js';
 import type { UriComponents } from './interfaces.js';
-import { normalizeSourcePathInput } from './mapping.js';
 import { suggestPathHints } from './pathHints.js';
 import { applyTreeDepth } from './projection.js';
 
@@ -31,7 +30,7 @@ export function projectRoutesEntries(
   entries: readonly CognitionRoutesEntry[],
 ): RoutesProjectionNode[] {
   return buildRoutesProjectionTree(entries.map((entry) => ({
-    routePath: entry.toolSourcePath ?? entry.cognitionPath,
+    routePath: entry.projectRelativeSourcePath ?? entry.cognitionPath,
     cognitionPath: entry.cognitionPath,
     description: routeDescription(entry),
   })));
@@ -67,10 +66,10 @@ export function routeProjectionLineText(route: RouteProjectionLine): string {
 export function selectRoutesBySourcePath(
   tree: readonly RoutesProjectionNode[],
   sourcePath?: string,
-  context?: RoutesSourcePathContext,
+  _context?: RoutesSourcePathContext,
 ): RoutesSourcePathSelection {
   const normalizedSourcePath = sourcePath
-    ? normalizeSourcePathInput(sourcePath, context)
+    ? trimProjectRelativeInput(sourcePath)
     : undefined;
 
   if (!normalizedSourcePath || normalizedSourcePath === '' || normalizedSourcePath === '.') {
@@ -89,9 +88,9 @@ export function selectRoutesBySourcePath(
 export function suggestRoutePathHints(
   tree: readonly RoutesProjectionNode[],
   sourcePath: string,
-  sourceRoot?: string,
+  _sourceRoot?: string,
 ): string[] {
-  const normalizedPath = normalizeSourcePathInput(sourcePath, { sourceRoot });
+  const normalizedPath = trimProjectRelativeInput(sourcePath);
   return suggestHintsFromNormalizedPath(tree, normalizedPath);
 }
 
@@ -108,16 +107,20 @@ function suggestHintsFromNormalizedPath(
 export function applyRoutesFilters(
   tree: readonly RoutesProjectionNode[],
   sourcePath?: string,
-  sourceRoot?: string,
+  _sourceRoot?: string,
 ): RoutesProjectionNode[] {
   if (!sourcePath) {
     return [...tree];
   }
-  const normalizedPath = normalizeSourcePathInput(sourcePath, { sourceRoot });
+  const normalizedPath = trimProjectRelativeInput(sourcePath);
   if (normalizedPath === '' || normalizedPath === '.') {
     return [...tree];
   }
   return selectRouteSubtree(tree, normalizedPath);
+}
+
+function trimProjectRelativeInput(sourcePath: string): string {
+  return sourcePath.replace(/\\/g, '/').replace(/^\/+|\/+$/gu, '');
 }
 
 function buildRoutesProjectionTree(
@@ -271,7 +274,7 @@ export function assembleRoutesContent(
     ...(selection.normalizedSourcePath !== undefined ? { sourcePath: selection.normalizedSourcePath } : {}),
     ...(selection.missed ? { pathMissMessage: 'No tracked cognition routes matched the requested source path.' } : {}),
     ...(selection.missed && selection.pathHints.length > 0
-      ? { pathHintMessage: 'You may mean one of these source-root-relative route paths.' }
+      ? { pathHintMessage: 'You may mean one of these project-root-relative route paths.' }
       : {}),
     ...(selection.missed && selection.pathHints.length > 0 ? { pathHints: selection.pathHints } : {}),
   };

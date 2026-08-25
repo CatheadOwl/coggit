@@ -1,7 +1,7 @@
 import * as path from './path-utils';
 import type { UriComponents } from './interfaces';
 import { joinUriPath, uriRelativePath, uriBasename, uriKey } from './uri-utils';
-import type { CoggitConfig } from './types';
+import type { CoggitConfig, CoggitWorkspaceRoot } from './types';
 
 /**
  * Path and URI mapping helpers.
@@ -117,6 +117,14 @@ export function toRelativeUriPath(
   return relativePath;
 }
 
+/**
+ * Normalize an operation `sourcePath` input to a source identity.
+ *
+ * The operation-DTO input surface is project-root-relative; this is the single
+ * place that strips the configured `sourceRoot` prefix back to the
+ * source-root-relative identity used for tree matching. Non-prefixed paths pass
+ * through unchanged as the legacy source-root-relative fallback.
+ */
 export function normalizeSourcePathInput(
   sourcePath: string,
   context?: {
@@ -162,6 +170,68 @@ function trimSlashes(input: string): string {
 // ─── source → cognition mapping ────────────────────────────────────────
 
 /**
+ * The single source↔cognition pairing convention. Written once here and reused
+ * by key derivation (`identity.ts`), URI mapping (below), and reverse inference.
+ *
+ * - Leaf:      `sourceIdentity + ".md"`
+ * - Skeleton:  `sourceIdentity + "/README.md"` (root `.` → `README.md`)
+ */
+export type CognitionIdentityKind = 'leaf' | 'folder';
+
+export function sourceIdentityToCognitionIdentity(
+  sourceIdentity: string,
+  kind: CognitionIdentityKind,
+): string {
+  const identity = sourceIdentity === '' ? '.' : sourceIdentity;
+  if (kind === 'leaf') {
+    return `${identity}.md`;
+  }
+  return identity === '.' ? 'README.md' : `${identity}/README.md`;
+}
+
+/**
+ * Reverse of {@link sourceIdentityToCognitionIdentity}. Returns `undefined` for
+ * free-form cognition documents (e.g. `CODE_MAP.md`) that have no source-pairing
+ * convention.
+ */
+export function cognitionIdentityToSourceIdentity(
+  cognitionIdentity: string,
+): { sourceIdentity: string; kind: CognitionIdentityKind } | undefined {
+  const normalized = cognitionIdentity.replace(/\\/g, '/');
+  if (!normalized.endsWith('.md')) {
+    return undefined;
+  }
+
+  const withoutMd = normalized.slice(0, -'.md'.length);
+  if (withoutMd === '') {
+    return undefined;
+  }
+  if (withoutMd === 'README') {
+    return { sourceIdentity: '.', kind: 'folder' };
+  }
+
+  const lastSegment = withoutMd.split('/').pop()!;
+  if (lastSegment === 'README') {
+    return {
+      sourceIdentity: withoutMd.slice(0, -'/README'.length) || '.',
+      kind: 'folder',
+    };
+  }
+
+  // Only `<source>.<ext>.md` (a source-like extension before `.md`) is a paired
+  // leaf cognition file. Dotfile sources (e.g. `.eslintrc.js`) stay paired when
+  // an extension follows the leading dot.
+  const hasSourceExtension = lastSegment.startsWith('.')
+    ? lastSegment.slice(1).includes('.')
+    : lastSegment.includes('.');
+  if (!hasSourceExtension) {
+    return undefined;
+  }
+
+  return { sourceIdentity: withoutMd, kind: 'leaf' };
+}
+
+/**
  * source file → cognition markdown file path.
  * Example: src/foo/bar.ts → src_cognition/foo/bar.ts.md
  */
@@ -171,7 +241,7 @@ export function toCognitionFilePath(
   sourceFilePath: string,
 ): string {
   const rel = toRelativePath(sourceRootPath, sourceFilePath);
-  return path.join(cognitionRootPath, rel + '.md');
+  return path.join(cognitionRootPath, sourceIdentityToCognitionIdentity(rel, 'leaf'));
 }
 
 export function toCognitionFileUri(
@@ -180,7 +250,7 @@ export function toCognitionFileUri(
   sourceFileUri: UriComponents,
 ): UriComponents {
   const rel = toRelativeUriPath(sourceRootUri, sourceFileUri);
-  return joinUriPath(cognitionRootUri, rel + '.md');
+  return joinIdentityPath(cognitionRootUri, sourceIdentityToCognitionIdentity(rel, 'leaf'));
 }
 
 /**
@@ -193,9 +263,7 @@ export function toCognitionFolderReadmePath(
   folderPath: string,
 ): string {
   const rel = toRelativePath(sourceRootPath, folderPath);
-  return rel === '.'
-    ? path.join(cognitionRootPath, 'README.md')
-    : path.join(cognitionRootPath, rel, 'README.md');
+  return path.join(cognitionRootPath, sourceIdentityToCognitionIdentity(rel, 'folder'));
 }
 
 export function toCognitionFolderReadmeUri(
@@ -204,9 +272,7 @@ export function toCognitionFolderReadmeUri(
   folderUri: UriComponents,
 ): UriComponents {
   const rel = toRelativeUriPath(sourceRootUri, folderUri);
-  return rel === '.'
-    ? joinUriPath(cognitionRootUri, 'README.md')
-    : joinUriPath(cognitionRootUri, ...rel.split('/'), 'README.md');
+  return joinIdentityPath(cognitionRootUri, sourceIdentityToCognitionIdentity(rel, 'folder'));
 }
 
 export function inferSourceUriFromCognitionUri(
@@ -224,36 +290,84 @@ export function inferSourceUriCandidatesFromCognitionUri(
   cognitionRootUri: UriComponents,
 ): UriComponents[] {
   const relativePath = toRelativeUriPath(cognitionRootUri, cognitionUri);
-  if (relativePath === '.' || !relativePath.toLowerCase().endsWith('.md')) {
+  if (relativePath === '.') {
     return [];
   }
 
-  if (relativePath === 'README.md') {
-    return [sourceRootUri];
-  }
-
-  const withoutExt = relativePath.slice(0, -'.md'.length);
-  if (withoutExt.endsWith('/README')) {
-    const folderRel = withoutExt.slice(0, -'/README'.length);
-    return [folderRel.length === 0
-      ? sourceRootUri
-      : joinUriPath(sourceRootUri, ...folderRel.split('/'))];
-  }
-
-  // Standalone docs (e.g. MODULES.md) have no source-extension pattern.
-  // Only files named <source>.<ext>.md are paired cognition files. Dotfile
-  // sources (e.g. .eslintrc.js) stay paired when an extension follows the
-  // leading dot.
-  const basename = withoutExt.split('/').pop() || withoutExt;
-  const hasSourceExtension = basename.startsWith('.')
-    ? basename.slice(1).includes('.')
-    : basename.includes('.');
-  if (!hasSourceExtension) {
+  const mapped = cognitionIdentityToSourceIdentity(relativePath);
+  if (!mapped) {
     return [];
   }
 
-  // toCognitionFileUri does (rel + '.md'), so reverse is simply strip '.md'
-  return [joinUriPath(sourceRootUri, withoutExt)];
+  return [joinIdentityPath(sourceRootUri, mapped.sourceIdentity)];
+}
+
+// ─── Identity ↔ project-relative coordinate conversion ─────────────────────
+
+/**
+ * Convert a source-root-relative identity to a project-root-relative path by
+ * prepending the configured `sourceRoot` name (skipped when the root is `.`).
+ */
+export function sourceIdentityToProjectRelative(
+  root: CoggitWorkspaceRoot,
+  sourceIdentity: string,
+): string {
+  return prependRootName(rootName(root.projectRootUri, root.sourceRootUri), sourceIdentity);
+}
+
+export function cognitionIdentityToProjectRelative(
+  root: CoggitWorkspaceRoot,
+  cognitionIdentity: string,
+): string {
+  return prependRootName(rootName(root.projectRootUri, root.cognitionRootUri), cognitionIdentity);
+}
+
+/**
+ * Convert a project-root-relative path back to a source identity by stripping
+ * the configured `sourceRoot` name. Non-prefixed paths pass through unchanged
+ * (the legacy source-root-relative fallback).
+ */
+export function projectRelativeToSourceIdentity(
+  root: CoggitWorkspaceRoot,
+  projectRelative: string,
+): string {
+  return stripRootName(rootName(root.projectRootUri, root.sourceRootUri), projectRelative);
+}
+
+function rootName(projectRootUri: UriComponents, rootUri: UriComponents): string {
+  return toRelativeUriPath(projectRootUri, rootUri);
+}
+
+function prependRootName(rootName: string, identity: string): string {
+  if (rootName === '.' || rootName === '') {
+    return identity === '' ? '.' : identity;
+  }
+  if (identity === '.' || identity === '') {
+    return rootName;
+  }
+  return `${rootName}/${identity}`;
+}
+
+function stripRootName(rootName: string, projectRelative: string): string {
+  const normalized = projectRelative.replace(/\\/g, '/').replace(/^\/+|\/+$/gu, '');
+  if (rootName === '.' || rootName === '') {
+    return normalized === '' ? '.' : normalized;
+  }
+  if (normalized === rootName) {
+    return '.';
+  }
+  if (normalized.startsWith(`${rootName}/`)) {
+    return normalized.slice(rootName.length + 1) || '.';
+  }
+  return normalized;
+}
+
+function joinIdentityPath(base: UriComponents, identity: string): UriComponents {
+  const segments = identity
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((segment) => segment.length > 0 && segment !== '.');
+  return segments.length === 0 ? base : joinUriPath(base, ...segments);
 }
 
 // ─── Directory / containment ────────────────────────────────────────────────────

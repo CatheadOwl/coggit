@@ -10,6 +10,7 @@ import {
 } from '@coggit/core';
 import {
   createHandbookMaintenanceAction,
+  externalPathOrNull,
   handbookUri,
   mcpMaintenanceNextActionSchema,
   mcpStatusIssueSchema,
@@ -35,7 +36,9 @@ export const statusTriageSchema = z.object({
 
 export const statusOperationOutputSchema = {
   sourcePath: z.string(),
+  sourceUri: z.string().nullable(),
   cognitionPath: z.string().nullable(),
+  cognitionUri: z.string().nullable(),
   cognitionPresence: z.enum(['present', 'missing', 'not-applicable']),
   status: observedStatusSchema,
   ownStatus: observedStatusSchema,
@@ -63,6 +66,8 @@ export interface MaintenanceNextAction {
 
 export interface StatusMcpView extends StatusPresentationView {
   [key: string]: unknown;
+  sourceUri: string | null;
+  cognitionUri: string | null;
   handbookUri: string | null;
   nextActions: MaintenanceNextAction[];
   suggestedActions: Array<z.infer<typeof operationActionSchema>>;
@@ -113,6 +118,8 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
   if (!inspection) {
     const miss = projectStatusMissPresentation(result);
     return {
+      sourceUri: externalPathOrNull(result.sourceUri),
+      cognitionUri: externalPathOrNull(result.cognitionUri),
       cognitionPath: result.cognitionPath,
       cognitionPresence: result.cognitionPath ? 'present' : 'not-applicable',
       status: result.status,
@@ -139,6 +146,8 @@ export function statusMcpView(result: StatusOperationResult): StatusMcpView {
 
   return {
     ...presentation,
+    sourceUri: externalPathOrNull(result.sourceUri),
+    cognitionUri: externalPathOrNull(result.cognitionUri),
     handbookUri: resolvedHandbookUri,
     nextActions: hasStepLocalHandbookAction ? [] : statusNextActions({ handbookUri: resolvedHandbookUri }),
     suggestedActions: result.suggestedActions.map(toMcpOperationAction),

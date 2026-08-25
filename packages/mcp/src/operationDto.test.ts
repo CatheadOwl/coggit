@@ -34,20 +34,20 @@ suite('mcp operation DTO adapter', () => {
     label: 'fixture',
     configUri: 'file:///workspace/.coggit/config.yaml',
     projectRootUri: 'file:///workspace',
-    sourceRootUri: 'file:///workspace/src',
-    cognitionRootUri: 'file:///workspace/codebase_cognition',
     sourceRoot: 'src',
     cognitionRoot: 'codebase_cognition',
-    sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
+    sourcePathRule: 'Use project-root-relative paths with CogGit tools, for example src/main.ts, src/app, or ".".',
   };
 
   test('status structured content maps handbook id to handbook URI', () => {
     const result: StatusOperationResult = {
       found: true,
       sourcePath: 'src/main.ts',
+      sourceUri: null,
       nodeKind: 'file',
       project: null,
       cognitionPath: 'src/main.ts.md',
+      cognitionUri: null,
       status: 'fresh',
       ownStatus: 'fresh',
       descendantStatus: null,
@@ -101,9 +101,11 @@ suite('mcp operation DTO adapter', () => {
     const result: StatusOperationResult = {
       found: true,
       sourcePath: 'src/stale.ts',
+      sourceUri: null,
       nodeKind: 'file',
       project: null,
       cognitionPath: 'src/stale.ts.md',
+      cognitionUri: null,
       status: 'stale',
       ownStatus: 'stale',
       descendantStatus: null,
@@ -172,9 +174,11 @@ suite('mcp operation DTO adapter', () => {
     const result: StatusOperationResult = {
       found: true,
       sourcePath: 'src/app',
+      sourceUri: null,
       nodeKind: 'folder',
       project: null,
       cognitionPath: 'src/app/README.md',
+      cognitionUri: null,
       status: 'stale',
       ownStatus: 'fresh',
       descendantStatus: 'stale',
@@ -254,9 +258,11 @@ suite('mcp operation DTO adapter', () => {
     const result: StatusOperationResult = {
       found: true,
       sourcePath: 'src/fresh.ts',
+      sourceUri: null,
       nodeKind: 'file',
       project: null,
       cognitionPath: 'src/fresh.ts.md',
+      cognitionUri: null,
       status: 'fresh',
       ownStatus: 'fresh',
       descendantStatus: null,
@@ -300,7 +306,9 @@ suite('mcp operation DTO adapter', () => {
       created: null,
       kind: null,
       sourcePath: 'missing.ts',
+      sourceUri: null,
       cognitionPath: null,
+      cognitionUri: null,
       project: null,
       handbookId: null,
       suggestedActions: [],
@@ -322,7 +330,9 @@ suite('mcp operation DTO adapter', () => {
       created: null,
       kind: null,
       sourcePath: 'missing.ts',
+      sourceUri: null,
       cognitionPath: null,
+      cognitionUri: null,
       project: null,
       handbookId: null,
       suggestedActions: [],
@@ -351,7 +361,9 @@ suite('mcp operation DTO adapter', () => {
       created: null,
       kind: null,
       sourcePath: 'registry',
+      sourceUri: null,
       cognitionPath: null,
+      cognitionUri: null,
       project: null,
       handbookId: null,
       suggestedActions: [],
@@ -382,7 +394,9 @@ suite('mcp operation DTO adapter', () => {
     const result: ResolveOperationResult = {
       success: true,
       sourcePath: 'src/app',
+      sourceUri: null,
       cognitionPath: 'src/app/README.md',
+      cognitionUri: null,
       project,
       sourceKey: 'src/app/',
       verificationTimeMs: 1710000000000,
@@ -402,7 +416,7 @@ suite('mcp operation DTO adapter', () => {
       projectRoot: '/workspace',
       sourceRoot: 'src',
       cognitionRoot: 'codebase_cognition',
-      sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
+      sourcePathRule: 'Use project-root-relative paths with CogGit tools, for example src/main.ts, src/app, or ".".',
     });
     assert.deepStrictEqual(structuredContent.nextActions, []);
   });
@@ -523,7 +537,7 @@ suite('mcp operation DTO adapter', () => {
       projectRoot: '/workspace',
       sourceRoot: 'src',
       cognitionRoot: 'codebase_cognition',
-      sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
+      sourcePathRule: 'Use project-root-relative paths with CogGit tools, for example src/main.ts, src/app, or ".".',
     }]);
     assert.deepStrictEqual(structuredContent.nextScopes, ['untracked']);
     assert.deepStrictEqual(structuredContent.suggestedActions, [{
@@ -541,9 +555,11 @@ suite('mcp operation DTO adapter', () => {
     const result: StatusOperationResult = {
       found: true,
       sourcePath: 'src/main.ts',
+      sourceUri: null,
       nodeKind: 'file',
       project,
       cognitionPath: 'src/main.ts.md',
+      cognitionUri: null,
       status: 'stale',
       ownStatus: 'stale',
       descendantStatus: null,
@@ -648,9 +664,11 @@ suite('mcp operation DTO adapter', () => {
     const result: StatusOperationResult = {
       found: true,
       sourcePath: 'src/app',
+      sourceUri: null,
       nodeKind: 'folder',
       project,
       cognitionPath: 'src/app/README.md',
+      cognitionUri: null,
       status: 'conflict',
       ownStatus: 'fresh',
       descendantStatus: 'conflict',
@@ -735,9 +753,11 @@ suite('mcp operation DTO adapter', () => {
     const result: StatusOperationResult = {
       found: false,
       sourcePath: 'src/core/watchPipeline.ts',
+      sourceUri: null,
       nodeKind: null,
       project: null,
       cognitionPath: null,
+      cognitionUri: null,
       status: null,
       ownStatus: null,
       descendantStatus: null,
@@ -771,7 +791,9 @@ suite('mcp operation DTO adapter', () => {
       created: true,
       kind: 'leaf',
       sourcePath: 'src/main.ts',
+      sourceUri: null,
       cognitionPath: 'src/main.ts.md',
+      cognitionUri: null,
       project,
       handbookId: 'leaf',
       suggestedActions: [],
@@ -790,7 +812,7 @@ suite('mcp operation DTO adapter', () => {
       projectRoot: '/workspace',
       sourceRoot: 'src',
       cognitionRoot: 'codebase_cognition',
-      sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
+      sourcePathRule: 'Use project-root-relative paths with CogGit tools, for example src/main.ts, src/app, or ".".',
     });
     assert.strictEqual(structuredContent.handbookUri, 'coggit://handbook/leaf');
     assert.deepStrictEqual(structuredContent.nextActions, [{
@@ -809,8 +831,7 @@ suite('mcp operation DTO adapter', () => {
       entryCount: 4,
       entries: [{
         key: 'src/core',
-        projectRelativeSourcePath: 'src/src/core',
-        toolSourcePath: 'src/core',
+        projectRelativeSourcePath: 'src/core',
         cognitionPath: 'src/core/README.md',
         documentKind: 'folder',
         metadataType: 'reference',
@@ -844,8 +865,7 @@ suite('mcp operation DTO adapter', () => {
         suggestedActions: [],
       }, {
         key: 'src/main.ts',
-        projectRelativeSourcePath: 'src/src/main.ts',
-        toolSourcePath: 'src/main.ts',
+        projectRelativeSourcePath: 'src/main.ts',
         cognitionPath: 'src/main.ts.md',
         documentKind: 'leaf',
         metadataType: 'reference',
@@ -889,8 +909,7 @@ suite('mcp operation DTO adapter', () => {
         }],
       }, {
         key: 'src/core/status.ts',
-        projectRelativeSourcePath: 'src/src/core/status.ts',
-        toolSourcePath: 'src/core/status.ts',
+        projectRelativeSourcePath: 'src/core/status.ts',
         cognitionPath: 'src/core/status.ts.md',
         documentKind: 'leaf',
         metadataType: 'reference',
@@ -925,7 +944,6 @@ suite('mcp operation DTO adapter', () => {
       }, {
         key: 'outside.md',
         projectRelativeSourcePath: '../outside.md',
-        toolSourcePath: null,
         cognitionPath: 'outside.md',
         documentKind: 'leaf',
         metadataType: 'reference',
@@ -998,8 +1016,7 @@ suite('mcp operation DTO adapter', () => {
       entryCount: 4,
       entries: [{
         key: 'src/core',
-        projectRelativeSourcePath: 'src/src/core',
-        toolSourcePath: 'src/core',
+        projectRelativeSourcePath: 'src/core',
         cognitionPath: 'src/core/README.md',
         documentKind: 'folder',
         metadataType: 'reference',
@@ -1033,8 +1050,7 @@ suite('mcp operation DTO adapter', () => {
         suggestedActions: [],
       }, {
         key: 'src/main.ts',
-        projectRelativeSourcePath: 'src/src/main.ts',
-        toolSourcePath: 'src/main.ts',
+        projectRelativeSourcePath: 'src/main.ts',
         cognitionPath: 'src/main.ts.md',
         documentKind: 'leaf',
         metadataType: 'reference',
@@ -1068,8 +1084,7 @@ suite('mcp operation DTO adapter', () => {
         suggestedActions: [],
       }, {
         key: 'src/core/status.ts',
-        projectRelativeSourcePath: 'src/src/core/status.ts',
-        toolSourcePath: 'src/core/status.ts',
+        projectRelativeSourcePath: 'src/core/status.ts',
         cognitionPath: 'src/core/status.ts.md',
         documentKind: 'leaf',
         metadataType: 'reference',
@@ -1104,7 +1119,6 @@ suite('mcp operation DTO adapter', () => {
       }, {
         key: 'CODE_MAP',
         projectRelativeSourcePath: null,
-        toolSourcePath: null,
         cognitionPath: 'CODE_MAP.md',
         documentKind: 'leaf',
         metadataType: 'reference',
@@ -1242,7 +1256,7 @@ suite('mcp operation DTO adapter', () => {
     }]);
   });
 
-  test('routes sourcePath filtering normalizes configured source root prefixes', () => {
+  test('routes sourcePath filtering trims slash forms and ignores source-root args', () => {
     const tree = [{
       path: 'coggit',
       children: [{
@@ -1251,8 +1265,8 @@ suite('mcp operation DTO adapter', () => {
       }],
     }];
 
-    assert.deepStrictEqual(applyRoutesFilters(tree, 'codebase/coggit', 'codebase'), tree);
-    assert.deepStrictEqual(applyRoutesFilters(tree, '\\codebase\\coggit\\src\\', 'codebase'), [{
+    assert.deepStrictEqual(applyRoutesFilters(tree, 'coggit', 'codebase'), tree);
+    assert.deepStrictEqual(applyRoutesFilters(tree, '\\coggit\\src\\', 'codebase'), [{
       path: 'coggit/src',
       cognition: 'coggit/src/README.md',
     }]);
@@ -1320,12 +1334,10 @@ suite('mcp operation DTO adapter', () => {
     assert.deepStrictEqual(suggestRoutePathHints(tree, 'src'), [
       'coggit/src',
     ]);
-    assert.deepStrictEqual(suggestRoutePathHints(tree, 'codebase/src', 'codebase'), [
-      'coggit/src',
-    ]);
+    assert.deepStrictEqual(suggestRoutePathHints(tree, 'codebase/src', 'codebase'), []);
   });
 
-  test('routes sourcePath selection centralizes normalization, miss, and fuzzy hints', () => {
+  test('routes sourcePath selection trims input and centralizes miss and fuzzy hints', () => {
     const tree = [{
       path: 'coggit',
       children: [{
@@ -1334,7 +1346,7 @@ suite('mcp operation DTO adapter', () => {
       }],
     }];
 
-    assert.deepStrictEqual(selectRoutesBySourcePath(tree, 'codebase/coggit/src', {
+    assert.deepStrictEqual(selectRoutesBySourcePath(tree, 'coggit/src', {
       sourceRoot: 'codebase',
     }), {
       normalizedSourcePath: 'coggit/src',
@@ -1346,7 +1358,7 @@ suite('mcp operation DTO adapter', () => {
       pathHints: [],
     });
 
-    assert.deepStrictEqual(selectRoutesBySourcePath(tree, 'codebase/src', {
+    assert.deepStrictEqual(selectRoutesBySourcePath(tree, 'src', {
       sourceRoot: 'codebase',
     }), {
       normalizedSourcePath: 'src',

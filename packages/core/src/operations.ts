@@ -19,7 +19,12 @@ import type {
 } from './types';
 import { buildSnapshotFromProjects, ResolveAcceptanceError, resolveNodeInSnapshot } from './project';
 import { inspectNodeStatus, querySubtreeIssues } from './status';
-import { toRelativeUriPath } from './mapping';
+import {
+  cognitionIdentityToProjectRelative,
+  sourceIdentityToProjectRelative,
+  toRelativeUriPath,
+} from './mapping';
+import { uriKey } from './uri-utils';
 import {
   PATH_HINT_MESSAGE,
   PATH_MISS_MESSAGE,
@@ -78,19 +83,24 @@ export interface SnapshotOperationResult {
 
 export interface StatusOperationResult {
   found: boolean;
-  /** Source-root-relative source path: the matched node's relative path on a
+  /** Project-root-relative source path: the matched node's relative path on a
    *  hit, or the requested input on a miss. */
   sourcePath: string;
+  /** Absolute source URI key string; `null` on a miss. */
+  sourceUri: string | null;
   nodeKind: CoggitNodeKind | null;
   /** `null` on a miss. */
   project: CoggitProjectContext | null;
   /**
-   * Expected paired cognition path, cognition-root-relative. `null` on a miss
+   * Expected paired cognition path, project-root-relative. `null` on a miss
    * or when the node has no expected cognition URI. This is the *expected*
    * target path, not an existence check — same semantics and null encoding as
    * `LocatedStatusIssue.cognitionPath`.
    */
   cognitionPath: string | null;
+  /** Absolute cognition URI key string; `null` on a miss or when the node has
+   *  no expected cognition URI. */
+  cognitionUri: string | null;
   /**
    * Whole-node observed status: the worst of `ownStatus` and `descendantStatus`
    * by `fresh` < `stale` < `conflict`. `null` means "no cognition" (neither the
@@ -151,11 +161,15 @@ export interface AddOperationResult {
   created: boolean | null;
   /** Created cognition kind on success; `null` on failure. */
   kind: CognitionKind | null;
-  /** Source-root-relative source path. */
+  /** Project-root-relative source path. */
   sourcePath: string;
-  /** Expected paired cognition path, cognition-root-relative; `null` on
+  /** Absolute source URI key string; `null` on failure. */
+  sourceUri: string | null;
+  /** Expected paired cognition path, project-root-relative; `null` on
    *  failure (no path materialized). */
   cognitionPath: string | null;
+  /** Absolute cognition URI key string; `null` on failure. */
+  cognitionUri: string | null;
   /** `null` on a miss or `no-projects`. */
   project: CoggitProjectContext | null;
   handbookId: 'leaf' | 'skeleton' | null;
@@ -203,11 +217,15 @@ export interface ResolveOperationError {
 
 export interface ResolveOperationResult {
   success: boolean;
-  /** Source-root-relative source path. */
+  /** Project-root-relative source path. */
   sourcePath: string;
-  /** Expected paired cognition path, cognition-root-relative; `null` when the
+  /** Absolute source URI key string; `null` when the node could not be re-read. */
+  sourceUri: string | null;
+  /** Expected paired cognition path, project-root-relative; `null` when the
    *  node could not be re-read after acceptance. */
   cognitionPath: string | null;
+  /** Absolute cognition URI key string; `null` when the node could not be re-read. */
+  cognitionUri: string | null;
   /** `null` on a miss or `no-projects`. */
   project: CoggitProjectContext | null;
   /** Registry key written on success; `null` on failure. */
@@ -343,12 +361,12 @@ export async function snapshotOperation(
       omittedChildrenCount,
       suggestedActions: suggestedActionsForSnapshot(counts, {
         sourcePath,
-        foundSourcePath: node?.relativePath ?? null,
+        foundSourcePath: node ? projectRelativeSourcePathOf(node) : null,
         maxDepth,
         projectCount: projects.length,
       }),
       projects: match ? [projectContext(match.project)] : projectsContext,
-      sourcePath,
+      sourcePath: node ? projectRelativeSourcePathOf(node) : sourcePath,
       found: match !== undefined,
       snapshot: null,
       node,
@@ -370,7 +388,9 @@ export async function snapshotOperation(
     omittedChildrenCount,
     suggestedActions: suggestedActionsForSnapshot(counts, {
       sourcePath: null,
-      foundSourcePath: projects.length === 1 ? '.' : null,
+      foundSourcePath: projects.length === 1
+        ? sourceIdentityToProjectRelative(projects[0].root, '.')
+        : null,
       maxDepth,
       projectCount: projects.length,
     }),
@@ -411,9 +431,11 @@ export async function statusOperation(
     return {
       found: false,
       sourcePath,
+      sourceUri: null,
       nodeKind: null,
       project: null,
       cognitionPath: null,
+      cognitionUri: null,
       status: null,
       ownStatus: null,
       descendantStatus: null,
@@ -437,12 +459,13 @@ export async function statusOperation(
     };
   }
 
-  const cognitionPath = cognitionRelativePath(match.node);
+  const resolvedSourcePath = projectRelativeSourcePathOf(match.node);
+  const resolvedCognitionPath = projectRelativeCognitionPathOf(match.node);
   const handbookId = handbookIdForNodeKind(match.node.kind);
   const inspection = inspectNodeStatus({
     node: match.node,
-    sourcePath: match.node.relativePath,
-    cognitionPath,
+    sourcePath: resolvedSourcePath,
+    cognitionPath: resolvedCognitionPath,
     handbookId,
     issueVisibility: options.issueVisibility,
   });
@@ -453,10 +476,12 @@ export async function statusOperation(
 
   return {
     found: true,
-    sourcePath: match.node.relativePath,
+    sourcePath: resolvedSourcePath,
+    sourceUri: uriKey(match.node.sourceUri),
     nodeKind: match.node.kind,
     project: projectContext(match.project),
-    cognitionPath,
+    cognitionPath: resolvedCognitionPath,
+    cognitionUri: match.node.cognitionUri ? uriKey(match.node.cognitionUri) : null,
     status: inspection.status,
     ownStatus: inspection.ownStatus,
     descendantStatus: inspection.descendantStatus,
@@ -500,14 +525,14 @@ export async function addOperation(
       kind: options.kind ?? 'auto',
       overwrite: options.overwrite ?? false,
     });
-    const sourcePath = match.node.relativePath;
-    const cognitionPath = toRelativeUriPath(match.project.root.cognitionRootUri, result.cognitionUri);
     return {
       success: true,
       created: result.created,
       kind: result.kind,
-      sourcePath,
-      cognitionPath,
+      sourcePath: result.sourcePath,
+      sourceUri: uriKey(match.node.sourceUri),
+      cognitionPath: result.cognitionPath,
+      cognitionUri: uriKey(result.cognitionUri),
       project: projectContext(match.project),
       handbookId: handbookIdForCognitionKind(result.kind),
       suggestedActions: [],
@@ -517,10 +542,11 @@ export async function addOperation(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const code = classifyAddError(message);
+    const projectRelativeSourcePath = projectRelativeSourcePathOf(match.node);
     return addFailure(
-      match.node.relativePath,
+      projectRelativeSourcePath,
       projectContext(match.project),
-      [recheckStatusAction(match.node.relativePath)],
+      [recheckStatusAction(projectRelativeSourcePath)],
       code,
       message,
     );
@@ -546,11 +572,13 @@ export async function resolveOperation(
         // leave a partial acceptance if the final reread then fails.
         const result = await candidate.markResolved(candidatePath);
         const node = await candidate.getNode(candidatePath);
-        const matchedSourcePath = node?.relativePath ?? candidatePath;
+        const matchedSourcePath = node ? projectRelativeSourcePathOf(node) : candidatePath;
         return {
           success: true,
           sourcePath: matchedSourcePath,
-          cognitionPath: node ? cognitionRelativePath(node) : null,
+          sourceUri: node ? uriKey(node.sourceUri) : null,
+          cognitionPath: node ? projectRelativeCognitionPathOf(node) : null,
+          cognitionUri: node?.cognitionUri ? uriKey(node.cognitionUri) : null,
           project: projectContext(candidate),
           sourceKey: result.sourceKey,
           verificationTimeMs: result.verificationTimeMs ?? null,
@@ -576,7 +604,7 @@ export async function resolveOperation(
         // `addOperation`'s raw-on-miss / canonical-on-found split. Pre-resolution
         // failures keep the raw caller input.
         const failureSourcePath = error instanceof ResolveAcceptanceError
-          ? error.canonicalSourcePath
+          ? sourceIdentityToProjectRelative(candidate.root, error.canonicalSourcePath)
           : sourcePath;
         return resolveFailure(
           failureSourcePath,
@@ -764,15 +792,26 @@ function uniqueActions(actions: readonly CoggitOperationAction[]): CoggitOperati
 }
 
 /**
- * Expected paired cognition path for a node, cognition-root-relative, or `null`
+ * Project-root-relative source path for a node (derived from the node's source
+ * identity and the configured `sourceRoot` name).
+ */
+function projectRelativeSourcePathOf(node: CoggitTreeNode): string {
+  return sourceIdentityToProjectRelative(node.root, node.relativePath);
+}
+
+/**
+ * Expected paired cognition path for a node, project-root-relative, or `null`
  * when the node has no expected cognition URI. This is the *expected* target
  * path derived from `node.cognitionUri`, not an existence check; both
  * `StatusOperationResult.cognitionPath` and `LocatedStatusIssue.cognitionPath`
  * carry this same meaning and null encoding.
  */
-function cognitionRelativePath(node: CoggitTreeNode): string | null {
+function projectRelativeCognitionPathOf(node: CoggitTreeNode): string | null {
   return node.cognitionUri
-    ? toRelativeUriPath(node.root.cognitionRootUri, node.cognitionUri)
+    ? cognitionIdentityToProjectRelative(
+        node.root,
+        toRelativeUriPath(node.root.cognitionRootUri, node.cognitionUri),
+      )
     : null;
 }
 
@@ -802,7 +841,9 @@ function addFailure(
     created: null,
     kind: null,
     sourcePath,
+    sourceUri: null,
     cognitionPath: null,
+    cognitionUri: null,
     project,
     handbookId: null,
     suggestedActions,
@@ -829,7 +870,9 @@ function resolveFailure(
   return {
     success: false,
     sourcePath,
+    sourceUri: null,
     cognitionPath,
+    cognitionUri: null,
     project,
     sourceKey: null,
     verificationTimeMs: null,

@@ -25,7 +25,7 @@ export function registerRoutesTool(
         sourcePath: z
           .string()
           .optional()
-          .describe('Path relative to the configured source root. Paths that include the configured source root prefix are normalized. Use "." for the source root itself.'),
+          .describe('Project-root-relative path. Use "." for the source root itself.'),
         depth: z
           .number()
           .int()

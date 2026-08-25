@@ -24,7 +24,7 @@ export function registerResolveTool(
       inputSchema: {
         sourcePath: z
           .string()
-          .describe('Source-root-relative path for the stale source/cognition node to resolve. Do not pass an absolute filesystem path.'),
+          .describe('Project-root-relative path for the stale source/cognition node to resolve. Do not pass an absolute filesystem path.'),
       },
       outputSchema: resolveOperationOutputSchema,
       annotations: {

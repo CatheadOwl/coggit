@@ -87,6 +87,11 @@ export function toMcpProjectContext(project: {
   };
 }
 
+/** Map an absolute URI key string to the model-facing clean path, or null. */
+export function externalPathOrNull(uriKey: string | null): string | null {
+  return uriKey ? externalPathFromString(uriKey) : null;
+}
+
 export function handbookUri(kind: CognitionKind): string {
   return `coggit://handbook/${kind}`;
 }

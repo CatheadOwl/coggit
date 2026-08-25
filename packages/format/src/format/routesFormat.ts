@@ -57,8 +57,8 @@ export function routesContentText(
   }
 
   lines.push(surface === 'cli'
-    ? 'Use route cognition values as cognition-root-relative grep/read targets for full context. Lines prefixed with [truncated: N] mark branches whose children were omitted; increase --depth or narrow the path to expand them.'
-    : 'Use structuredContent.routes cognition values as cognition-root-relative grep/read targets for full context, and continue deeper through child nodes as needed. Lines prefixed with [truncated: N] mark branches whose children were omitted; increase depth or pass sourcePath to expand them.');
+    ? 'Use route cognition values as project-root-relative grep/read targets for full context. Lines prefixed with [truncated: N] mark branches whose children were omitted; increase --depth or narrow the path to expand them.'
+    : 'Use structuredContent.routes cognition values as project-root-relative grep/read targets for full context, and continue deeper through child nodes as needed. Lines prefixed with [truncated: N] mark branches whose children were omitted; increase depth or pass sourcePath to expand them.');
 
   return lines.join('\n');
 }

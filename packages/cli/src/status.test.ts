@@ -89,7 +89,7 @@ suite('CLI status', () => {
 
       const output = await runStatus([project('project', calls, pathToUriComponents(tempRoot).path)], undefined);
 
-      assert.match(output, /Source: feature/);
+      assert.match(output, /Source: src\/feature/);
       assert.deepStrictEqual(calls, ['project:feature']);
     } finally {
       process.chdir(previousCwd);

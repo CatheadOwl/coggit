@@ -36,7 +36,7 @@ export function registerSnapshotTool(
         sourcePath: z
           .string()
           .optional()
-          .describe('Source-root-relative path to start from, e.g. src/main.ts, src/app, or ".". Do not pass an absolute filesystem path.'),
+          .describe('Project-root-relative path to start from, e.g. src/main.ts, src/app, or ".". Do not pass an absolute filesystem path.'),
         scope: z
           .enum(['tracked', 'untracked', 'issues', 'all'])
           .optional()

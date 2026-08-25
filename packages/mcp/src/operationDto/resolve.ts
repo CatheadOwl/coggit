@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RESOLVE_ERROR_CODES } from '@coggit/core/internal';
 import type { ResolveOperationResult } from '@coggit/core';
 import {
+  externalPathOrNull,
   mcpMaintenanceNextActionSchema,
   operationActionSchema,
   projectContextSchema,
@@ -13,7 +14,9 @@ import {
 export const resolveOperationOutputSchema = {
   success: z.boolean(),
   sourcePath: z.string(),
+  sourceUri: z.string().nullable(),
   cognitionPath: z.string().nullable(),
+  cognitionUri: z.string().nullable(),
   sourceKey: z.string().nullable(),
   verificationTimeMs: z.number().nullable(),
   project: projectContextSchema.nullable(),
@@ -28,7 +31,9 @@ export const resolveOperationOutputSchema = {
 export function resolveStructuredContent(result: ResolveOperationResult): {
   success: boolean;
   sourcePath: string;
+  sourceUri: string | null;
   cognitionPath: string | null;
+  cognitionUri: string | null;
   sourceKey: string | null;
   verificationTimeMs: number | null;
   project: z.infer<typeof projectContextSchema> | null;
@@ -39,7 +44,9 @@ export function resolveStructuredContent(result: ResolveOperationResult): {
   return {
     success: result.success,
     sourcePath: result.sourcePath,
+    sourceUri: externalPathOrNull(result.sourceUri),
     cognitionPath: result.cognitionPath,
+    cognitionUri: externalPathOrNull(result.cognitionUri),
     sourceKey: result.sourceKey,
     verificationTimeMs: result.verificationTimeMs,
     project: result.project ? toMcpProjectContext(result.project) : null,

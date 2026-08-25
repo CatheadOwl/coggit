@@ -57,9 +57,11 @@ function hit(overrides: {
   return {
     found: true,
     sourcePath: 'src/app/main.ts',
+    sourceUri: null,
     nodeKind: 'file',
     project: null,
     cognitionPath,
+    cognitionUri: null,
     status,
     ownStatus,
     descendantStatus,
@@ -86,9 +88,11 @@ function miss(): StatusOperationResult {
   return {
     found: false,
     sourcePath: 'src/never.ts',
+    sourceUri: null,
     nodeKind: null,
     project: null,
     cognitionPath: null,
+    cognitionUri: null,
     status: null,
     ownStatus: null,
     descendantStatus: null,

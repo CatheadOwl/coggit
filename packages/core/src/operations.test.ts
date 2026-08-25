@@ -202,7 +202,7 @@ suite('core operations', () => {
     assert.ok(result.nextScopes.includes('untracked'));
     assert.ok(result.suggestedActions.some((action) => action.operation === 'snapshot' && action.scope === 'untracked'));
     assert.ok(result.suggestedActions.some((action) => action.operation === 'snapshot' && action.scope === 'issues'));
-    assert.ok(result.suggestedActions.some((action) => action.operation === 'status' && action.sourcePath === '.'));
+    assert.ok(result.suggestedActions.some((action) => action.operation === 'status' && action.sourcePath === 'src'));
   });
 
   test('snapshot reports effective max depth and omitted children', async () => {
@@ -227,12 +227,12 @@ suite('core operations', () => {
     const result = await snapshotOperation([project], { sourcePath: 'feature', maxDepth: 0 });
 
     assert.strictEqual(result.found, true);
-    assert.strictEqual(result.sourcePath, 'feature');
+    assert.strictEqual(result.sourcePath, 'src/feature');
     assert.strictEqual(result.maxDepth, 0);
     assert.strictEqual(result.truncated, true);
     assert.ok(result.suggestedActions.some((action) => (
       action.operation === 'status'
-      && action.sourcePath === 'feature'
+      && action.sourcePath === 'src/feature'
     )));
   });
 
@@ -244,8 +244,8 @@ suite('core operations', () => {
     const result = await statusOperation([project], 'missing.ts');
 
     assert.strictEqual(result.found, true);
-    assert.strictEqual(result.sourcePath, 'missing.ts');
-    assert.strictEqual(result.project?.sourceRootUri, 'test:///workspace/src');
+    assert.strictEqual(result.sourcePath, 'src/missing.ts');
+    assert.strictEqual(result.project?.sourceRoot, 'src');
     assert.strictEqual(result.handbookId, 'leaf');
     assert.strictEqual(result.issueCount, 0);
     assert.strictEqual(result.ownIssueCount, 0);
@@ -258,7 +258,7 @@ suite('core operations', () => {
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
-      sourcePath: 'missing.ts',
+      sourcePath: 'src/missing.ts',
     }]);
   });
 
@@ -279,7 +279,7 @@ suite('core operations', () => {
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
-      sourcePath: 'missing.ts',
+      sourcePath: 'src/missing.ts',
     }]);
   });
 
@@ -333,16 +333,16 @@ suite('core operations', () => {
       code: 'sync-cognition-with-source',
       label: 'Sync cognition with source changes',
       handbookId: 'leaf',
-      sourcePath: 'stale.ts',
+      sourcePath: 'src/stale.ts',
     }, {
       code: 'resolve-stale-cognition',
       label: 'After syncing, accept the pair as reviewed',
       operation: 'resolve',
-      sourcePath: 'stale.ts',
+      sourcePath: 'src/stale.ts',
     }, {
       code: 'fill-in-cognition-content',
       label: 'Fill in cognition content',
-      sourcePath: 'stale.ts',
+      sourcePath: 'src/stale.ts',
     }]);
   });
 
@@ -457,7 +457,7 @@ suite('core operations', () => {
     const result = await statusOperation([project], '.');
 
     assert.strictEqual(result.found, true);
-    assert.deepStrictEqual(result.issues.map((issue) => issue.relativePath), ['stale.ts']);
+    assert.deepStrictEqual(result.issues.map((issue) => issue.relativePath), ['src/stale.ts']);
     assert.ok(result.issues.every((issue) => issue.code !== 'missing-cognition'));
     assert.strictEqual(result.issueCount, 1);
     assert.strictEqual(result.descendantIssueCount, 1);
@@ -477,11 +477,11 @@ suite('core operations', () => {
       code: 'recheck-status',
       label: 'Re-check the current status of this source path.',
       operation: 'status',
-      sourcePath: 'file.ts',
+      sourcePath: 'src/file.ts',
     }]);
   });
 
-  test('add returns source-root and cognition-root relative paths', async () => {
+  test('add returns project-relative source and cognition paths', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/workspace/src/missing.ts', 'export const missing = true;');
     const project = await makeProject(fs);
@@ -489,8 +489,8 @@ suite('core operations', () => {
     const result = await addOperation([project], 'src/missing.ts');
 
     assert.strictEqual(result.success, true);
-    assert.strictEqual(result.sourcePath, 'missing.ts');
-    assert.strictEqual(result.cognitionPath, 'missing.ts.md');
+    assert.strictEqual(result.sourcePath, 'src/missing.ts');
+    assert.strictEqual(result.cognitionPath, 'cognition/missing.ts.md');
     assert.deepStrictEqual(result.suggestedActions, []);
   });
 
@@ -504,8 +504,8 @@ suite('core operations', () => {
     });
 
     assert.strictEqual(result.success, true);
-    assert.strictEqual(result.sourcePath, 'coggit/src/core/watchPipeline.ts');
-    assert.strictEqual(result.cognitionPath, 'coggit/src/core/watchPipeline.ts.md');
+    assert.strictEqual(result.sourcePath, 'src/coggit/src/core/watchPipeline.ts');
+    assert.strictEqual(result.cognitionPath, 'cognition/coggit/src/core/watchPipeline.ts.md');
   });
 
   test('add path-not-found carries fuzzy hints and miss fields', async () => {
@@ -541,11 +541,11 @@ suite('core operations', () => {
 
     const backslashResult = await statusOperation([project], 'feature\\nested\\deep.ts');
     assert.strictEqual(backslashResult.found, true);
-    assert.strictEqual(backslashResult.sourcePath, 'feature/nested/deep.ts');
+    assert.strictEqual(backslashResult.sourcePath, 'src/feature/nested/deep.ts');
 
     const forwardResult = await statusOperation([project], 'feature/nested/deep.ts');
     assert.strictEqual(forwardResult.found, true);
-    assert.strictEqual(forwardResult.sourcePath, 'feature/nested/deep.ts');
+    assert.strictEqual(forwardResult.sourcePath, 'src/feature/nested/deep.ts');
   });
 
   test('snapshot normalizes backslashes in sourcePath', async () => {
@@ -556,11 +556,11 @@ suite('core operations', () => {
 
     const backslashResult = await snapshotOperation([project], { sourcePath: 'feature\\nested\\deep.ts' });
     assert.strictEqual(backslashResult.found, true);
-    assert.strictEqual(backslashResult.sourcePath, 'feature\\nested\\deep.ts');
+    assert.strictEqual(backslashResult.sourcePath, 'src/feature/nested/deep.ts');
 
     const forwardResult = await snapshotOperation([project], { sourcePath: 'feature/nested/deep.ts' });
     assert.strictEqual(forwardResult.found, true);
-    assert.strictEqual(forwardResult.sourcePath, 'feature/nested/deep.ts');
+    assert.strictEqual(forwardResult.sourcePath, 'src/feature/nested/deep.ts');
   });
 
   test('status strips source-root prefix from project-relative paths', async () => {
@@ -571,7 +571,7 @@ suite('core operations', () => {
     // sourceRoot is "src", project-relative "src/missing.ts" should be resolved
     const result = await statusOperation([project], 'src/missing.ts');
     assert.strictEqual(result.found, true);
-    assert.strictEqual(result.sourcePath, 'missing.ts');
+    assert.strictEqual(result.sourcePath, 'src/missing.ts');
   });
 
   test('review unchanged advances verification time and resolves mtime-only stale', async () => {
@@ -675,12 +675,12 @@ suite('core operations', () => {
     const review = await resolveOperation([project], 'src/tracked.ts');
     assert.strictEqual(review.success, false);
     assert.strictEqual(review.error?.code, 'content-changed');
-    assert.strictEqual(review.sourcePath, 'tracked.ts');
+    assert.strictEqual(review.sourcePath, 'src/tracked.ts');
     assert.deepStrictEqual(review.suggestedActions, [{
       code: 'recheck-status',
       label: 'Re-check the current status of this source path.',
       operation: 'status',
-      sourcePath: 'tracked.ts',
+      sourcePath: 'src/tracked.ts',
     }]);
   });
 
@@ -842,17 +842,17 @@ suite('core operations', () => {
     assert.strictEqual(entries.length, 1);
     const entry = entries[0];
     assert.strictEqual(entry.relation, 'descendant');
-    assert.strictEqual(entry.sourcePath, 'stale.ts');
+    assert.strictEqual(entry.sourcePath, 'src/stale.ts');
     assert.deepStrictEqual(entry.actions, [{
       code: 'sync-cognition-with-source',
       label: 'Sync cognition with source changes',
       handbookId: 'leaf',
-      sourcePath: 'stale.ts',
+      sourcePath: 'src/stale.ts',
     }, {
       code: 'resolve-stale-cognition',
       label: 'After syncing, accept the pair as reviewed',
       operation: 'resolve',
-      sourcePath: 'stale.ts',
+      sourcePath: 'src/stale.ts',
     }]);
   });
 });

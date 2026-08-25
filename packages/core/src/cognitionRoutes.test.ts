@@ -108,11 +108,9 @@ function makeProjectContext(): CoggitProjectContext {
     label: 'root',
     configUri: 'test:///workspace/.coggit/config.yaml',
     projectRootUri: 'test:///workspace',
-    sourceRootUri: 'test:///workspace/src',
-    cognitionRootUri: 'test:///workspace/cognition',
     sourceRoot: 'src',
     cognitionRoot: 'cognition',
-    sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
+    sourcePathRule: 'Use project-root-relative paths with CogGit tools.',
   };
 }
 
@@ -160,7 +158,7 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
     const [entry] = index.entries;
     assert.strictEqual(entry.key, 'core/status.ts');
     assert.strictEqual(entry.projectRelativeSourcePath, 'src/core/status.ts');
-    assert.strictEqual(entry.toolSourcePath, 'core/status.ts');
+    assert.strictEqual(entry.cognitionPath, 'cognition/core/status.ts.md');
     assert.strictEqual(entry.documentKind, 'leaf');
     assert.strictEqual(entry.metadataType, 'reference');
     assert.strictEqual(entry.identity.name, 'core-status');
@@ -171,7 +169,7 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
     assert.deepStrictEqual(entry.document.headings.map((heading) => heading.text), ['Status', 'Evidence']);
     assert.strictEqual(entry.document.headingCount, 3);
     assert.ok(entry.suggestedActions.some((action) =>
-      action.operation === 'status' && action.sourcePath === 'core/status.ts'
+      action.operation === 'status' && action.sourcePath === 'src/core/status.ts'
     ));
   });
 
@@ -185,7 +183,6 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
 
     assert.strictEqual(entry.key, 'no-frontmatter');
     assert.strictEqual(entry.projectRelativeSourcePath, null);
-    assert.strictEqual(entry.toolSourcePath, null);
     assert.strictEqual(entry.quality.metadataQuality, 'poor');
     assert.ok(entry.diagnostics.some((diagnostic) => diagnostic.code === 'missing-frontmatter'));
     assert.ok(index.diagnostics.some((diagnostic) => diagnostic.code === 'missing-frontmatter'));
@@ -228,7 +225,6 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
 
     assert.strictEqual(entry.key, 'standalone.ts');
     assert.strictEqual(entry.projectRelativeSourcePath, null);
-    assert.strictEqual(entry.toolSourcePath, null);
     assert.strictEqual(entry.quality.metadataQuality, 'good');
     assert.deepStrictEqual(entry.suggestedActions, []);
   });
@@ -250,7 +246,7 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
     const [entry] = index.entries;
 
     assert.strictEqual(entry.key, 'windows/path.ts');
-    assert.strictEqual(entry.cognitionPath, 'windows/path.ts.md');
+    assert.strictEqual(entry.cognitionPath, 'cognition/windows/path.ts.md');
   });
 
   test('reports duplicate cognition keys without last-file-wins replacement', async () => {
@@ -284,7 +280,7 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
     assert.ok(index.diagnostics.some((diagnostic) => diagnostic.code === 'duplicate-cognition-key'));
   });
 
-  test('preserves project-relative source path when it cannot become a tool path', async () => {
+  test('preserves a project-relative source path outside the source root', async () => {
     const fs = new MockFileSystem();
     fs.addDirectory('/workspace/cognition');
     fs.addFile('/workspace/cognition/other.ts.md', [
@@ -304,9 +300,13 @@ suite('cognitionRoutes — buildCognitionRoutes', () => {
     const [entry] = index.entries;
 
     assert.strictEqual(entry.projectRelativeSourcePath, 'external/other.ts');
-    assert.strictEqual(entry.toolSourcePath, null);
     assert.ok(entry.diagnostics.some((diagnostic) => diagnostic.code === 'source-path-outside-source-root'));
-    assert.deepStrictEqual(entry.suggestedActions, []);
+    assert.deepStrictEqual(entry.suggestedActions, [{
+      code: 'diagnose-source-path',
+      label: 'Diagnose this source path before explaining or editing it.',
+      operation: 'status',
+      sourcePath: 'external/other.ts',
+    }]);
   });
 
   test('can omit headings from document summaries', async () => {

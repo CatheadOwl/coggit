@@ -13,6 +13,7 @@ import type {
   PathKeyRecord,
 } from './types';
 import { joinUriPath, uriRelativePath } from './uri-utils';
+import { cognitionIdentityToProjectRelative } from './mapping';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;
@@ -51,13 +52,21 @@ export async function buildCognitionRoutes(
     const facts = parseCognitionDocumentFacts(file.cognitionPath, file.content, { mtimeMs: file.mtimeMs });
     const entryDiagnostics = [...facts.diagnostics];
     const registryEntry = registryLookup?.getEntry(facts.key);
-    const sourcePaths = sourcePathsFromRegistryEntry(root, registryEntry, entryDiagnostics);
-    const entry = buildEntry(facts, registryEntry ?? null, sourcePaths, entryDiagnostics, options);
+    const projectRelativeSourcePath = sourcePathFromRegistryEntry(root, registryEntry, entryDiagnostics);
+    const projectRelativeCognitionPath = cognitionIdentityToProjectRelative(root, facts.cognitionPath);
+    const entry = buildEntry(
+      facts,
+      registryEntry ?? null,
+      projectRelativeSourcePath,
+      projectRelativeCognitionPath,
+      entryDiagnostics,
+      options,
+    );
 
     const existing = entriesByKey.get(facts.key);
     if (existing) {
       const paths = duplicatePathsByKey.get(facts.key) ?? [existing.cognitionPath];
-      paths.push(file.cognitionPath);
+      paths.push(projectRelativeCognitionPath);
       duplicatePathsByKey.set(facts.key, paths);
       continue;
     }
@@ -154,7 +163,8 @@ async function collectCognitionMarkdownFiles(
 function buildEntry(
   facts: CognitionDocumentFacts,
   registryEntry: PathKeyRecord | null,
-  sourcePaths: { projectRelativeSourcePath: string | null; toolSourcePath: string | null },
+  projectRelativeSourcePath: string | null,
+  projectRelativeCognitionPath: string,
   diagnostics: CognitionDocumentDiagnostic[],
   options: BuildCognitionRoutesOptions,
 ): CognitionRoutesEntry {
@@ -171,9 +181,8 @@ function buildEntry(
 
   return {
     key: facts.key,
-    projectRelativeSourcePath: sourcePaths.projectRelativeSourcePath,
-    toolSourcePath: sourcePaths.toolSourcePath,
-    cognitionPath: facts.cognitionPath,
+    projectRelativeSourcePath,
+    cognitionPath: projectRelativeCognitionPath,
     documentKind: facts.kind,
     metadataType: typeof facts.frontmatter.metadata.type === 'string'
       ? facts.frontmatter.metadata.type
@@ -193,37 +202,29 @@ function buildEntry(
       staleRisk,
     },
     diagnostics,
-    suggestedActions: suggestedActionsForEntry(sourcePaths.toolSourcePath, registryEntry),
+    suggestedActions: suggestedActionsForEntry(projectRelativeSourcePath, registryEntry),
   };
 }
 
-function sourcePathsFromRegistryEntry(
+function sourcePathFromRegistryEntry(
   root: CoggitWorkspaceRoot,
   registryEntry: PathKeyRecord | undefined,
   diagnostics: CognitionDocumentDiagnostic[],
-): { projectRelativeSourcePath: string | null; toolSourcePath: string | null } {
+): string | null {
   if (!registryEntry?.sourcePath) {
-    return { projectRelativeSourcePath: null, toolSourcePath: null };
+    return null;
   }
 
   const sourceUri = joinRelativePath(root.projectRootUri, registryEntry.sourcePath);
-  const toolSourcePath = uriRelativePath(root.sourceRootUri, sourceUri);
-  if (toolSourcePath === undefined) {
+  if (uriRelativePath(root.sourceRootUri, sourceUri) === undefined) {
     diagnostics.push({
       code: 'source-path-outside-source-root',
       severity: 'warning',
       message: `Registry source path "${registryEntry.sourcePath}" is outside the configured source root.`,
     });
-    return {
-      projectRelativeSourcePath: registryEntry.sourcePath,
-      toolSourcePath: null,
-    };
   }
 
-  return {
-    projectRelativeSourcePath: registryEntry.sourcePath,
-    toolSourcePath: toolSourcePath || '.',
-  };
+  return registryEntry.sourcePath;
 }
 
 function headingsForOptions(
@@ -261,10 +262,10 @@ function projectMetadataQuality(
 }
 
 function suggestedActionsForEntry(
-  toolSourcePath: string | null,
+  projectRelativeSourcePath: string | null,
   _registryEntry: PathKeyRecord | null,
 ) {
-  if (!toolSourcePath) {
+  if (!projectRelativeSourcePath) {
     return [];
   }
 
@@ -272,7 +273,7 @@ function suggestedActionsForEntry(
     code: 'diagnose-source-path',
     label: 'Diagnose this source path before explaining or editing it.',
     operation: 'status' as const,
-    sourcePath: toolSourcePath,
+    sourcePath: projectRelativeSourcePath,
   }];
 }
 

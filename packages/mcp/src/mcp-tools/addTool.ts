@@ -25,7 +25,7 @@ export function registerAddTool(
       inputSchema: {
         sourcePath: z
           .string()
-          .describe('Source-root-relative path to an existing source file or folder, e.g. src/main.ts or src/app. Do not pass an absolute filesystem path.'),
+          .describe('Project-root-relative path to an existing source file or folder, e.g. src/main.ts or src/app. Do not pass an absolute filesystem path.'),
         kind: z
           .enum(['auto', 'leaf', 'skeleton'])
           .optional()

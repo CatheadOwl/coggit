@@ -79,8 +79,9 @@ export interface CognitionRoutes {
 
 export interface CognitionRoutesEntry {
 	key: string;
+	/** Bound source path, project-root-relative (from the registry binding). */
 	projectRelativeSourcePath: string | null;
-	toolSourcePath: string | null;
+	/** Cognition document path, project-root-relative. */
 	cognitionPath: string;
 	documentKind: CognitionDocumentKind;
 	metadataType: string | null;

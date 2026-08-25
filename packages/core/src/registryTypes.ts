@@ -13,8 +13,9 @@ export interface AcceptedPair {
 export interface PathKeyRecord {
 	/**
 	 * Bound source file or folder path, relative to the CogGit project root
-	 * (the directory containing .coggit/). This is registry storage, not the
-	 * source-root-relative path used by tool-facing operation DTOs.
+	 * (the directory containing .coggit/). This is registry storage, aligned
+	 * with the project-root-relative coordinate used by tool-facing operation
+	 * DTOs.
 	 */
 	sourcePath: string | null;
 	/** Cognition type, matching config template definition. */

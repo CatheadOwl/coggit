@@ -3,9 +3,12 @@ export type SnapshotOperationScope = 'tracked' | 'untracked' | 'issues' | 'all';
 export interface CoggitProjectContext {
 	label: string;
 	configUri: string;
+	/**
+	 * The consumer anchor: every project-root-relative path on the operation-DTO
+	 * surface resolves against this URI. `sourceRootUri` / `cognitionRootUri`
+	 * are internal and intentionally absent.
+	 */
 	projectRootUri: string;
-	sourceRootUri: string;
-	cognitionRootUri: string;
 	/** Project-root-relative source root path, e.g. "codebase" - mirrors config.yaml source_root. */
 	sourceRoot: string;
 	/** Project-root-relative cognition root path, e.g. "codebase_cognition" - mirrors config.yaml cognition_root. */
@@ -39,6 +42,7 @@ export interface CoggitOperationAction {
 	 * structured (adapter-mappable) even without an `operation`.
 	 */
 	handbookId?: 'leaf' | 'skeleton';
+	/** Project-root-relative source path (the same coordinate as operation `sourcePath` inputs). */
 	sourcePath?: string;
 	scope?: SnapshotOperationScope;
 	maxDepth?: number;

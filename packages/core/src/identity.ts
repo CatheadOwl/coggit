@@ -3,10 +3,18 @@
  *
  * Registry keys are cognition-root-derived identities used in
  * .coggit/registry.json. They are path-shaped keys, not general source paths.
- * Registry keys are cognition-root-derived identities. Path anchors are
- * specified in the registry path contract spec.
+ * Path anchors are specified in the registry path contract spec.
  * No IO, no state -- just string transformations.
+ *
+ * The `.md`/`README` source↔cognition pairing convention lives in `mapping.ts`
+ * (`sourceIdentityToCognitionIdentity` / `cognitionIdentityToSourceIdentity`);
+ * this module reuses it for key derivation rather than re-deriving it.
  */
+
+import {
+  cognitionIdentityToSourceIdentity,
+  sourceIdentityToCognitionIdentity,
+} from './mapping';
 
 /** Minimum content length (in chars) for rename pairing to avoid false positives on empty template skeletons. */
 export const MIN_RENAME_PAIRING_LENGTH = 100;
@@ -64,22 +72,15 @@ export function cognitionPathToKey(relativePath: string): string {
 		throw new Error(`cognitionPathToKey: path must end with .md, got "${normalized}"`);
 	}
 
-	const withoutMd = normalized.slice(0, -'.md'.length);
-
-	if (withoutMd === '') {
-		return '/';
+	const mapped = cognitionIdentityToSourceIdentity(normalized);
+	if (!mapped) {
+		// Free-form document (e.g. `CODE_MAP.md`): key is the `.md`-stripped path.
+		return normalized.slice(0, -'.md'.length);
 	}
-
-	const lastSegment = withoutMd.split('/').pop()!;
-	if (lastSegment === 'README') {
-		if (withoutMd === 'README') {
-			return '/';
-		}
-		// Strip "/README" from end, append "/" to mark as folder key
-		return withoutMd.slice(0, withoutMd.length - '/README'.length) + '/';
+	if (mapped.kind === 'leaf') {
+		return mapped.sourceIdentity;
 	}
-
-	return withoutMd;
+	return mapped.sourceIdentity === '.' ? '/' : `${mapped.sourceIdentity}/`;
 }
 
 /**
@@ -101,18 +102,7 @@ export function cognitionPathToKey(relativePath: string): string {
  * @example isTrackedCognitionFile("src/core/MODULES.md")    // false
  */
 export function isTrackedCognitionFile(relativePath: string): boolean {
-	const normalized = relativePath.replace(/\\/g, '/');
-	const basename = normalized.split('/').pop() ?? normalized;
-
-	// README.md → folder cognition, always tracked
-	if (basename === 'README.md') {
-		return true;
-	}
-
-	// Strip trailing .md and check if the remaining basename contains a dot
-	// (indicating a source-like extension, e.g. "types.ts.md" → "types.ts")
-	const withoutMd = basename.slice(0, -'.md'.length);
-	return withoutMd.includes('.');
+	return cognitionIdentityToSourceIdentity(relativePath) !== undefined;
 }
 
 /**
@@ -128,14 +118,7 @@ export function isTrackedCognitionFile(relativePath: string): boolean {
  */
 export function keyToCognitionPath(key: string, kind: 'leaf' | 'folder'): string {
 	if (kind === 'leaf') {
-		return key + '.md';
+		return `${key}.md`;
 	}
-
-	// kind === 'folder'
-	if (key === '/') {
-		return 'README.md';
-	}
-
-	const normalized = key.endsWith('/') ? key : key + '/';
-	return normalized + 'README.md';
+	return sourceIdentityToCognitionIdentity(key === '/' ? '.' : key.replace(/\/+$/u, ''), 'folder');
 }

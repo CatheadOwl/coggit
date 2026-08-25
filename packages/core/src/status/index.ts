@@ -37,6 +37,18 @@ import type { AcceptedPair } from '../registryTypes';
 
 export { isTemplateContent } from './evidence';
 
+/** Project-root-relative source path for a node (the operation-DTO display form). */
+function projectRelativeSourcePath(node: CoggitTreeNode): string {
+	return toRelativeUriPath(node.root.projectRootUri, node.sourceUri);
+}
+
+/** Project-root-relative expected cognition path, or `null` when the node has none. */
+function projectRelativeCognitionPath(node: CoggitTreeNode): string | null {
+	return node.cognitionUri
+		? toRelativeUriPath(node.root.projectRootUri, node.cognitionUri)
+		: null;
+}
+
 export function projectStatusResultToNodeStatus(status: StatusResult): NodeStatusResult {
 	return {
 		observedStatus: status.observedStatus,
@@ -183,10 +195,8 @@ export function collectSubtreeIssues(node: CoggitTreeNode): LocatedStatusIssue[]
 				nodeKind: current.kind,
 				sourceUri: current.sourceUri,
 				cognitionUri: current.cognitionUri,
-				cognitionPath: current.cognitionUri
-					? toRelativeUriPath(current.root.cognitionRootUri, current.cognitionUri)
-					: null,
-				relativePath: current.relativePath,
+				cognitionPath: projectRelativeCognitionPath(current),
+				relativePath: projectRelativeSourcePath(current),
 				hasPairedCognition: current.ownStatus?.coverage?.ownCognition === 'present',
 				issue,
 			});
@@ -379,7 +389,7 @@ function synthesizeDescendantTriageActions(node: CoggitTreeNode): CoggitOperatio
 	}
 	return synthesizeNodeOperationActions(
 		node,
-		node.relativePath,
+		projectRelativeSourcePath(node),
 		triageHandbookId(node),
 	);
 }

@@ -15,7 +15,7 @@ import {
  * re-inspection.
  */
 export interface StatusTriageView {
-  /** Source-root-relative path of the inspected node. */
+  /** Project-root-relative path of the inspected node. */
   sourcePath: string;
   /** Total projected issue count over the inspected node and its subtree. */
   issueCount: number;
