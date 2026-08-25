@@ -463,9 +463,9 @@ suite('CogGit Ghost Tree', () => {
 				const issues = collectSubtreeIssues(root);
 				const query = querySubtreeIssues(root);
 
-				assert.deepStrictEqual(issues.map((issue) => issue.relativePath), ['.', 'src/a.ts', 'src/b.ts']);
+				assert.deepStrictEqual(issues.map((issue) => issue.relativePath), ['src', 'src/a.ts', 'src/b.ts']);
 				assert.deepStrictEqual(issues.map((issue) => issue.issue.diagnostic.code), ['missing-cognition', 'outdated-cognition', 'outdated-cognition']);
-				assert.deepStrictEqual(query.ownIssues.map((issue) => issue.relativePath), ['.']);
+				assert.deepStrictEqual(query.ownIssues.map((issue) => issue.relativePath), ['src']);
 				assert.deepStrictEqual(query.descendantIssues.map((issue) => issue.relativePath), ['src/a.ts', 'src/b.ts']);
 				assert.strictEqual(query.totalIssues, 3);
 				assert.strictEqual(countSubtreeIssues(root), 3);
@@ -656,7 +656,7 @@ suite('CogGit Ghost Tree', () => {
 				assert.doesNotMatch(text, /Own status:/);
 				assert.match(text, /Own issues: 0/);
 				assert.match(text, /Descendant issues: 1/);
-				assert.match(text, /Status: Stale\nSource: src\n\nOwn issues: 0/);
+				assert.match(text, /Status: Stale\nSource: src\/src\n\nOwn issues: 0/);
 				assert.match(text, /Own issues: 0\n\nDescendant issues: 1/);
 				assert.doesNotMatch(text, /^→ /m);
 				assert.doesNotMatch(text, /^This node:/m);
@@ -689,7 +689,7 @@ suite('CogGit Ghost Tree', () => {
 
 				assert.strictEqual(text, [
 					'**Status**: Stale',
-					'**Source**: src',
+					'**Source**: src/src',
 					'',
 					'**Own issues**: 0',
 					'',
@@ -709,7 +709,7 @@ suite('CogGit Ghost Tree', () => {
 				assert.strictEqual(nodeTooltip(node), [
 					'**Status**: Fresh',
 					'**Source**: src/present.ts',
-					'**Cognition**: src/present.ts.md',
+					'**Cognition**: cog/src/present.ts.md',
 					'',
 					'**Own issues**: 0',
 					'',
@@ -769,7 +769,7 @@ suite('CogGit Ghost Tree', () => {
 				assert.doesNotMatch(cliText, /Cognition: coggit_prompt\/evals\/runs\/README\.md/);
 				assert.doesNotMatch(cliText, /^Actions:/m);
 				assert.strictEqual(tooltip, [
-					'**Source**: coggit_prompt/evals/runs',
+					'**Source**: src/coggit_prompt/evals/runs',
 					'**Cognition**: Not created (add on demand)',
 					'',
 					'**Own issues**: 0',
@@ -792,7 +792,7 @@ suite('CogGit Ghost Tree', () => {
 
 				assert.doesNotMatch(renderStatusAgentInspectionText(inspection), /^Cognition:/m);
 				assert.strictEqual(nodeTooltip(node), [
-					'**Source**: broken',
+					'**Source**: src/broken',
 					'',
 					'**Own issues**: 0',
 					'',
