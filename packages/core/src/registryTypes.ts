@@ -8,7 +8,7 @@ export interface AcceptedPair {
 /**
  * A single cognition-keyed record in .coggit/registry.json.
  *
- * Path anchors are specified in docs/registry-path-contract.md.
+ * Path anchors are specified in the registry path contract spec.
  */
 export interface PathKeyRecord {
 	/**

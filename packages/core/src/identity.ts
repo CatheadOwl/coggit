@@ -3,7 +3,8 @@
  *
  * Registry keys are cognition-root-derived identities used in
  * .coggit/registry.json. They are path-shaped keys, not general source paths.
- * See docs/registry-path-contract.md for registry/tool path anchors.
+ * Registry keys are cognition-root-derived identities. Path anchors are
+ * specified in the registry path contract spec.
  * No IO, no state -- just string transformations.
  */
 
