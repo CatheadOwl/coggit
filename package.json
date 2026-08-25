@@ -21,8 +21,9 @@
     "lint": "eslint packages/vscode/src packages/core/src packages/runtime-node/src packages/format/src packages/mcp/src packages/mcp-runtime-support/src packages/cli/src",
     "test:compile": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\" && tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
     "test:watch": "tsc -p tsconfig.test.json -w --outDir out",
-    "pretest": "pnpm run test:compile && pnpm run compile",
-    "test": "vscode-test"
+    "test": "pnpm run test:unit",
+    "test:unit": "pnpm run build && pnpm run test:compile && mocha",
+    "test:integration": "pnpm run compile && pnpm run test:compile && pnpm exec vscode-test"
   },
   "devDependencies": {
     "@coggit/core": "workspace:*",
@@ -39,6 +40,7 @@
     "@vscode/test-electron": "^3.0.0",
     "commander": "^12.1.0",
     "eslint": "^10.5.0",
+    "mocha": "^11.7.6",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
     "yaml": "^2.8.1",

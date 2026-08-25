@@ -1,0 +1,11 @@
+{
+  "ui": "tdd",
+  "spec": [
+    "out/packages/core/src/**/*.test.js",
+    "out/packages/runtime-node/src/**/*.test.js",
+    "out/packages/cli/src/**/*.test.js",
+    "out/packages/mcp/src/**/*.test.js",
+    "out/packages/mcp-runtime-support/src/**/*.test.js"
+  ],
+  "timeout": 10000
+}
