@@ -10,6 +10,9 @@ async function main() {
 		sourcemap: false,
 		sourcesContent: false,
 		platform: 'node',
+		loader: {
+			'.md': 'text',
+		},
 		define: {
 			__COGGIT_PACKAGE_VERSION__: JSON.stringify(packageJson.version),
 		},
@@ -19,7 +22,7 @@ async function main() {
 	const contexts = await Promise.all([
 		// CLI executable (bin: coggit). Published SDK deps stay external (single
 		// semantic source of truth); @parcel/watcher resolves its native binary
-		// through a dynamic require (ADR 0014), so it must stay external. Private
+		// through a dynamic require, so it must stay external. Private
 		// @coggit/format + @coggit/mcp-runtime-support and no-shared-semantics
 		// commander are bundled.
 		esbuild.context({

@@ -13,12 +13,22 @@
         "rootDir": ".",
         "noEmit": false,
         "strict": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "paths": {
+            "@coggit/core": ["./packages/core/src/public.ts"],
+            "@coggit/core/*": ["./packages/core/src/*"],
+            "@coggit/runtime-node": ["./packages/runtime-node/src/public.ts"],
+            "@coggit/runtime-node/*": ["./packages/runtime-node/src/*"],
+            "@coggit/format": ["./packages/format/src/public.ts"],
+            "@coggit/mcp": ["./packages/mcp/src/public.ts"],
+            "@coggit/mcp-runtime-support": ["./packages/mcp-runtime-support/src/public.ts"]
+        }
     },
     "include": [
         "packages/vscode/src",
         "packages/core/src",
         "packages/runtime-node/src",
+        "packages/format/src",
         "packages/mcp/src",
         "packages/mcp-runtime-support/src",
         "packages/cli/src"

@@ -1,20 +1,23 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "module": "Node16",
-    "target": "ES2022",
-    "lib": [
-      "ES2022"
-    ],
-    "types": [
-      "node",
-      "mocha"
-    ],
-    "sourceMap": true,
     "rootDir": "src",
-    "strict": true,
-    "skipLibCheck": true
+    "paths": {
+      "@coggit/core": ["../core/src/public.ts"],
+      "@coggit/core/*": ["../core/src/*"],
+      "@coggit/runtime-node": ["../runtime-node/src/public.ts"],
+      "@coggit/runtime-node/*": ["../runtime-node/src/*"],
+      "@coggit/format": ["../format/src/public.ts"],
+      "@coggit/mcp": ["../mcp/src/public.ts"],
+      "@coggit/mcp-runtime-support": ["../mcp-runtime-support/src/public.ts"]
+    }
   },
-  "include": [
-    "src"
+  "include": ["src"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../runtime-node" },
+    { "path": "../format" },
+    { "path": "../mcp" },
+    { "path": "../mcp-runtime-support" }
   ]
 }

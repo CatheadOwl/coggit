@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/mcp-runtime-support" },
+    { "path": "packages/format" },
+    { "path": "packages/runtime-node" },
+    { "path": "packages/mcp" },
+    { "path": "packages/cli" },
+    { "path": "packages/vscode" }
+  ]
+}

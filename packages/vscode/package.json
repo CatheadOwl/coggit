@@ -245,10 +245,10 @@
     "vscode:prepublish": "pnpm run package",
     "build": "node build.js",
     "package": "node build.js --production",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc -b",
     "watch": "npm-run-all -p watch:esbuild watch:tsc",
     "watch:esbuild": "node build.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "watch:tsc": "tsc -b --watch",
     "package:vsix": "npx --yes @vscode/vsce package --out dist/coggit.vsix",
     "publish:marketplace": "npx --yes @vscode/vsce publish"
   },

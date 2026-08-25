@@ -1,14 +1,20 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "composite": false,
     "declaration": true,
     "emitDeclarationOnly": true,
     "noEmit": false,
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "@coggit/core": ["../core/dist/public.d.ts"],
+      "@coggit/core/*": ["../core/dist/*"],
+      "@coggit/runtime-node": ["../runtime-node/dist/public.d.ts"],
+      "@coggit/runtime-node/*": ["../runtime-node/dist/*"],
+      "@coggit/format": ["../format/dist/public.d.ts"],
+      "@coggit/mcp": ["../mcp/dist/public.d.ts"],
+      "@coggit/mcp-runtime-support": ["../mcp-runtime-support/dist/public.d.ts"]
+    }
   },
-  "include": [
-    "src/public.ts",
-    "src/internal.ts",
-    "src/markdown.d.ts"
-  ]
+  "include": ["src/public.ts", "src/internal.ts", "src/markdown.d.ts"]
 }

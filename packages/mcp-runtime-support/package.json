@@ -1,7 +1,7 @@
 {
   "name": "@coggit/mcp-runtime-support",
   "version": "0.2.0",
-  "description": "CogGit MCP runtime install and launcher support (shared caller-neutral, ADR 0018).",
+  "description": "CogGit MCP runtime install and launcher support (shared caller-neutral).",
   "private": true,
   "license": "MIT",
   "repository": {
@@ -24,7 +24,7 @@
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "pnpm run clean && tsc -p tsconfig.build.json && node build.js",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc -b",
     "watch": "node build.js --watch"
   },
   "devDependencies": {

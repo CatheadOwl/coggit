@@ -3,3 +3,11 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+
+# Compiled artifacts (tsc inline output — should go to out/)
+# Safe: tracked .js files (build.js etc.) are not affected by gitignore.
+*.js
+*.d.ts
+*.js.map
+*.tsbuildinfo
+

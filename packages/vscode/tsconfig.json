@@ -1,29 +1,24 @@
 {
-    "compilerOptions": {
-        "module": "Node16",
-        "target": "ES2022",
-        "lib": [
-            "ES2022"
-        ],
-        "types": [
-            "node",
-            "mocha"
-        ],
-        "sourceMap": true,
-        "rootDir": "src",
-        "strict": true, /* enable all strict type-checking options */
-        "skipLibCheck": true, /* skip type checking of .d.ts files */
-        /* Additional Checks */
-        // "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-        // "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-        // "noUnusedParameters": true,  /* Report errors on unused parameters. */
-    },
-    "include": [
-        "src"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist",
-        "out"
-    ]
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "paths": {
+      "@coggit/core": ["../core/src/public.ts"],
+      "@coggit/core/*": ["../core/src/*"],
+      "@coggit/runtime-node": ["../runtime-node/src/public.ts"],
+      "@coggit/runtime-node/*": ["../runtime-node/src/*"],
+      "@coggit/format": ["../format/src/public.ts"],
+      "@coggit/mcp": ["../mcp/src/public.ts"],
+      "@coggit/mcp-runtime-support": ["../mcp-runtime-support/src/public.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "out"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../runtime-node" },
+    { "path": "../format" },
+    { "path": "../mcp" },
+    { "path": "../mcp-runtime-support" }
+  ]
 }
