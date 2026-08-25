@@ -16,7 +16,7 @@ This repository is a pnpm-workspace monorepo with one package per delivery surfa
 | Shared format | [`packages/format`](packages/format) | `@coggit/format` (private, bundled) | Pure status/tree text rendering. |
 | MCP runtime support | [`packages/mcp-runtime-support`](packages/mcp-runtime-support) | `@coggit/mcp-runtime-support` (private, bundled) | User-level MCP runtime install / launcher management. |
 
-The published npm surface is `coggit`, `@coggit/core`, `@coggit/runtime-node`, and `@coggit/mcp`; the VS Code extension ships as a Marketplace VSIX, and `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into their consumers (ADR 0019).
+The published npm surface is `coggit`, `@coggit/core`, `@coggit/runtime-node`, and `@coggit/mcp`; the VS Code extension ships as a Marketplace VSIX, and `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into their consumers.
 
 ## Quick start
 

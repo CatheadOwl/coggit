@@ -59,7 +59,7 @@ class NodeLockFileStore {
   async tryCreate(lockPath: string, lock: LockFile): Promise<boolean> {
     try {
       await nodeFs.mkdir(path.dirname(lockPath), { recursive: true });
-      // 'wx' (O_EXCL) is racy on NFS; accepted limitation, see ADR 0014.
+      // 'wx' (O_EXCL) is racy on NFS; accepted limitation.
       const handle = await nodeFs.open(lockPath, 'wx');
       try {
         await handle.writeFile(JSON.stringify(lock, null, 2), 'utf8');

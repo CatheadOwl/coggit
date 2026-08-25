@@ -11,7 +11,7 @@ async function main() {
 		platform: 'node',
 		// `@coggit/core` stays a real dependency (single semantic source of
 		// truth); `@parcel/watcher` resolves its native binary through a dynamic
-		// require (ADR 0014), so both must stay external like node built-ins.
+		// require, so both must stay external like node built-ins.
 		external: ['@coggit/core', '@coggit/core/internal', '@parcel/watcher'],
 		logLevel: 'silent',
 	};
