@@ -148,6 +148,8 @@ export type {
   StatusPresentationIssue,
   StatusPresentationView,
 } from './status/statusPresentation';
+export { tryGetCognitionPath } from './status/lookupCognition';
+export type { CognitionLookupHit } from './status/lookupCognition';
 export {
   projectMaintenancePresentation,
   renderMaintenancePresentation,
