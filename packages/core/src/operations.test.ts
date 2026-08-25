@@ -245,6 +245,8 @@ suite('core operations', () => {
 
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.sourcePath, 'src/missing.ts');
+    assert.strictEqual(result.sourceUri, 'test:///workspace/src/missing.ts');
+    assert.strictEqual(result.cognitionUri, 'test:///workspace/cognition/missing.ts.md');
     assert.strictEqual(result.project?.sourceRoot, 'src');
     assert.strictEqual(result.handbookId, 'leaf');
     assert.strictEqual(result.issueCount, 0);
@@ -491,6 +493,8 @@ suite('core operations', () => {
     assert.strictEqual(result.success, true);
     assert.strictEqual(result.sourcePath, 'src/missing.ts');
     assert.strictEqual(result.cognitionPath, 'cognition/missing.ts.md');
+    assert.strictEqual(result.sourceUri, 'test:///workspace/src/missing.ts');
+    assert.strictEqual(result.cognitionUri, 'test:///workspace/cognition/missing.ts.md');
     assert.deepStrictEqual(result.suggestedActions, []);
   });
 
