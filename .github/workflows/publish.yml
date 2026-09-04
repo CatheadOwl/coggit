@@ -1,8 +1,7 @@
 name: Publish npm
 
-# Publishes the npm-lane packages in dependency order. The publish list starts
-# with @coggit/core only; append runtime-node, cli, mcp as their publish
-# gates close (see the npm-publish release handbook in the meta repo).
+# Publishes the npm-lane packages in dependency order. All four published
+# packages are on the registry; version bumps ride a `v*` tag.
 #
 # Requires the NPM_TOKEN repo secret: a npm Granular Access Token with
 # "Read and write" packages permission (granular tokens bypass interactive 2FA).
@@ -62,7 +61,7 @@ jobs:
       contents: read
     env:
       # Tag pushes publish this fixed list; workflow_dispatch overrides it.
-      PUBLISH_LIST: core
+      PUBLISH_LIST: core runtime-node cli mcp
     steps:
       - name: Checkout
         uses: actions/checkout@v4
