@@ -12,8 +12,13 @@
     "coggit": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "pnpm run clean && node build.js",
@@ -26,9 +31,6 @@
     "@parcel/watcher": "^2.6.0"
   },
   "devDependencies": {
-    "@coggit/format": "workspace:*",
-    "@coggit/mcp": "workspace:*",
-    "@coggit/mcp-runtime-support": "workspace:*",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "commander": "^12.1.0",
