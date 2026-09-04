@@ -33,6 +33,12 @@
     "@coggit/core": "workspace:*",
     "@coggit/runtime-node": "workspace:*"
   },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@coggit/format": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",

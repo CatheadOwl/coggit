@@ -1,4 +1,5 @@
 const esbuild = require('esbuild');
+const packageJson = require('./package.json');
 
 const watch = process.argv.includes('--watch');
 
@@ -11,6 +12,9 @@ async function main() {
 		platform: 'node',
 		loader: {
 			'.md': 'text',
+		},
+		define: {
+			__COGGIT_PACKAGE_VERSION__: JSON.stringify(packageJson.version),
 		},
 		// `@coggit/core` and `@coggit/runtime-node` are published runtime
 		// dependencies (single semantic source of truth); `@coggit/format` is

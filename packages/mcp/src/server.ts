@@ -12,12 +12,20 @@ export interface CreateCoggitMcpServerOptions {
   initialProjects?: readonly CoggitProject[];
 }
 
+declare const __COGGIT_PACKAGE_VERSION__: string | undefined;
+
 export function createCoggitMcpServer(
   services: CoggitServices,
   options: CreateCoggitMcpServerOptions = {},
 ): McpServer {
   const server = new McpServer(
-    { name: 'coggit', version: '0.1.0' },
+    {
+      name: 'coggit',
+      version:
+        typeof __COGGIT_PACKAGE_VERSION__ === 'string'
+          ? __COGGIT_PACKAGE_VERSION__
+          : '0.0.0-dev',
+    },
     {
       capabilities: { tools: {}, resources: {}, prompts: {} },
       instructions: MCP_SERVER_INSTRUCTIONS,
