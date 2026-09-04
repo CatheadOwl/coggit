@@ -19,6 +19,7 @@
     "package": "pnpm run build && pnpm run check-types && pnpm run lint && pnpm --filter coggit-vscode run package",
     "check-types": "tsc -b",
     "lint": "eslint packages/vscode/src packages/core/src packages/runtime-node/src packages/format/src packages/mcp/src packages/mcp-runtime-support/src packages/cli/src",
+    "verify:publish-face": "node scripts/verify-publish-face.mjs",
     "test:compile": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\" && tsc -p tsconfig.test.json --outDir out && node scripts/copy-test-assets.js",
     "test:watch": "tsc -p tsconfig.test.json -w --outDir out",
     "test": "pnpm run test:unit",

@@ -1,76 +1,27 @@
 ---
-description: npm publish face rules seed — expected shape of the published @coggit/* / coggit packages; consumed by writing (advisory) and by SDK-face reviews (embedded verbatim, findings cite PKG-n ids).
+description: npm publish-face rules seed — expected shape of the published @coggit/* / coggit packages; consumed by writing (advisory via AGENTS.md) and by SDK-face reviews (embedded verbatim, findings cite PKG-n ids).
 ---
 
 # Package publish-face rules
 
-Rules SSOT seed for the npm publish face (packages `coggit`, `@coggit/core`,
+Rules SSOT seed for the npm publish face (`coggit`, `@coggit/core`,
 `@coggit/runtime-node`, `@coggit/mcp`; `@coggit/format` and
-`@coggit/mcp-runtime-support` are private). Dual consumption: writing-time
-(advisory, loaded via the `AGENTS.md` pointer) and review-time (SDK-face
-review dispatch prompts embed this file verbatim; findings cite rule ids).
-Rules state only the expected shape; rationale lives in the cognition layer /
-decision history. Ids never renumber once cited; a semantic change retires the
-id and issues a new one; retired ids are marked "deprecated", never reused.
+`@coggit/mcp-runtime-support` are private). Probes are mechanical arms —
+violations are prefixed with the rule id. Ids never renumber once cited; a
+semantic change retires the id and issues a new one.
 
-- **PKG-1〈external-published-deps〉**: Published runtime dependencies
-  (`@coggit/core`, `@coggit/runtime-node`, their `/internal` subpaths) stay
-  external in every esbuild bundle of an npm-published package — single
-  semantic source of truth. Probe: read the `external` array in
-  `packages/{core,runtime-node,mcp,cli}/build.js`. Baseline: should-fix.
-- **PKG-2〈bundled-types-not-leaked〉**: No `.d.ts` reachable from a package's
-  `exports` entry may import anything outside the package's declared
-  dependencies (`dependencies` + `peerDependencies`); public type surface
-  must resolve from declared deps alone. Bundled dev-time deps appearing only
-  in non-reachable internal `dist/**` d.ts files are not leaks. Probe: read
-  the entry `dist/<entry>.d.ts`, collect its transitive relative imports, then
-  grep that reachable set for bare module imports not in the package's
-  declared deps (for `@coggit/mcp` the reachable set is
-  `dist/public.d.ts` → `dist/server.d.ts` + `dist/mcp-stdio.d.ts`). Baseline:
-  blocker.
-- **PKG-3〈native-deps-external-and-declared〉**: Native-binding dependencies
-  (`@parcel/watcher`) stay external in bundles AND are declared runtime
-  dependencies of the package whose code reaches them. Probe: `external` array
-  in `packages/{runtime-node,cli}/build.js` + `dependencies` in
-  `packages/runtime-node/package.json`. Baseline: should-fix.
-- **PKG-4〈publish-via-pnpm〉**: `workspace:*` protocol dependencies require
-  publishing through `pnpm publish` (never `npm publish`, which ships the
-  literal `workspace:*` and breaks installs). Probe: none. Baseline:
-  should-fix.
-- **PKG-5〈per-package-readme〉**: Every npm-published package has its own
-  `README.md` shipped in the tarball (one-line positioning, minimal usage
-  example, link to the repo root docs; private packages exempt). Probe:
-  `Test-Path packages/{core,runtime-node,mcp,cli}/README.md`. Baseline:
-  should-fix.
-- **PKG-6〈exports-mirror-dist〉**: Every `exports`/`main`/`types`/`bin` target
-  in a published `package.json` exists in `dist` after build, and `files`
-  covers all shipped artifacts. Probe:
-  `pnpm -r run build` then resolve each target path. Baseline: blocker when a
-  target is missing.
-- **PKG-7〈version-single-source〉**: Shipped artifacts report the package
-  version via build-time injection (e.g. `__COGGIT_PACKAGE_VERSION__` define),
-  never hardcoded version literals in source. Probe:
-  `grep -rnE "version: '[0-9]+\.[0-9]+" packages/*/src --include=*.ts`
-  (should only hit injected constants). Baseline: nit.
+- **PKG-1〈deps-external〉**: every `dependencies` entry of a published package is external in its `build.js`. Probe: `node scripts/verify-publish-face.mjs`. Baseline: should-fix.
+- **PKG-2〈reachable-types-declared〉**: every bare import in a `.d.ts` reachable from `exports` type entries is declared in dependencies/peerDependencies. Probe: `node scripts/verify-publish-face.mjs`. Baseline: blocker.
+- **PKG-3〈native-external-and-declared〉**: native-binding deps are external and declared runtime dependencies. Probe: `node scripts/verify-publish-face.mjs` (PKG-1 arm). Baseline: should-fix.
+- **PKG-4〈publish-via-pnpm〉**: publishing uses `pnpm publish`, never `npm publish`. Probe: none. Baseline: should-fix.
+- **PKG-5〈per-package-readme〉**: every published package ships a package-root `README.md`. Probe: `node scripts/verify-publish-face.mjs`. Baseline: should-fix.
+- **PKG-6〈exports-resolve〉**: every exports/main/types/bin target exists in the built package. Probe: `node scripts/verify-publish-face.mjs` (run after build). Baseline: blocker.
+- **PKG-7〈version-single-source〉**: no hardcoded semver literals in shipped sources; versions come from build-time injection. Probe: `node scripts/verify-publish-face.mjs`. Baseline: nit.
 
-## intentional-design exemptions (cite this list to dismiss a finding)
+## intentional-design exemptions
 
-Reviewers: the following are deliberate design, not defects —
-
-- **`./internal` subpaths are published on purpose**: `@coggit/core/internal`
-  and `@coggit/runtime-node/internal` are consumed at runtime by the published
-  `coggit` CLI (see `external` in `packages/cli/build.js`); they are a
-  trusted-consumer face with no stability promise — publishing them is
-  correct, third-party use is merely discouraged.
-- **`coggit` CLI's `dist/mcp-stdio.js` bundles everything** (`@coggit/mcp`,
-  `@coggit/core`, `@coggit/runtime-node`): it is copied by the launcher to
-  `~/.coggit/runtimes/...` where no `@coggit/*` are installed — an explicit
-  exemption to PKG-1.
-- **CJS-only output**: bundles are CommonJS with no ESM condition; Node-first
-  consumers only, by design for v1.
-- **Private packages bundled into consumers**: `@coggit/format` and
-  `@coggit/mcp-runtime-support` are `private: true` and inlined — never
-  expected on npm.
-- **`@coggit/mcp` bundles the MCP SDK and zod at runtime**: the code size /
-  single-tarball tradeoff is intentional; only the *type leak* (PKG-2) is a
-  finding, not the bundling itself.
+- `./internal` subpaths are published on purpose (the published `coggit` CLI consumes them at runtime); no stability promise to third parties.
+- The `coggit` CLI's `dist/mcp-stdio.js` bundles everything — exemption to PKG-1 (launcher copies it outside any `@coggit/*` install).
+- CJS-only output for v1.
+- `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into consumers.
+- `@coggit/mcp` bundles the MCP SDK and zod at runtime; only type leaks (PKG-2) are findings.
