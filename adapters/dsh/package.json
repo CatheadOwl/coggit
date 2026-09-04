@@ -80,10 +80,5 @@
     "@types/react": "^18.3.0",
     "react": "^18.2.0",
     "typescript": "^5.9.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@parcel/watcher"
-    ]
   }
 }

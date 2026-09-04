@@ -1,6 +1,11 @@
 packages:
   - .
 
+# @parcel/watcher (via @coggit/runtime-node) needs its native build script
+# allowed; it ships prebuilt binaries for common platforms.
+allowBuilds:
+  '@parcel/watcher': true
+
 # @deepseek-ai/* are host-provided peers (see peerDependencies). The host's
 # prerelease line cannot be resolved from the registry (cross-referenced ^0.1.2
 # ranges are unsatisfiable by prerelease versions), so peer auto-install must
@@ -10,3 +15,5 @@ autoInstallPeers: false
 
 minimumReleaseAgeExclude:
   - '@catheadowl/dsh-eval@0.1.0'
+  - '@coggit/core@0.2.0'
+  - '@coggit/runtime-node@0.2.0'
