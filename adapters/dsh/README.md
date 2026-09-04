@@ -91,11 +91,10 @@ Dependency faces (asymmetric by rule):
   (the host-maintained install closure — this package is an installed-closure
   consumer, not a source consumer). Rebuild: `pnpm --dir . relink`. A bare
   `pnpm install` purges the junction — always re-run `relink` after install.
-- **Library face** — `@coggit/core` + `@coggit/runtime-node` as `link:` into
-  `../../packages/*` (they keep their own `node_modules`, so `link:` transitive
-  resolution is safe; run the root workspace `pnpm install` first).
+- **Library face** — `@coggit/core` + `@coggit/runtime-node` as registry
+  versions (`^0.2.0`, installed from npm; no `link:` into `../../packages/*`).
   `@catheadowl/dsh-extras` and dev-only `@catheadowl/dsh-eval` are registry
-  versions.
+  versions too.
 - **Host source (the only residual)** — `build:client` uses the host's tsdown
   and the unpublished `clientBundle` preset via the machine-level `DSH_REPO`
   anchor (no committed path carries it; the script fails loud with remedy when
