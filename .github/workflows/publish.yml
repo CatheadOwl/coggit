@@ -59,6 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write  # OIDC trusted publishing (npm trusts CatheadOwl/coggit + publish.yml)
     env:
       # Tag pushes publish this fixed list; workflow_dispatch overrides it.
       PUBLISH_LIST: core runtime-node cli mcp
