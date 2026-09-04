@@ -5,8 +5,9 @@ All notable changes to `@coggit/core` are documented here. Format follows
 
 ## [0.2.0] - 2026-09-05
 
-Initial npm publish. `0.2.0` matches the monorepo split source (see ADR 0017 /
-ADR 0019); there is no npm release for `0.1.0`.
+Initial npm publish. `0.2.0` matches the monorepo split source (the
+physical-split and published-surface decisions); there is no npm release for
+`0.1.0`.
 
 ### Added
 

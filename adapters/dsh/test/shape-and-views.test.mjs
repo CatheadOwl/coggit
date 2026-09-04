@@ -610,7 +610,7 @@ test('statusProjection hit routes descendant next steps only through triage (own
     'Before authoring or editing this cognition, load skill "coggit-handbook-skeleton" with the skill tool.',
   ])
   // The stale descendant is routed through its descendant row: its sync-leaf +
-  // resolve tags come from the shared actionLegend (ADR 0015 descendant
+  // resolve tags come from the shared actionLegend (core's descendant-routing
   // routing; matches the CLI text surface, which also shows the row + legend).
   assert.equal(view.descendantIssueCount, 1)
   assert.deepEqual(view.descendantIssues[0], {

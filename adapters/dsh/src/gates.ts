@@ -1,6 +1,6 @@
 /**
  * Register the coggit-misplaced gate through gates' hard-import `registerGate`
- * face (ADR 0003). Replaces the former structural-`*Like` + `ctx.inject` +
+ * face (the upstream gates-face design). Replaces the former structural-`*Like` + `ctx.inject` +
  * `declare module` ceremony: the gate definition type and the registration
  * wiring now come from `@catheadowl/dsh-extras/gates/register`.
  */

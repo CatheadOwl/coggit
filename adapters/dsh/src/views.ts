@@ -57,7 +57,8 @@ export interface StatusMissView {
  * legend entries define each tag once, and counts split own vs descendant.
  * A node with no paired cognition is NOT an issue — it is the materialization
  * branch: `cognitionPresence: "missing"` with empty rows/legends, and the
- * create-cognition add action carried by `surfaceHints` (upstream ADR 0015).
+ * create-cognition add action carried by `surfaceHints` (core's
+ * materialization-branch decision).
  * The adapter only appends its `surfaceHints` addressing (tool calls / skill
  * loads); nothing here is re-derived from issue `code` or `status: null`.
  */
