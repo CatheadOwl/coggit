@@ -1,0 +1,105 @@
+name: Publish npm
+
+# Publishes the npm-lane packages in dependency order. The publish list starts
+# with @coggit/core only; append runtime-node, cli, mcp as their publish
+# gates close (see worker_handbook/coggit-release/npm-publish.md).
+#
+# Requires the NPM_TOKEN repo secret: a npm Granular Access Token with
+# "Read and write" packages permission (granular tokens bypass interactive 2FA).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Space-separated packages to publish (dirs under packages/), dependency order'
+        required: false
+        default: 'core'
+  pull_request:
+
+jobs:
+  dry-run:
+    name: Pack dry-run (no publish)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Publish-face probes
+        run: node scripts/verify-publish-face.mjs
+
+      - name: Pack dry-run
+        run: |
+          for pkg in core runtime-node cli mcp; do
+            echo "::group::packages/$pkg"
+            (cd "packages/$pkg" && npm pack --dry-run)
+            echo "::endgroup::"
+          done
+
+  publish:
+    name: Publish (dependency order)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Tag pushes publish this fixed list; workflow_dispatch overrides it.
+      PUBLISH_LIST: core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Resolve package list
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.packages }}" ]; then
+            echo "PUBLISH_LIST=${{ github.event.inputs.packages }}" >> "$GITHUB_ENV"
+          fi
+          echo "Publishing: $PUBLISH_LIST"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Publish-face probes
+        run: node scripts/verify-publish-face.mjs
+
+      - name: Publish (pnpm, workspace:* rewrite)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -e
+          for pkg in $PUBLISH_LIST; do
+            echo "::group::publish packages/$pkg"
+            (cd "packages/$pkg" && pnpm publish --access public --no-git-checks)
+            echo "::endgroup::"
+          done
