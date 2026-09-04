@@ -1,11 +1,13 @@
 # Changelog
 
-All notable changes to `coggit` (CLI) are documented here. Format follows
+All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
 ## [0.2.0] - 2026-09-05
 
-Initial npm publish (`npm i -g coggit`). `0.2.0` matches the monorepo split
+Initial npm publish (`npm i -g @coggit/cli`; the `coggit` bin name is
+unchanged — the unscoped `coggit` registry name was rejected as too similar
+to the existing `cz-git` package). `0.2.0` matches the monorepo split
 source; there is no npm release for `0.1.0`.
 
 ### Added

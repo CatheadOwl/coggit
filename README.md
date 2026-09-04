@@ -32,7 +32,7 @@ pnpm run lint         # eslint across package sources
 pnpm run test         # compile tests + build + run the vscode-test suite
 ```
 
-Package-level commands use pnpm filters, e.g. `pnpm --filter coggit build` or `pnpm --filter coggit-vscode run package:vsix`.
+Package-level commands use pnpm filters, e.g. `pnpm --filter @coggit/cli build` or `pnpm --filter coggit-vscode run package:vsix`.
 
 ## Documentation
 
