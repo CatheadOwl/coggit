@@ -7,7 +7,7 @@ import type { CoggitService } from './service.js'
 
 /**
  * Local structural mirror of prompt-middleware's frozen `RelatesResolveResult`
- * (see `workunits/prompt-middleware/spec/declarative-enricher-api.md`). The
+ * (the spec lives with the prompt-middleware project). The
  * provider is registered through the `ctx.inject(['promptMiddleware'], ...)`
  * soft dependency, so the plugin keeps no hard type/runtime import of
  * prompt-middleware (same registration shape as any_routes' breadcrumb).
