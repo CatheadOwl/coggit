@@ -18,12 +18,16 @@ id and issues a new one; retired ids are marked "deprecated", never reused.
   external in every esbuild bundle of an npm-published package — single
   semantic source of truth. Probe: read the `external` array in
   `packages/{core,runtime-node,mcp,cli}/build.js`. Baseline: should-fix.
-- **PKG-2〈bundled-types-not-leaked〉**: No dependency that is a devDependency
-  (i.e. bundled into `dist`) may appear in an import line of any published
-  `.d.ts`; public type surface must resolve from the package's declared
-  dependencies alone. Probe:
-  `grep -rE "from '(zod|@modelcontextprotocol[^']*|commander|yaml)'" packages/*/dist --include=*.d.ts`
-  (empty output = pass). Baseline: blocker.
+- **PKG-2〈bundled-types-not-leaked〉**: No `.d.ts` reachable from a package's
+  `exports` entry may import anything outside the package's declared
+  dependencies (`dependencies` + `peerDependencies`); public type surface
+  must resolve from declared deps alone. Bundled dev-time deps appearing only
+  in non-reachable internal `dist/**` d.ts files are not leaks. Probe: read
+  the entry `dist/<entry>.d.ts`, collect its transitive relative imports, then
+  grep that reachable set for bare module imports not in the package's
+  declared deps (for `@coggit/mcp` the reachable set is
+  `dist/public.d.ts` → `dist/server.d.ts` + `dist/mcp-stdio.d.ts`). Baseline:
+  blocker.
 - **PKG-3〈native-deps-external-and-declared〉**: Native-binding dependencies
   (`@parcel/watcher`) stay external in bundles AND are declared runtime
   dependencies of the package whose code reaches them. Probe: `external` array
