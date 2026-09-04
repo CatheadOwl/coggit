@@ -3,6 +3,11 @@
 All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.2.1] - 2026-09-05
+
+Patch release exercising the tag-triggered publish workflow (first CI
+publish; no functional changes).
+
 ## [0.2.0] - 2026-09-05
 
 Initial npm publish (`npm i -g @coggit/cli`; the `coggit` bin name is

@@ -1,6 +1,6 @@
 {
   "name": "@coggit/mcp-runtime-support",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CogGit MCP runtime install and launcher support (shared caller-neutral).",
   "private": true,
   "license": "MIT",

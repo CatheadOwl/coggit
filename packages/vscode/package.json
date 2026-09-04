@@ -2,7 +2,7 @@
   "name": "coggit-vscode",
   "displayName": "CogGit",
   "description": "Track source-linked Markdown cognition files with freshness status, evidence, and MCP tools for agent workflows.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "coggit",
   "license": "MIT",
   "private": true,

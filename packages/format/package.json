@@ -1,6 +1,6 @@
 {
   "name": "@coggit/format",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CogGit shared presentation formatting for tree, snapshot, status, route, tooltip, and clipboard text.",
   "private": true,
   "license": "MIT",

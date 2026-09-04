@@ -1,6 +1,6 @@
 {
   "name": "@coggit/runtime-node",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CogGit Node runtime: local filesystem, config, registry, lock, URI, and service-construction primitives.",
   "license": "MIT",
   "repository": {

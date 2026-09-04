@@ -3,6 +3,11 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.2.1] - 2026-09-05
+
+Patch release exercising the tag-triggered publish workflow (first CI
+publish; no functional changes).
+
 ## [0.2.0] - 2026-09-05
 
 Initial npm publish. `0.2.0` matches the monorepo split source (the
