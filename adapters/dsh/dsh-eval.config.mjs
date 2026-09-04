@@ -1,7 +1,9 @@
 export default {
   profile: 'coggit-headless',
-  // eval 临时工作区非 git 仓库，doc-link gate 会以 git 报错成 blocking 并
-  // splice 反馈步骤耗尽脚本——本包 case 测插件面、不测 gate 交互，默认禁
-  // gates 行（gate 交互 case 可在 case 级声明 disableRows: [] 显式恢复）。
+  // The eval temp workspace is not a git repository, so the doc-link gate
+  // fails with a git error as blocking and splices feedback steps that
+  // exhaust the script — this package's cases test the plugin surface, not
+  // gate interaction, so the gates row is disabled by default (a
+  // gate-interaction case can restore it per-case with disableRows: []).
   disableRows: ['gates'],
 }

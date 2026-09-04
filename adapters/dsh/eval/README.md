@@ -1,5 +1,5 @@
 ---
-description: coggit 的规范化 eval：行为验证与理解设计评审分层
+description: normalized coggit eval — behavior verification and comprehension design review as separate layers
 ---
 
 # coggit eval
@@ -7,27 +7,26 @@ description: coggit 的规范化 eval：行为验证与理解设计评审分层
 ```text
 eval/
   behavior/
-    real/       # 自然语言意图 → 工具选择；真实模型
-    mock/       # 脚本化模型 → 真实工具管线；确定性
-    _fixtures/  # 行为 case 共用工作区 fixture
+    real/       # natural-language intent → tool choice; real model
+    mock/       # scripted model → real tool pipeline; deterministic
+    _fixtures/  # shared workspace fixtures for behavior cases
   comprehension/
-    coggit.review.mjs  # 理解实验定义
-    fixtures.json      # 冻结 SDK 输入
-    prompt.md          # reviewer 盲评问题
-    rubric.md          # 人工答案键，不发送给 reviewer
+    coggit.review.mjs  # comprehension experiment definition
+    fixtures.json      # frozen SDK outputs
+    prompt.md          # blind-review questions for the reviewer
+    rubric.md          # human answer key, never sent to the reviewer
 ```
 
-行为层使用共享 `dsh-eval` trace matcher；理解层使用共享、与模型执行器无关的 review experiment，再由 dsh headless adapter 启动 fresh reviewer。两层回答不同问题：前者验证“agent 有没有调用正确工具、写入是否成功”，后者验证“工具输出是否足以让新模型知道下一步”。
+The behavior layer uses the shared `dsh-eval` trace matcher; the comprehension layer uses the shared, model-executor-agnostic review experiment, with a dsh headless adapter launching a fresh reviewer. The two layers answer different questions: the former verifies "did the agent call the right tool, did the write succeed", the latter verifies "is the tool output enough for a fresh model to know the next step".
 
 ```bash
-# 工作目录：仓库根（pnpm --dir 形式从任意目录均可）
-pnpm --dir dsh-plugin-dev/coggit eval:mock
-pnpm --dir dsh-plugin-dev/coggit eval
-pnpm --dir dsh-plugin-dev/coggit eval:review
+# Working directory: coggit repo root (pnpm --dir works from anywhere)
+pnpm --dir adapters/dsh eval:mock
+pnpm --dir adapters/dsh eval
+pnpm --dir adapters/dsh eval:review
 
-# 理解实验 dry-run，不调用模型
-node dsh-plugin-dev/eval/bin/dsh-review.mjs --dry-run \
-  dsh-plugin-dev/coggit/eval/comprehension
+# Comprehension experiment dry-run, no model calls
+dsh-review --dry-run adapters/dsh/eval/comprehension
 ```
 
-所有生成物进入 case/experiment 旁的 `.runs/`，不作为 SSOT 提交。
+All generated artifacts go into `.runs/` next to the case/experiment and are never committed as SSOT.

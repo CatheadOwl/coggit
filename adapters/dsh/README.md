@@ -1,5 +1,5 @@
 ---
-description: @catheadowl/dsh-coggit —— CogGit runtime adapter for dsh:ctx.coggit 服务门面 + coggit_* 工具 + handbook 技能 + 顶层 system-prompt section
+description: @catheadowl/dsh-coggit — CogGit runtime adapter for dsh: ctx.coggit service facade + coggit_* tools + handbook skills + top-level system-prompt section
 ---
 
 # @catheadowl/dsh-coggit

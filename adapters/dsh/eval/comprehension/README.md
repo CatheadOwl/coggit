@@ -1,5 +1,5 @@
 # coggit comprehension review
 
-这是 [`../README.md`](../README.md) 所述的理解设计评审。`fixtures.json` 保存稳定的 raw SDK result；`coggit.review.mjs` 通过当前 `lib/types/views.js` 实时投影，再由共享框架组装成 `prompt.md` 中的盲评任务。这样 projection 变化会自然进入实验，同时 reviewer 看不到设计意图与 `rubric.md`。
+This is the comprehension design review described in [`../README.md`](../README.md). `fixtures.json` holds stable raw SDK results; `coggit.review.mjs` projects them live through the current `lib/types/views.js`, and the shared framework assembles them into the blind-review task in `prompt.md`. This way projection changes flow naturally into the experiment, while the reviewer never sees the design intent or `rubric.md`.
 
-运行与产物约定见 [`../README.md`](../README.md)。人工评分时逐项检查：字段含义、每个 scenario 的下一步动作、以及 reviewer 报告的 red flag 是否已经属于 rubric 中登记的 intentional design。
+Run instructions and artifact conventions live in [`../README.md`](../README.md). When grading manually, check item by item: field meanings, the next action for each scenario, and whether each red flag the reviewer reported is already registered as intentional design in the rubric.
