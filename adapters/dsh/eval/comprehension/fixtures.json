@@ -1,0 +1,650 @@
+{
+  "tools": [
+    {
+      "name": "coggit_status",
+      "description": "Get detailed diagnosis for one selected source file or folder. Defaults to the source root when no sourcePath is given: the root view diagnoses the whole project — the root's own status, every issue-bearing subtree node, and each one's next-step hints — as the entry point before focusing on a specific sourcePath. A hit returns the canonical compact status view: `ownIssueCount`/`descendantIssueCount`, log-style issue rows (`level`, `issueTags`, `actionTags`, `optionalActionTags`) split into `ownIssues`/`descendantIssues`, and `issueLegend`/`actionLegend` defining each tag once — descendant next steps appear in the descendant rows' action tags, not in the top-level hints; a miss returns `found: false` with fuzzy `pathHints` candidates. A node with no paired cognition is not an issue — status reports `cognitionPresence: \"missing\"` with empty rows and a `create-cognition` add action, the materialization branch. Every result carries a `surfaceHints` array of next-step instructions (a tool call, a skill load, or a path retry); for a stale pair the handbook-sync skill hint leads the resolve call. Use it before explaining or editing a selected node, and again after editing paired cognition.",
+      "parameters": {
+        "sourcePath": {
+          "type": "string",
+          "description": "Source-root-relative path, e.g. src/main.ts or src/app. Defaults to root when not provided. Do not pass an absolute filesystem path."
+        }
+      }
+    },
+    {
+      "name": "coggit_add",
+      "description": "Create a missing CogGit cognition document for an existing source file or folder and register it for tracking. This writes files; keep overwrite false unless the user explicitly asks to regenerate existing cognition. This is the immediate write surface when the paired cognition is clearly missing. The created template is not a completed cognition document; on success the surfaceHints name the handbook skill to load with the skill tool before completing it.",
+      "parameters": {
+        "sourcePath": {
+          "type": "string",
+          "required": true,
+          "description": "Source-root-relative path to an existing source file or folder, e.g. src/main.ts or src/app. Do not pass an absolute filesystem path."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "leaf",
+            "skeleton"
+          ],
+          "description": "auto chooses leaf for files and skeleton for folders. Use leaf only for files and skeleton only for folders. Defaults to auto."
+        },
+        "overwrite": {
+          "type": "boolean",
+          "description": "Replace existing cognition content when true. Defaults to false. Do not enable without explicit user approval."
+        }
+      }
+    },
+    {
+      "name": "coggit_resolve",
+      "description": "Resolve a stale CogGit source/cognition state by accepting the current pair as reviewed. Call after inspecting the current source and paired cognition and confirming the cognition correctly covers the source. Re-records the accepted pair to the current contents. This is an explicit review declaration, not an automatic check.",
+      "parameters": {
+        "sourcePath": {
+          "type": "string",
+          "required": true,
+          "description": "Source-root-relative path for the stale source/cognition node to resolve. Do not pass an absolute filesystem path."
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "status-hit-fresh",
+      "tool": "coggit_status",
+      "result": {
+        "found": true,
+        "sourcePath": "coggit/src/client/locales.ts",
+        "cognitionPath": "coggit/src/client/locales.ts.md",
+        "status": "fresh",
+        "ownStatus": "fresh",
+        "handbookId": "leaf",
+        "suggestedActions": [],
+        "pathHints": [],
+        "inspection": {
+          "sourcePath": "coggit/src/client/locales.ts",
+          "cognitionPath": "coggit/src/client/locales.ts.md",
+          "cognitionPresence": "present",
+          "nodeKind": "file",
+          "status": "fresh",
+          "ownStatus": "fresh",
+          "descendantStatus": null,
+          "issueSummary": {
+            "total": 0,
+            "own": 0,
+            "descendant": 0
+          },
+          "subtreeIssues": {
+            "own": [],
+            "descendant": []
+          },
+          "suggestedActions": [],
+          "triage": [],
+          "handbookId": "leaf"
+        }
+      }
+    },
+    {
+      "id": "status-hit-stale",
+      "tool": "coggit_status",
+      "result": {
+        "found": true,
+        "sourcePath": "coggit/src/views.ts",
+        "cognitionPath": "coggit/src/views.ts.md",
+        "status": "stale",
+        "ownStatus": "stale",
+        "handbookId": "leaf",
+        "suggestedActions": [
+          {
+            "code": "sync-cognition-with-source",
+            "label": "Sync cognition with source changes",
+            "handbookId": "leaf",
+            "sourcePath": "coggit/src/views.ts"
+          },
+          {
+            "code": "resolve-stale-cognition",
+            "label": "After syncing, accept the pair as reviewed",
+            "operation": "resolve",
+            "sourcePath": "coggit/src/views.ts"
+          }
+        ],
+        "pathHints": [],
+        "inspection": {
+          "sourcePath": "coggit/src/views.ts",
+          "cognitionPath": "coggit/src/views.ts.md",
+          "cognitionPresence": "present",
+          "nodeKind": "file",
+          "status": "stale",
+          "ownStatus": "stale",
+          "descendantStatus": null,
+          "issueSummary": {
+            "total": 1,
+            "own": 1,
+            "descendant": 0
+          },
+          "subtreeIssues": {
+            "own": [
+              {
+                "relativePath": "coggit/src/views.ts",
+                "cognitionPath": "coggit/src/views.ts.md",
+                "issue": {
+                  "diagnostic": {
+                    "code": "outdated-cognition",
+                    "severity": "warning",
+                    "message": "Stale cognition."
+                  },
+                  "actions": [
+                    {
+                      "label": "Sync cognition with source changes"
+                    }
+                  ]
+                }
+              }
+            ],
+            "descendant": []
+          },
+          "suggestedActions": [
+            {
+              "code": "sync-cognition-with-source",
+              "label": "Sync cognition with source changes",
+              "handbookId": "leaf",
+              "sourcePath": "coggit/src/views.ts"
+            },
+            {
+              "code": "resolve-stale-cognition",
+              "label": "After syncing, accept the pair as reviewed",
+              "operation": "resolve",
+              "sourcePath": "coggit/src/views.ts"
+            }
+          ],
+          "triage": [
+            {
+              "sourcePath": "coggit/src/views.ts",
+              "cognitionPath": "coggit/src/views.ts.md",
+              "nodeKind": "file",
+              "relation": "own",
+              "issues": [
+                {
+                  "relativePath": "coggit/src/views.ts",
+                  "cognitionPath": "coggit/src/views.ts.md",
+                  "issue": {
+                    "diagnostic": {
+                      "code": "outdated-cognition",
+                      "severity": "warning",
+                      "message": "Stale cognition."
+                    },
+                    "actions": [
+                      {
+                        "label": "Sync cognition with source changes"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "handbookId": "leaf"
+        }
+      }
+    },
+    {
+      "id": "status-hit-null",
+      "tool": "coggit_status",
+      "result": {
+        "found": true,
+        "sourcePath": "coggit/src/client/locales.ts",
+        "cognitionPath": "coggit/src/client/locales.ts.md",
+        "status": null,
+        "ownStatus": null,
+        "handbookId": "leaf",
+        "suggestedActions": [
+          {
+            "code": "create-cognition",
+            "label": "Create cognition file",
+            "operation": "add",
+            "sourcePath": "coggit/src/client/locales.ts"
+          }
+        ],
+        "pathHints": [],
+        "inspection": {
+          "sourcePath": "coggit/src/client/locales.ts",
+          "cognitionPath": "coggit/src/client/locales.ts.md",
+          "cognitionPresence": "missing",
+          "nodeKind": "file",
+          "status": null,
+          "ownStatus": null,
+          "descendantStatus": null,
+          "issueSummary": {
+            "total": 0,
+            "own": 0,
+            "descendant": 0
+          },
+          "subtreeIssues": {
+            "own": [],
+            "descendant": []
+          },
+          "suggestedActions": [
+            {
+              "code": "create-cognition",
+              "label": "Create cognition file",
+              "operation": "add",
+              "sourcePath": "coggit/src/client/locales.ts"
+            }
+          ],
+          "triage": [],
+          "handbookId": "leaf"
+        }
+      }
+    },
+    {
+      "id": "status-hit-folder",
+      "tool": "coggit_status",
+      "result": {
+        "found": true,
+        "sourcePath": "coggit/src",
+        "cognitionPath": "coggit/src/README.md",
+        "status": "stale",
+        "ownStatus": "stale",
+        "handbookId": "skeleton",
+        "suggestedActions": [
+          {
+            "code": "sync-cognition-with-source",
+            "label": "Sync folder README with child structure changes",
+            "handbookId": "skeleton",
+            "sourcePath": "coggit/src"
+          },
+          {
+            "code": "resolve-stale-cognition",
+            "label": "After syncing, accept the pair as reviewed",
+            "operation": "resolve",
+            "sourcePath": "coggit/src"
+          }
+        ],
+        "pathHints": [],
+        "inspection": {
+          "sourcePath": "coggit/src",
+          "cognitionPath": "coggit/src/README.md",
+          "cognitionPresence": "present",
+          "nodeKind": "folder",
+          "status": "stale",
+          "ownStatus": "stale",
+          "descendantStatus": "stale",
+          "issueSummary": {
+            "total": 2,
+            "own": 1,
+            "descendant": 1
+          },
+          "subtreeIssues": {
+            "own": [
+              {
+                "relativePath": "coggit/src",
+                "cognitionPath": "coggit/src/README.md",
+                "issue": {
+                  "diagnostic": {
+                    "code": "folder-structure-outdated",
+                    "severity": "warning",
+                    "message": "Stale folder README."
+                  },
+                  "actions": [
+                    {
+                      "label": "Sync folder README with child structure changes"
+                    }
+                  ]
+                }
+              }
+            ],
+            "descendant": [
+              {
+                "relativePath": "coggit/src/views.ts",
+                "cognitionPath": "coggit/src/views.ts.md",
+                "issue": {
+                  "diagnostic": {
+                    "code": "outdated-cognition",
+                    "severity": "warning",
+                    "message": "Stale cognition."
+                  },
+                  "actions": [
+                    {
+                      "label": "Sync cognition with source changes"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "suggestedActions": [
+            {
+              "code": "sync-cognition-with-source",
+              "label": "Sync folder README with child structure changes",
+              "handbookId": "skeleton",
+              "sourcePath": "coggit/src"
+            },
+            {
+              "code": "resolve-stale-cognition",
+              "label": "After syncing, accept the pair as reviewed",
+              "operation": "resolve",
+              "sourcePath": "coggit/src"
+            }
+          ],
+          "triage": [
+            {
+              "sourcePath": "coggit/src",
+              "cognitionPath": "coggit/src/README.md",
+              "nodeKind": "folder",
+              "relation": "own",
+              "issues": [
+                {
+                  "relativePath": "coggit/src",
+                  "cognitionPath": "coggit/src/README.md",
+                  "issue": {
+                    "diagnostic": {
+                      "code": "folder-structure-outdated",
+                      "severity": "warning",
+                      "message": "Stale folder README."
+                    },
+                    "actions": [
+                      {
+                        "label": "Sync folder README with child structure changes"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": []
+            },
+            {
+              "sourcePath": "coggit/src/views.ts",
+              "cognitionPath": "coggit/src/views.ts.md",
+              "nodeKind": "file",
+              "relation": "descendant",
+              "issues": [
+                {
+                  "relativePath": "coggit/src/views.ts",
+                  "cognitionPath": "coggit/src/views.ts.md",
+                  "issue": {
+                    "diagnostic": {
+                      "code": "outdated-cognition",
+                      "severity": "warning",
+                      "message": "Stale cognition."
+                    },
+                    "actions": [
+                      {
+                        "label": "Sync cognition with source changes"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "code": "sync-cognition-with-source",
+                  "label": "Sync cognition with source changes",
+                  "handbookId": "leaf",
+                  "sourcePath": "coggit/src/views.ts"
+                },
+                {
+                  "code": "resolve-stale-cognition",
+                  "label": "After syncing, accept the pair as reviewed",
+                  "operation": "resolve",
+                  "sourcePath": "coggit/src/views.ts"
+                }
+              ]
+            }
+          ],
+          "handbookId": "skeleton"
+        }
+      }
+    },
+    {
+      "id": "status-hit-folder-mixed",
+      "tool": "coggit_status",
+      "result": {
+        "found": true,
+        "sourcePath": "coggit/src",
+        "cognitionPath": "coggit/src/README.md",
+        "status": "stale",
+        "ownStatus": "fresh",
+        "handbookId": "skeleton",
+        "suggestedActions": [],
+        "pathHints": [],
+        "inspection": {
+          "sourcePath": "coggit/src",
+          "cognitionPath": "coggit/src/README.md",
+          "cognitionPresence": "present",
+          "nodeKind": "folder",
+          "status": "stale",
+          "ownStatus": "fresh",
+          "descendantStatus": "stale",
+          "issueSummary": {
+            "total": 1,
+            "own": 0,
+            "descendant": 1
+          },
+          "subtreeIssues": {
+            "own": [],
+            "descendant": [
+              {
+                "relativePath": "coggit/src/views.ts",
+                "cognitionPath": "coggit/src/views.ts.md",
+                "issue": {
+                  "diagnostic": {
+                    "code": "outdated-cognition",
+                    "severity": "warning",
+                    "message": "Stale cognition."
+                  },
+                  "actions": [
+                    {
+                      "label": "Sync cognition with source changes"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "suggestedActions": [],
+          "triage": [
+            {
+              "sourcePath": "coggit/src/views.ts",
+              "cognitionPath": "coggit/src/views.ts.md",
+              "nodeKind": "file",
+              "relation": "descendant",
+              "issues": [
+                {
+                  "relativePath": "coggit/src/views.ts",
+                  "cognitionPath": "coggit/src/views.ts.md",
+                  "issue": {
+                    "diagnostic": {
+                      "code": "outdated-cognition",
+                      "severity": "warning",
+                      "message": "Stale cognition."
+                    },
+                    "actions": [
+                      {
+                        "label": "Sync cognition with source changes"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "code": "sync-cognition-with-source",
+                  "label": "Sync cognition with source changes",
+                  "handbookId": "leaf",
+                  "sourcePath": "coggit/src/views.ts"
+                },
+                {
+                  "code": "resolve-stale-cognition",
+                  "label": "After syncing, accept the pair as reviewed",
+                  "operation": "resolve",
+                  "sourcePath": "coggit/src/views.ts"
+                }
+              ]
+            }
+          ],
+          "handbookId": "skeleton"
+        }
+      }
+    },
+    {
+      "id": "status-miss-candidates",
+      "tool": "coggit_status",
+      "result": {
+        "found": false,
+        "sourcePath": "src/tools.ts",
+        "pathHints": [
+          "coggit/src/tools.ts"
+        ]
+      }
+    },
+    {
+      "id": "status-miss-nocandidates",
+      "tool": "coggit_status",
+      "result": {
+        "found": false,
+        "sourcePath": "zzz/unknown.ts",
+        "pathHints": []
+      }
+    },
+    {
+      "id": "add-success",
+      "tool": "coggit_add",
+      "result": {
+        "success": true,
+        "created": true,
+        "kind": "leaf",
+        "sourcePath": "coggit/src/client/locales.ts",
+        "cognitionPath": "coggit/src/client/locales.ts.md",
+        "handbookId": "leaf",
+        "suggestedActions": [],
+        "error": null,
+        "pathHints": []
+      }
+    },
+    {
+      "id": "add-already-exists",
+      "tool": "coggit_add",
+      "result": {
+        "success": true,
+        "created": false,
+        "kind": "leaf",
+        "sourcePath": "coggit/src/client/locales.ts",
+        "cognitionPath": "coggit/src/client/locales.ts.md",
+        "handbookId": "leaf",
+        "suggestedActions": [],
+        "error": null,
+        "pathHints": []
+      }
+    },
+    {
+      "id": "add-success-skeleton",
+      "tool": "coggit_add",
+      "result": {
+        "success": true,
+        "created": true,
+        "kind": "skeleton",
+        "sourcePath": "coggit/src",
+        "cognitionPath": "coggit/src/README.md",
+        "handbookId": "skeleton",
+        "suggestedActions": [],
+        "error": null,
+        "pathHints": []
+      }
+    },
+    {
+      "id": "add-miss-candidates",
+      "tool": "coggit_add",
+      "result": {
+        "success": false,
+        "created": null,
+        "kind": null,
+        "sourcePath": "src/nope.ts",
+        "cognitionPath": null,
+        "handbookId": null,
+        "suggestedActions": [],
+        "error": {
+          "code": "path-not-found",
+          "message": "Path not found in any CogGit project."
+        },
+        "pathHints": [
+          "coggit/src/note.ts"
+        ]
+      }
+    },
+    {
+      "id": "add-error-invalid-kind",
+      "tool": "coggit_add",
+      "result": {
+        "success": false,
+        "created": null,
+        "kind": null,
+        "sourcePath": "coggit/src",
+        "cognitionPath": null,
+        "handbookId": null,
+        "suggestedActions": [
+          {
+            "code": "recheck-status",
+            "label": "Re-check the current status of this source path.",
+            "operation": "status",
+            "sourcePath": "coggit/src"
+          }
+        ],
+        "error": {
+          "code": "invalid-kind",
+          "message": "Cannot create leaf cognition for a folder."
+        },
+        "pathHints": []
+      }
+    },
+    {
+      "id": "resolve-success",
+      "tool": "coggit_resolve",
+      "result": {
+        "success": true,
+        "sourcePath": "coggit/src/views.ts",
+        "cognitionPath": "coggit/src/views.ts.md",
+        "suggestedActions": [],
+        "error": null,
+        "pathHints": []
+      }
+    },
+    {
+      "id": "resolve-miss-candidates",
+      "tool": "coggit_resolve",
+      "result": {
+        "success": false,
+        "sourcePath": "src/tools.ts",
+        "cognitionPath": null,
+        "suggestedActions": [],
+        "error": {
+          "code": "path-not-found",
+          "message": "Path not found in any CogGit project."
+        },
+        "pathHints": [
+          "coggit/src/tools.ts"
+        ]
+      }
+    },
+    {
+      "id": "resolve-error-content-changed",
+      "tool": "coggit_resolve",
+      "result": {
+        "success": false,
+        "sourcePath": "coggit/src/b.ts",
+        "cognitionPath": null,
+        "suggestedActions": [
+          {
+            "code": "recheck-status",
+            "label": "Re-check the current status of this source path.",
+            "operation": "status",
+            "sourcePath": "coggit/src/b.ts"
+          }
+        ],
+        "error": {
+          "code": "content-changed",
+          "message": "Source changed during resolve."
+        },
+        "pathHints": []
+      }
+    }
+  ]
+}

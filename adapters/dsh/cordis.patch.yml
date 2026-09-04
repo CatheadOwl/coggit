@@ -1,0 +1,3 @@
+- insert:
+    - id: coggit
+      name: '@catheadowl/dsh-coggit'

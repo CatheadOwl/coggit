@@ -1,0 +1,84 @@
+{
+  "name": "@catheadowl/dsh-coggit",
+  "description": "CogGit runtime adapter for dsh: a ctx.coggit service facade and model-facing coggit_* tools over the CogGit SDK.",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/types/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/types/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "lib/client.js",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-settings-plugins",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-locale"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:client": "node scripts/build-client.mjs",
+    "relink": "node scripts/relink-dsh-peers.mjs",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "node --test --test-isolation=none test/shape-and-views.test.mjs test/tools.test.mjs test/service.test.mjs test/cognition-link-provider.test.mjs test/workspace-resolve.test.mjs",
+    "eval": "dsh-eval run eval/behavior/real",
+    "eval:mock": "dsh-eval run --mode mock eval/behavior/mock",
+    "eval:review": "dsh-review eval/comprehension",
+    "verify": "pnpm run check-types && pnpm run build && pnpm run test"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-api-session-controller": "*",
+    "@deepseek-ai/dsh-api-workspace-controller": "*",
+    "@deepseek-ai/dsh-client-connection": "*",
+    "@deepseek-ai/dsh-client-locale": "*",
+    "@deepseek-ai/dsh-client-ui-primitives": "*",
+    "@deepseek-ai/dsh-client-ui-renderer": "*",
+    "@deepseek-ai/dsh-client-ui-session": "*",
+    "@deepseek-ai/dsh-client-ui-settings": "*",
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "*",
+    "@deepseek-ai/dsh-client-ui-slots": "*",
+    "@deepseek-ai/dsh-client-ui-workspace": "*",
+    "@deepseek-ai/dsh-skill": "*",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/dsh-typert-protocol": "*",
+    "@deepseek-ai/dsh-util-values": "*",
+    "@deepseek-ai/schemastery": "*"
+  },
+  "dependencies": {
+    "@catheadowl/dsh-extras": "^0.1.1",
+    "@coggit/core": "link:../../packages/core",
+    "@coggit/runtime-node": "link:../../packages/runtime-node"
+  },
+  "devDependencies": {
+    "@catheadowl/dsh-eval": "^0.1.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "react": "^18.2.0",
+    "typescript": "^5.9.0"
+  }
+}
