@@ -1,5 +1,5 @@
 {
-  "name": "@catheadowl/dsh-coggit",
+  "name": "@coggit/dsh",
   "description": "CogGit runtime adapter for dsh: a ctx.coggit service facade and model-facing coggit_* tools over the CogGit SDK.",
   "version": "0.2.1",
   "license": "MIT",

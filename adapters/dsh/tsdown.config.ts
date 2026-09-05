@@ -29,6 +29,6 @@ async function loadClientBundle() {
 
 const clientBundle = await loadClientBundle()
 
-export default clientBundle('@catheadowl/dsh-coggit', ['lib/types/index.js'], {
+export default clientBundle('@coggit/dsh', ['lib/types/index.js'], {
   hostPhase: true,
 })

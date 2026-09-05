@@ -1,10 +1,10 @@
 ---
-description: npm publish-face rules seed for @catheadowl/dsh-coggit — adapter-scoped projection of the packages/ PKG seed; consumed by publish reviews of this tree, findings cite PKG-n ids.
+description: npm publish-face rules seed for @coggit/dsh — adapter-scoped projection of the packages/ PKG seed; consumed by publish reviews of this tree, findings cite PKG-n ids.
 ---
 
 # Adapter publish-face rules (dsh)
 
-Rules seed for the npm publish face of `@catheadowl/dsh-coggit`
+Rules seed for the npm publish face of `@coggit/dsh`
 (`adapters/dsh`). Pulled from [the packages PKG seed](../../../../packages/.agent/rules/npm-publish-face.md)
 (S5 of the publish-readiness spec); ids keep the PKG-n numbering so findings
 stay citable across both trees. Scope: this directory (tree-positioned,

@@ -1,15 +1,15 @@
 ---
-description: @catheadowl/dsh-coggit — CogGit runtime adapter for dsh: ctx.coggit service facade + coggit_* tools + handbook skills + top-level system-prompt section
+description: @coggit/dsh — CogGit runtime adapter for dsh: ctx.coggit service facade + coggit_* tools + handbook skills + top-level system-prompt section
 ---
 
-# @catheadowl/dsh-coggit
+# @coggit/dsh
 
 CogGit runtime adapter for dsh: a `ctx.coggit` service facade plus model-facing `coggit_*` tools over the CogGit SDK (`@coggit/core`, `@coggit/runtime-node`). It gives a dsh agent the same paired-cognition workflow the CogGit MCP server exposes — discover, diagnose, add, and resolve cognition documents.
 
 ## Install
 
 ```bash
-dsh plugin --profile <name> add @catheadowl/dsh-coggit
+dsh plugin --profile <name> add @coggit/dsh
 ```
 
 The dsh host provides the `@deepseek-ai/*` peer runtime at plugin load; the SDK pair (`@coggit/core`, `@coggit/runtime-node`) installs as regular dependencies. Architecture, configuration, and the model experience live in this README; the SDK's design contracts live in the [coggit repository](https://github.com/CatheadOwl/coggit).
