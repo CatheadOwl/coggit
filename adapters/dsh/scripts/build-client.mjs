@@ -8,7 +8,7 @@
  * remedy when the anchor is missing (never guesses a path).
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const host = process.env.DSH_REPO
@@ -20,13 +20,29 @@ if (!host) {
   process.exit(1)
 }
 
-const bin = join(host, 'node_modules', '.bin', process.platform === 'win32' ? 'tsdown.cmd' : 'tsdown')
+// Resolve the tsdown JS entry and run it with the current node executable:
+// spawning a `.cmd` shim via child_process without `shell: true` is rejected
+// as EINVAL on Node >= 20.12.2 (CVE-2024-27980 hardening) on Windows.
+const binDir = join(host, 'node_modules', '.bin')
+const ext = process.platform === 'win32' ? '.cmd' : ''
+const bin = join(binDir, 'tsdown' + ext)
 if (!existsSync(bin)) {
   console.error(`[build-client] tsdown bin missing at ${bin} — is the host checkout installed?`)
   process.exit(1)
 }
+const pkgPath = join(host, 'node_modules', 'tsdown', 'package.json')
+if (!existsSync(pkgPath)) {
+  console.error(`[build-client] tsdown package missing at ${pkgPath} — is the host checkout installed?`)
+  process.exit(1)
+}
+const { bin: binField } = JSON.parse(readFileSync(pkgPath, 'utf8'))
+const jsEntry = join(host, 'node_modules', 'tsdown', typeof binField === 'string' ? binField : binField.tsdown)
+if (!existsSync(jsEntry)) {
+  console.error(`[build-client] tsdown JS entry missing at ${jsEntry}`)
+  process.exit(1)
+}
 
-const result = spawnSync(bin, [], {
+const result = spawnSync(process.execPath, [jsEntry], {
   stdio: 'inherit',
   cwd: resolve('.'),
   env: { ...process.env, DSH_REPO: host },
