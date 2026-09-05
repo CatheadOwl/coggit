@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Publish-face gate for the npm-published packages (rules SSOT:
-// .agent/rules/package-publish-face.md, ids PKG-1..PKG-7; every violation is
-// prefixed with its rule id).
+// packages/.agent/rules/npm-publish-face.md, ids PKG-1..PKG-9; every
+// violation is prefixed with its rule id).
 //
 // Coverage:
 //   PKG-1  every `dependencies` entry of a published package is external in
@@ -11,9 +11,14 @@
 //          dependencies/peerDependencies (node builtins exempt);
 //   PKG-5  every published package ships a README.md;
 //   PKG-6  every exports/main/types/bin target resolves inside dist/;
-//   PKG-7  no hardcoded semver literals in package sources.
+//   PKG-7  no hardcoded semver literals in package sources;
+//   PKG-9  every named import shown in a published package README's code
+//          blocks exists in that package's public exports face
+//          (src/public.ts); call tokens must be grep-able there.
 // PKG-3 is the PKG-1 check applied to native deps; PKG-4 (pnpm publish) is
-// procedural and stays probe-less in the seed.
+// procedural and stays probe-less in the seed. PKG-8 content shape stays
+// human-reviewed. The vscode package is out of scope for PKG-9 (Marketplace
+// listing face — see packages/vscode/.agent/rules/marketplace-listing.md).
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -110,6 +115,30 @@ function reachableTypeImports({ name, dir, manifest }, violations) {
   }
 }
 
+// PKG-9 — README example named imports must exist in the package's public face.
+function readmeExampleMatchesExports({ name, dir }, violations) {
+  const readmePath = join(dir, 'README.md')
+  const publicFacePath = join(dir, 'src', 'public.ts')
+  if (!existsSync(readmePath) || !existsSync(publicFacePath)) return // PKG-5 covers the README; no public face = probe n/a (e.g. the vscode Marketplace listing)
+  const readme = readFileSync(readmePath, 'utf8')
+  const publicFace = readFileSync(publicFacePath, 'utf8')
+  const pkgName = name
+  for (const block of readme.matchAll(/```[^\n]*\n([\s\S]*?)```/gu)) {
+    const code = block[1]
+    for (const importMatch of code.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/gu)) {
+      if (importMatch[2] !== pkgName) continue
+      for (const raw of importMatch[1].split(',')) {
+        const named = raw.trim().split(/\s+as\s+/u)[0].trim()
+        if (named.length === 0) continue
+        // Signature tokens must be grep-able in the public surface.
+        if (!new RegExp(`\\b${named.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\b`, 'u').test(publicFace)) {
+          violations.push(`PKG-9: ${name} README example imports { ${named} } from '${pkgName}' but it is not grep-able in src/public.ts — example API drift`)
+        }
+      }
+    }
+  }
+}
+
 // PKG-5
 function packageReadme({ name, dir }, violations) {
   if (!existsSync(join(dir, 'README.md'))) {
@@ -162,7 +191,7 @@ function versionLiterals({ name, dir }, violations) {
   }
 }
 
-const checks = [dependencyExternals, reachableTypeImports, packageReadme, targetsResolve, versionLiterals]
+const checks = [dependencyExternals, reachableTypeImports, packageReadme, targetsResolve, versionLiterals, readmeExampleMatchesExports]
 
 export function check() {
   const violations = []

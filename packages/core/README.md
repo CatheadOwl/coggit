@@ -36,7 +36,7 @@ ships ready-made local-filesystem adapters and
 
 - The `.` export is the public contract (see `src/public.ts`).
 - `@coggit/core/internal` is a trusted-consumer face used by the published
-  `coggit` CLI; it ships in the tarball but carries **no stability promise**
+  `@coggit/cli`; it ships in the tarball but carries **no stability promise**
   for third parties.
 
 Architecture, concepts, and workflow docs live in the
