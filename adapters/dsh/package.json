@@ -1,8 +1,13 @@
 {
   "name": "@catheadowl/dsh-coggit",
   "description": "CogGit runtime adapter for dsh: a ctx.coggit service facade and model-facing coggit_* tools over the CogGit SDK.",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CatheadOwl/coggit.git",
+    "directory": "adapters/dsh"
+  },
   "type": "module",
   "main": "lib/types/index.js",
   "types": "lib/types/index.d.ts",
@@ -21,8 +26,14 @@
     "lib/types/**/*.js",
     "lib/types/**/*.d.ts",
     "lib/client.js",
-    "cordis.patch.yml"
+    "lib/index.js",
+    "cordis.patch.yml",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -68,6 +79,9 @@
     "@deepseek-ai/dsh-typert-protocol": "*",
     "@deepseek-ai/dsh-util-values": "*",
     "@deepseek-ai/schemastery": "*"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@catheadowl/dsh-extras": "^0.1.1",

@@ -8,7 +8,7 @@
  * remedy when the anchor is missing (never guesses a path).
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const host = process.env.DSH_REPO
@@ -47,4 +47,23 @@ const result = spawnSync(process.execPath, [jsEntry], {
   cwd: resolve('.'),
   env: { ...process.env, DSH_REPO: host },
 })
-process.exit(result.status ?? 1)
+if (result.status !== 0) process.exit(result.status ?? 1)
+
+// Publish hygiene: the bundler's `#region` markers embed machine-absolute
+// source paths into lib/client.js. Rewritten artifacts must not carry the
+// release machine's checkout location, so strip the cwd prefix from the
+// emitted bundle (comment-only regions — no runtime semantics).
+const outFile = resolve('lib', 'client.js')
+let text = readFileSync(outFile, 'utf8')
+const cwd = process.cwd()
+const sanitized = text
+  .replaceAll(cwd.replaceAll('\\', '/') + '/', '')
+  .replaceAll(cwd.replaceAll('\\', '/'), '')
+  .replaceAll(cwd + '\\', '')
+  .replaceAll(cwd, '')
+if (sanitized !== text) {
+  writeFileSync(outFile, sanitized)
+  console.log('[build-client] sanitized absolute build paths in lib/client.js')
+}
+
+process.exit(0)

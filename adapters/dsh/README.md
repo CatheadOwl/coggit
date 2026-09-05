@@ -6,9 +6,17 @@ description: @catheadowl/dsh-coggit — CogGit runtime adapter for dsh: ctx.cogg
 
 CogGit runtime adapter for dsh: a `ctx.coggit` service facade plus model-facing `coggit_*` tools over the CogGit SDK (`@coggit/core`, `@coggit/runtime-node`). It gives a dsh agent the same paired-cognition workflow the CogGit MCP server exposes — discover, diagnose, add, and resolve cognition documents.
 
+## Install
+
+```bash
+dsh plugin --profile <name> add @catheadowl/dsh-coggit
+```
+
+The dsh host provides the `@deepseek-ai/*` peer runtime at plugin load; the SDK pair (`@coggit/core`, `@coggit/runtime-node`) installs as regular dependencies. Architecture, configuration, and the model experience live in this README; the SDK's design contracts live in the [coggit repository](https://github.com/CatheadOwl/coggit).
+
 ## What it provides
 
-- **`ctx.coggit`** — a `CoggitService` (single-package fold) whose methods take the workspace root, discover CogGit projects under it (cached per root), and read fresh state on every call (reconcile-on-read). Methods: `status`, `add`, `resolve`, plus the single-turn batch pair `buildSnapshot` / `statusWithSnapshot` used by the cognition-link enricher (below). The model-facing `snapshot`/`routes` tools remain removed — see [Removed capabilities](README.md#removed-capabilities).
+- **`ctx.coggit`** — a `CoggitService` (single-package fold) whose methods take the workspace root, discover CogGit projects under it (cached per root), and read fresh state on every call (reconcile-on-read). Methods: `status`, `add`, `resolve`, plus the single-turn batch pair `buildSnapshot` / `statusWithSnapshot` used by the cognition-link enricher (below). The model-facing `snapshot`/`routes` tools remain removed — see [Removed capabilities](#removed-capabilities).
 - **cognition-link enricher** — a declarative prompt-middleware provider (`cognition-link-enricher`, kind `cognition-link`, priority `10`, canonical band) that, for each resolved prompt path, emits a `cognition-link` relates item pointing at the paired cognition document with a `stale` meta marker (miss / missing / not-applicable → no item); on an unconfigured workspace it short-circuits before the per-turn snapshot build. It builds one snapshot per turn (`buildSnapshot`) and reuses it across paths (`statusWithSnapshot`), and registers through the `ctx.inject(['promptMiddleware'], ...)` soft dependency — coggit loads and works without prompt-middleware present.
 - **Session-scoped workspace** — the workspace is NOT a config: each `coggit_*` tool call resolves CogGit projects under the CALLING session's workspace (`SessionHeader.cwd`), mirroring dsh-tool-fs/dsh-tool-bash; discovery results are cached per workspace root. Every face still registers unconditionally; the MODEL-VISIBLE surface (the `coggit:overview` section and the `coggit_*` tool schemas) is gated lazily per session — a workspace with no `.coggit/config.yaml` at its exact root hides them (root-only: the gate does not walk up to ancestor configs, unlike the SDK's own discovery), while the execution face still reports empty state if reached directly.
 - **Handbook skills** — the dsh analog of the MCP server's `coggit://handbook/<kind>` resources: the node-kind handbooks register as runtime skills (`coggit-handbook-leaf`, `coggit-handbook-skeleton`) via `ctx.skills`. They are **model-only** (`invocation: { modelInvocable: true, userInvocable: false }`): the model sees them in the skill catalog and loads a body with the `skill` tool, but a user `/name` gesture never injects one — only a `coggit_*` tool result's `surfaceHints` routes the agent to load the handbook. The aggregate `all` handbook stays out of the catalog, mirroring the MCP server's model-facing choice.
@@ -148,7 +156,7 @@ pnpm --dir . eval        # real-model intent cases (skips without a credential)
 pnpm --dir . eval:review # repeated fresh-model design review, human-graded against rubric
 ```
 
-The normalized layout is documented in [`eval/README.md`](eval/README.md): behavior cases live under `eval/behavior/{real,mock}/`, while the separate `eval/comprehension/` experiment keeps frozen raw inputs, a blind prompt, and a hidden rubric. Generated artifacts stay under nearby `.runs/` directories. A rebuilt `lib/` is required first (`pnpm --dir . build`).
+The normalized layout is documented in the `eval/README.md` file in the repository (not shipped in the npm tarball): behavior cases live under `eval/behavior/{real,mock}/`, while the separate `eval/comprehension/` experiment keeps frozen raw inputs, a blind prompt, and a hidden rubric. Generated artifacts stay under nearby `.runs/` directories. A rebuilt `lib/` is required first (`pnpm --dir . build`).
 
 ## What still needs a dsh profile (rare)
 
