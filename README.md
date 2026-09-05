@@ -1,6 +1,6 @@
 # CogGit
 
-CogGit pairs source code with a **cognition layer** — Markdown files that record local design intent, contracts, and invariants — and tracks their freshness against the code. When source changes without a matching cognition update, CogGit marks the pair stale and surfaces the evidence an agent needs to review it.
+CogGit helps coding agents stay aligned with your codebase's local design intent. It pairs source code with a **cognition layer** — Markdown files that record local design intent, contracts, and invariants — and tracks their freshness against the code. When source changes without a matching cognition update, CogGit marks the pair stale and surfaces the evidence an agent needs to review it.
 
 This repository is a pnpm-workspace monorepo with one package per delivery surface plus a reusable SDK.
 
