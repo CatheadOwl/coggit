@@ -54,6 +54,7 @@ function createProgram(
 
   program
     .name('coggit')
+    .version(packageVersion(), '-v, --version', 'output the CLI version')
     .showHelpAfterError()
     .showSuggestionAfterError(false);
 
