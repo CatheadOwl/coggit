@@ -33,6 +33,12 @@ constrains. Do not summarize the source.
 If a layer-wide collision appears, record the local resolution under the
 relevant invariant.
 
+## Forward-Looking Guidance
+
+Record unlanded intent only in conditional form ("when P happens, do Q") -
+the condition is its own expiry trigger. No time-based promises, no change
+history; those belong to decision records.
+
 ## Update Rules
 
 Update the skeleton when the folder's layer-level meaning changes:

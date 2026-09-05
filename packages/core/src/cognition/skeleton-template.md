@@ -29,6 +29,6 @@ metadata:
 
 ## Pointers
 
-- [MODULES.md](MODULES.md) - current module inventory, if needed.
-- [CODE_MAP.md](CODE_MAP.md) - current wiring or flow, if needed.
+- `MODULES.md` - current module inventory, if needed.
+- `CODE_MAP.md` - current wiring or flow, if needed.
 

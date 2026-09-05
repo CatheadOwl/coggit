@@ -103,12 +103,12 @@ function createFakeProject(onEnsureFresh: () => void): CoggitProject {
     },
     getCognitionHandbook: () => ({
       kind: 'all',
-      version: 'skeleton-leaf-v3',
+      version: 'skeleton-leaf-v4',
       content: '',
     }),
     getCognitionTemplate: () => ({
       kind: 'leaf',
-      version: 'skeleton-leaf-v3',
+      version: 'skeleton-leaf-v4',
       content: '',
     }),
     getNode: async () => undefined,

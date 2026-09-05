@@ -85,6 +85,16 @@ When a cited source is relevant to the current change, use it to check whether
 the local projection still holds. Use the cited Source to clarify local
 tension, not to start routine source auditing.
 
+## Forward-Looking Guidance
+
+Cognition records the present. Unlanded design intent may be recorded only in
+conditional form: "when P happens, do Q". The condition is its own expiry -
+when P lands, the paired source changes and this entry goes stale with it.
+
+Do not write time-based promises ("v2 will ...") or change history
+("previously this was ..."); those belong to decision records. If you cannot
+name the condition, it is speculation, not design intent - leave it out.
+
 ## Boundaries Rule
 
 Only record a boundary when a reasonable reader might otherwise misjudge what

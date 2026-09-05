@@ -10,6 +10,10 @@ import { LEAF_TEMPLATE, SKELETON_TEMPLATE } from './templates';
 export type CognitionKind = 'leaf' | 'skeleton';
 export type AddCognitionKind = CognitionKind | 'auto';
 
+/** Version of the deployed cognition prompt assets (templates + handbooks). */
+export const COGNITION_ASSET_VERSION = 'skeleton-leaf-v4';
+export type CognitionAssetVersion = typeof COGNITION_ASSET_VERSION;
+
 export interface AddCognitionOptions {
   kind?: AddCognitionKind;
   overwrite?: boolean;
@@ -25,13 +29,13 @@ export interface AddCognitionResult {
 
 export interface CognitionTemplate {
   kind: CognitionKind;
-  version: 'skeleton-leaf-v3';
+  version: CognitionAssetVersion;
   content: string;
 }
 
 export interface CognitionHandbook {
   kind: CognitionKind | 'all';
-  version: 'skeleton-leaf-v3';
+  version: CognitionAssetVersion;
   content: string;
 }
 
@@ -95,7 +99,7 @@ export async function addCognition(
 export function getCognitionTemplate(kind: CognitionKind): CognitionTemplate {
   return {
     kind,
-    version: 'skeleton-leaf-v3',
+    version: COGNITION_ASSET_VERSION,
     content: kind === 'skeleton' ? SKELETON_TEMPLATE : LEAF_TEMPLATE,
   };
 }
@@ -108,14 +112,14 @@ export function getCognitionHandbook(kind: CognitionKind): CognitionHandbook;
 export function getCognitionHandbook(kind?: 'all'): CognitionHandbook;
 export function getCognitionHandbook(kind: CognitionKind | 'all' = 'all'): CognitionHandbook {
   if (kind === 'leaf') {
-    return { kind, version: 'skeleton-leaf-v3', content: LEAF_HANDBOOK };
+    return { kind, version: COGNITION_ASSET_VERSION, content: LEAF_HANDBOOK };
   }
   if (kind === 'skeleton') {
-    return { kind, version: 'skeleton-leaf-v3', content: SKELETON_HANDBOOK };
+    return { kind, version: COGNITION_ASSET_VERSION, content: SKELETON_HANDBOOK };
   }
   return {
     kind,
-    version: 'skeleton-leaf-v3',
+    version: COGNITION_ASSET_VERSION,
     content: SYSTEM_HANDBOOK,
   };
 }
