@@ -32,7 +32,7 @@ you need to assemble or extend the service graph yourself.
 - The `.` export is the public contract (see `src/public.ts`).
 - `@coggit/runtime-node/internal` additionally exposes the watcher observer
   and watch-lease primitives; it is a trusted-consumer face used by the
-  published `coggit` CLI and carries **no stability promise** for third
+  published `@coggit/cli` and carries **no stability promise** for third
   parties. The v1 public surface is reconcile-on-read.
 
 Architecture, concepts, and workflow docs live in the

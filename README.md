@@ -9,14 +9,14 @@ This repository is a pnpm-workspace monorepo with one package per delivery surfa
 | Package | Directory | Identity | Role |
 |---|---|---|---|
 | VS Code extension | [`packages/vscode`](packages/vscode) | `coggit-vscode` (Marketplace VSIX) | Extension activation, Ghost Tree / Orphans / Misplaced views, `.mcp.json` UX, VSIX packaging. |
-| CLI | [`packages/cli`](packages/cli) | `coggit` (npm, `bin: coggit`) | Command-line status / snapshot / routes / `mcp install`. |
+| CLI | [`packages/cli`](packages/cli) | `@coggit/cli` (npm, `bin: coggit`) | Command-line status / snapshot / routes / `mcp install`. |
 | MCP runtime | [`packages/mcp`](packages/mcp) | `@coggit/mcp` (npm, `bin: coggit-mcp`) | MCP stdio runtime, tool/prompt registration, prompt assets. |
 | SDK — core | [`packages/core`](packages/core) | `@coggit/core` | Runtime-agnostic kernel: registry, snapshot, status, routes. |
 | SDK — runtime-node | [`packages/runtime-node`](packages/runtime-node) | `@coggit/runtime-node` | Node host primitives: fs, locks, watcher, registry adapter. |
 | Shared format | [`packages/format`](packages/format) | `@coggit/format` (private, bundled) | Pure status/tree text rendering. |
 | MCP runtime support | [`packages/mcp-runtime-support`](packages/mcp-runtime-support) | `@coggit/mcp-runtime-support` (private, bundled) | User-level MCP runtime install / launcher management. |
 
-The published npm surface is `coggit`, `@coggit/core`, `@coggit/runtime-node`, and `@coggit/mcp`; the VS Code extension ships as a Marketplace VSIX, and `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into their consumers.
+The published npm surface is `@coggit/cli`, `@coggit/core`, `@coggit/runtime-node`, and `@coggit/mcp`; the VS Code extension ships as a Marketplace VSIX, and `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into their consumers.
 
 ## Quick start
 

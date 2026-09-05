@@ -1,10 +1,10 @@
 ---
-description: npm publish-face rules seed — expected shape of the published @coggit/* / coggit packages; consumed by writing (advisory via AGENTS.md) and by SDK-face reviews (embedded verbatim, findings cite PKG-n ids).
+description: npm publish-face rules seed — expected shape of the published @coggit/* packages; consumed by writing (advisory via AGENTS.md) and by SDK-face reviews (embedded verbatim, findings cite PKG-n ids).
 ---
 
 # Package publish-face rules
 
-Rules SSOT seed for the npm publish face (`coggit`, `@coggit/core`,
+Rules SSOT seed for the npm publish face (`@coggit/cli`, `@coggit/core`,
 `@coggit/runtime-node`, `@coggit/mcp`; `@coggit/format` and
 `@coggit/mcp-runtime-support` are private). Probes are mechanical arms —
 violations are prefixed with the rule id. Ids never renumber once cited; a
@@ -22,8 +22,8 @@ semantic change retires the id and issues a new one.
 
 ## intentional-design exemptions
 
-- `./internal` subpaths are published on purpose (the published `coggit` CLI consumes them at runtime); no stability promise to third parties.
-- The `coggit` CLI's `dist/mcp-stdio.js` bundles everything — exemption to PKG-1 (launcher copies it outside any `@coggit/*` install).
+- `./internal` subpaths are published on purpose (the published `@coggit/cli` consumes them at runtime); no stability promise to third parties.
+- The `@coggit/cli`'s `dist/mcp-stdio.js` bundles everything — exemption to PKG-1 (launcher copies it outside any `@coggit/*` install).
 - CJS-only output for v1.
 - `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into consumers.
 - `@coggit/mcp` bundles the MCP SDK and zod at runtime; only type leaks (PKG-2) are findings.

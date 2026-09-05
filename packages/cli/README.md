@@ -1,4 +1,4 @@
-# coggit
+# @coggit/cli
 
 CogGit CLI: source/cognition freshness status, snapshot, routes, and MCP
 install from the command line.
@@ -6,7 +6,7 @@ install from the command line.
 ## Install
 
 ```sh
-npm install -g coggit
+npm install -g @coggit/cli
 ```
 
 ## Usage
