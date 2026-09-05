@@ -116,6 +116,9 @@ function reachableTypeImports({ name, dir, manifest }, violations) {
 }
 
 // PKG-9 — README example named imports must exist in the package's public face.
+// v1 arm covers named imports from the package's own root specifier; the
+// full call-shape verification stays human-reviewed (probe line in the seed
+// says "named-imports arm" for this reason).
 function readmeExampleMatchesExports({ name, dir }, violations) {
   const readmePath = join(dir, 'README.md')
   const publicFacePath = join(dir, 'src', 'public.ts')
@@ -128,7 +131,8 @@ function readmeExampleMatchesExports({ name, dir }, violations) {
     for (const importMatch of code.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/gu)) {
       if (importMatch[2] !== pkgName) continue
       for (const raw of importMatch[1].split(',')) {
-        const named = raw.trim().split(/\s+as\s+/u)[0].trim()
+        // `import { type Foo }` imports a type only — strip the modifier.
+        const named = raw.trim().replace(/^type\s+/u, '').split(/\s+as\s+/u)[0].trim()
         if (named.length === 0) continue
         // Signature tokens must be grep-able in the public surface.
         if (!new RegExp(`\\b${named.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\b`, 'u').test(publicFace)) {
