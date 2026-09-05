@@ -14,12 +14,13 @@ npm install @coggit/runtime-node
 
 ```ts
 import { createNodeCoggitServices } from '@coggit/runtime-node';
-import { statusOperation } from '@coggit/core';
+import { discoverCoggitProjects, statusOperation } from '@coggit/core';
 
 // Local-filesystem adapters wired for you (fs, config, registry, locks).
 const services = createNodeCoggitServices({ workspacePath: process.cwd() });
 
-const result = await statusOperation(services, { sourcePath: 'src/main.ts' });
+const projects = await discoverCoggitProjects(services);
+const result = await statusOperation(projects, 'src/main.ts');
 ```
 
 The individual adapters (`NodeFileSystem`, `NodeConfigProvider`,

@@ -13,7 +13,7 @@ npm install @coggit/core
 ## Minimal usage
 
 ```ts
-import { createCoggitServices, statusOperation } from '@coggit/core';
+import { createCoggitServices, discoverCoggitProjects, statusOperation } from '@coggit/core';
 
 // Assemble the kernel against your runtime's port implementations.
 const services = createCoggitServices({
@@ -24,7 +24,8 @@ const services = createCoggitServices({
   locks: myLocks,          // optional
 });
 
-const result = await statusOperation(services, { sourcePath: 'src/main.ts' });
+const projects = await discoverCoggitProjects(services);
+const result = await statusOperation(projects, 'src/main.ts');
 ```
 
 Node host? Use [`@coggit/runtime-node`](../runtime-node/README.md), which
