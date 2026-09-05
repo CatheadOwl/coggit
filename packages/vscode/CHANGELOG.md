@@ -10,6 +10,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 - Simplified `resolve` to a bare action: `resolve <path>` (CLI) and `coggit_resolve` (MCP) now accept the current source/cognition pair as reviewed, dropping the single-value `reviewed_unchanged` mode, the `--reviewed-unchanged` CLI flag, and the MCP `resolution` input parameter.
 
+## [0.2.1] - 2026-09-05
+
+### Notes
+
+- Republished from CI with OIDC trusted publishing; no user-facing changes versus 0.2.0.
+
 ## [0.2.0] - 2026-08-04
 
 ### Added

@@ -42,8 +42,8 @@ The **Ghost Tree** shows this map with live freshness status, like `git status` 
 
 ## Learn More
 
-- [Design Intent and Existing Docs](docs/design-intent.md) explains how CogGit fits with ADRs, PRDs, comments, and source code.
-- [Agent Workflow](docs/agent-workflow.md) shows how agents use routes, freshness status, and paired cognition while changing code.
+- [Design Intent and Existing Docs](https://github.com/CatheadOwl/coggit/blob/main/docs/design-intent.md) explains how CogGit fits with ADRs, PRDs, comments, and source code.
+- [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) shows how agents use routes, freshness status, and paired cognition while changing code.
 
 ## VS Code Features
 
@@ -58,7 +58,7 @@ CogGit includes an MCP server for agent workflows.
 
 Use **Configure CogGit MCP** to add a `coggit` server entry to your workspace `.mcp.json`. CogGit only writes `mcpServers.coggit` and preserves other server entries.
 
-Agents can use CogGit to inspect freshness status and evidence, browse cognition routes, create missing cognition files, and mark reviewed pairs as up to date. See [Agent Workflow](docs/agent-workflow.md).
+Agents can use CogGit to inspect freshness status and evidence, browse cognition routes, create missing cognition files, and mark reviewed pairs as up to date. See the [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) guide.
 
 Suggested agent instruction:
 
@@ -72,6 +72,16 @@ Suggested agent instruction:
 - Cognition files remain plain Markdown under your project control.
 
 ## Release Notes
+
+### 0.2.1
+
+Republished from CI with trusted publishing; no user-facing changes versus 0.2.0.
+
+### 0.2.0
+
+- Added fuzzy source-path suggestions when a requested source path cannot be found.
+- Improved detection and refresh of project state after files or configuration change.
+- Fixed watcher evidence recording and several Node watcher edge cases.
 
 ### 0.1.0
 
