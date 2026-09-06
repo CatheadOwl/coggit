@@ -494,7 +494,9 @@
         "sourcePath": "src/tools.ts",
         "pathHints": [
           "coggit/src/tools.ts"
-        ]
+        ],
+        "pathMissMessage": "Path not found in any CogGit project: src/tools.ts",
+        "pathHintMessage": "You may mean one of these source-root-relative source paths."
       }
     },
     {
@@ -503,7 +505,8 @@
       "result": {
         "found": false,
         "sourcePath": "zzz/unknown.ts",
-        "pathHints": []
+        "pathHints": [],
+        "pathMissMessage": "Path not found in any CogGit project: zzz/unknown.ts"
       }
     },
     {
