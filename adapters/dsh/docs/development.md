@@ -88,7 +88,7 @@ pnpm --dir . verify
 
 Coverage:
 
-- `test/shape-and-views.test.mjs` — function-plugin shape (no default export), and the pure view functions (`handbookSkillName`, `operationToolName`, `renderJson`, `toJsonValue`, `statusView`, `surfaceHints`).
+- `test/shape-and-views.test.mjs` — function-plugin shape (no default export), and the pure view functions (`handbookSkillName`, `operationToolName`, `renderJson`, `renderText`, `toJsonValue`, `statusText`, `surfaceHints`).
 - `test/workspace-resolve.test.mjs` — the init tab's workspace-target resolution (`resolveWorkspacePath`): selected-session ownership, recent fallback, pending-phase gating, host-order tie-break.
 - `test/tools.test.mjs` — mock `ctx.tools.register` capture: exactly three `coggit_*` tools registered, removed tools absent, and `execute` passthrough.
 - `test/service.test.mjs` — real `CoggitService` (constructed over a real cordis `Context`) against an on-disk temp fixture: status discovery, path-miss, add writes a cognition doc, resolve re-records, per-root project caching, and the `buildSnapshot` + `statusWithSnapshot` batch surface matching independent status calls.

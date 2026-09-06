@@ -6,10 +6,9 @@ import type {
   CoggitOperationAction,
   CoreOperationId,
   ResolveOperationResult,
-  StatusAgentPresentation,
   StatusOperationResult,
 } from '@coggit/core'
-import { projectStatusAgentPresentation, projectStatusMissPresentation } from '@coggit/core'
+import { renderPathMissText, renderStatusAgentInspectionText } from '@coggit/core'
 
 /** Cleanse plain-data projections for dsh's lossless-JSON boundary: `undefined` props omitted, `undefined` array items → null (see leaf). */
 export function toJsonValue(value: unknown): JsonValue {
@@ -35,35 +34,12 @@ export function renderJson(value: JsonValue): Array<{ type: 'text'; text: string
   return [{ type: 'text', text: JSON.stringify(value, null, 2) }]
 }
 
-// ─── Status projection ────────────────────────────────────────────────────────
-
-/** A MISS: only the lookup identity and (optional) fuzzy candidates. No status, no issues — those only exist once a node is found. */
-export interface StatusMissView {
-  found: false
-  sourcePath: string
-  /** Present only when non-empty (fuzzy source-path candidates). */
-  pathHints?: string[]
+/** Project a canonical text value to model-facing text (delivered verbatim). */
+export function renderText(value: string): Array<{ type: 'text'; text: string }> {
+  return [{ type: 'text', text: value }]
 }
 
-/**
- * Model-facing `coggit_status` payload: the core HIT projection or the adapter's
- * MISS branch (`found: false`).
- *
- * The HIT view is core's canonical `StatusAgentPresentation` — the same
- * structured projection the upstream CLI and MCP text render
- * (`statusAgentPresentation.ts`): a compact log-style surface with stable
- * issue/action tags and legends, fully aligned with the upstream status
- * format. Rows carry `level`/`issueTags`/`actionTags`/`optionalActionTags`,
- * legend entries define each tag once, and counts split own vs descendant.
- * A node with no paired cognition is NOT an issue — it is the materialization
- * branch: `cognitionPresence: "missing"` with empty rows/legends and NO
- * imperative hint (the status-surface role contract: that fact is the on-demand affordance; the
- * optional `add` action carries role `optional-on-demand` in core and is
- * filtered out of `surfaceHints`).
- * The adapter only appends its `surfaceHints` addressing (tool calls / skill
- * loads); nothing here is re-derived from issue `code` or `status: null`.
- */
-export type StatusResultView = StatusAgentPresentation | StatusMissView
+// ─── Status projection ────────────────────────────────────────────────────────
 
 /** Shared miss hint: candidate source-root-relative paths to try. */
 function pathHintsHint(pathHints: string[]): string {
@@ -71,49 +47,35 @@ function pathHintsHint(pathHints: string[]): string {
 }
 
 /**
- * One-step status projection: `{ view, surfaceHints }`.
+ * One-step status projection as core's canonical agent-facing text.
  *
- * - MISS: the core `projectStatusMissPresentation` view plus a fuzzy-candidate
- *   hint (a genuinely unknown path has no next step).
- * - HIT: the core `projectStatusAgentPresentation` view plus the
- *   surface-neutral mapping loop (`suggestedAction.operation` → tool,
- *   `handbookId` → skill).
+ * - MISS: core's `renderPathMissText` (not-found line plus fuzzy candidates)
+ *   — the same miss text the MCP surface renders.
+ * - HIT: core's `renderStatusAgentInspectionText` (legend-once + one-line
+ *   rows + `actions=`/`optional=` channels, the the status-surface role contract decision shape)
+ *   followed, after a blank line, by this adapter's `surfaceHints` lines.
  *
- * Core emits operation-bearing `add`/`resolve` actions from node signals (the
- * materialization branch for `cognitionPresence: 'missing'`, the ordered
- * sync+resolve pair for stale), so there is no branch on `status`, issue
- * `code`, or `cognitionPresence` here: the loop maps whatever core emitted —
- * except actions core itself marks `optional-on-demand` (the status-surface role contract filter) and
- * the top-level `handbookId` emission (status-face rule, see
- * `statusActionHints`).
- * Descendant actions stay in core's own-node-only top-level channel boundary:
- * top-level `surfaceHints` carries the current node's steps; descendant next
- * steps appear in `descendantIssues` rows as action tags (defined once in
- * `actionLegend`), matching the CLI/MCP text surface.
+ * Text, not JSON, is the deliberate paradigm (FR 20260907-dsh-status-view-
+ * core-text-rendering): the tool face serves the model only — one text line
+ * per issue row vs ~8 JSON fields; CLI / MCP text / dsh all deliver the same
+ * core renderer, and structural assertions live on core's
+ * `StatusAgentPresentation` (tested there). Future non-model consumers
+ * (e.g. a GUI status panel) take structured data from the core SDK, not from
+ * this face. Hit/miss is discriminated by content (`Path not found…` lead vs
+ * `Status:`/`Source:` header), not by JSON shape.
  *
- * The MISS branch is intentionally narrower than the HIT pass-through: it adds
- * this adapter's own `found: false` discriminator and re-renders hints from
- * `pathHints`, dropping core's miss/hint prose (prose is not a next-step signal
- * on this model face). Core's miss projection stays `found`-free so MCP can
- * spread it unchanged; this asymmetry is deliberate, not drift.
+ * Hints are `statusActionHints(result)` — the action channel only (never the
+ * top-level `handbookId` emission; the status-surface role contract filter as documented there).
  */
-export function statusProjection(result: StatusOperationResult): { view: StatusResultView; surfaceHints: string[] } {
+export function statusText(result: StatusOperationResult): string {
   const inspection = result.inspection
   if (!inspection) {
-    const miss = projectStatusMissPresentation(result)
-    const view: StatusMissView = {
-      found: false,
-      sourcePath: miss.sourcePath,
-      ...(miss.pathHints.length > 0 ? { pathHints: miss.pathHints } : {}),
-    }
-    const hints = miss.pathHints.length > 0 ? [pathHintsHint(miss.pathHints)] : []
-    return { view, surfaceHints: hints }
+    return renderPathMissText(result)
   }
 
-  return {
-    view: projectStatusAgentPresentation(inspection),
-    surfaceHints: statusActionHints(result),
-  }
+  const body = renderStatusAgentInspectionText(inspection)
+  const hints = statusActionHints(result)
+  return hints.length > 0 ? `${body}\n\n${hints.join('\n')}` : body
 }
 // ─── Add / resolve projections ───────────────────────────────────────────────
 

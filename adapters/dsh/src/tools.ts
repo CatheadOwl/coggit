@@ -6,8 +6,9 @@ import type { CoggitService } from './service.js'
 import {
   addProjection,
   renderJson,
+  renderText,
   resolveProjection,
-  statusProjection,
+  statusText,
   toJsonValue,
 } from './views.js'
 
@@ -29,7 +30,7 @@ export function registerCoggitTools(ctx: Context): void {
   ctx.tools.register(defineTool({
     name: 'coggit_status',
     description:
-      'Get detailed diagnosis for one selected source file or folder. Defaults to the source root when no sourcePath is given: the root view diagnoses the whole project — the root\'s own status, every issue-bearing subtree node, and each one\'s next-step hints — as the entry point before focusing on a specific sourcePath. A hit returns the canonical compact status view: `ownIssueCount`/`descendantIssueCount`, log-style issue rows (`level`, `issueTags`, `actionTags`, `optionalActionTags`) split into `ownIssues`/`descendantIssues`, and `issueLegend`/`actionLegend` defining each tag once — descendant next steps appear in the descendant rows\' action tags, not in the top-level hints; a miss returns `found: false` with fuzzy `pathHints` candidates. A node with no paired cognition is not an issue — status reports `cognitionPresence: "missing"` with empty rows and NO imperative hint (the status-surface role contract materialization branch: that fact is the on-demand affordance; call coggit_add only when this node needs cognition). Every result carries a `surfaceHints` array of next-step instructions (a tool call, a skill load, or a path retry); for a stale pair the handbook-sync skill hint leads the resolve call. Use it before explaining or editing a selected node, and again after editing paired cognition.',
+      'Get detailed diagnosis for one selected source file or folder. Defaults to the source root when no sourcePath is given: the root view diagnoses the whole project — the root\'s own status, every issue-bearing subtree node, and each one\'s next-step hints — as the entry point before focusing on a specific sourcePath. A hit returns core\'s canonical status text: a legend defining each issue/action tag once, then log-style one-line rows (`level | issueTags | source=... | actions=... | optional=...`) split into own vs descendant sections with counts; descendant next steps appear in the descendant rows\' action tags, not in the trailing hints; a miss returns a not-found line with fuzzy candidate paths to try. A node with no paired cognition is not an issue — status reports `Cognition: Not created (add on demand)` with empty sections and NO imperative hint (the status-surface role contract materialization branch: that fact is the on-demand affordance; call coggit_add only when this node needs cognition). Trailing lines after a blank line carry this surface\'s next-step hints (a tool call, a skill load); for a stale pair the handbook-sync skill hint leads the resolve call. Use it before explaining or editing a selected node, and again after editing paired cognition.',
     parameters: {
       sourcePath: {
         type: 'string',
@@ -37,13 +38,12 @@ export function registerCoggitTools(ctx: Context): void {
       },
     },
     output: {
-      schema: { type: 'json' },
-      render: (_args, value) => renderJson(value),
+      schema: { type: 'string' },
+      render: (_args, value) => renderText(String(value)),
     },
     async execute(args, exec) {
       const result = await coggitService(ctx).status(sessionWorkspace(exec), args.sourcePath ?? '.')
-      const { view, surfaceHints: hints } = statusProjection(result)
-      return toJsonValue({ ...view, surfaceHints: hints })
+      return statusText(result)
     },
   }))
 

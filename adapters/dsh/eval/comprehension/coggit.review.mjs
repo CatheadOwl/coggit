@@ -2,17 +2,20 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { statusProjection, addProjection, resolveProjection, toJsonValue } from '../../lib/types/views.js'
+import { statusText, addProjection, resolveProjection, toJsonValue } from '../../lib/types/views.js'
 import { defineReviewExperiment } from '@catheadowl/dsh-eval'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const fixture = JSON.parse(readFileSync(join(here, 'fixtures.json'), 'utf8'))
 const prompt = readFileSync(join(here, 'prompt.md'), 'utf8')
-const PROJECTORS = { coggit_status: statusProjection, coggit_add: addProjection, coggit_resolve: resolveProjection }
 
 function projectScenario(scenario) {
-  const project = PROJECTORS[scenario.tool]
-  if (!project) throw new Error(`unknown tool in scenario ${scenario.id}: ${scenario.tool}`)
+  if (scenario.tool === 'coggit_status') {
+    // The status face delivers core's canonical agent-facing TEXT (legend-once
+    // + one-line rows), not a JSON view.
+    return { id: scenario.id, tool: scenario.tool, text: statusText(scenario.result) }
+  }
+  const project = scenario.tool === 'coggit_add' ? addProjection : resolveProjection
   const { view, surfaceHints } = project(scenario.result)
   return { id: scenario.id, tool: scenario.tool, output: toJsonValue({ ...view, surfaceHints }) }
 }
@@ -29,14 +32,19 @@ export default defineReviewExperiment({
     }))
     const scenarioEntries = fixture.scenarios.map(scenario => {
       const projected = projectScenario(scenario)
-      return {
-        heading: `${projected.id} (${projected.tool})`,
-        json: projected.output,
-      }
+      return projected.text !== undefined
+        ? {
+            heading: `${projected.id} (${projected.tool})`,
+            paragraphs: [projected.text],
+          }
+        : {
+            heading: `${projected.id} (${projected.tool})`,
+            json: projected.output,
+          }
     })
     return [
       { heading: 'Tools', entries: toolEntries },
-      { heading: 'Scenarios (the exact JSON each tool returns)', entries: scenarioEntries },
+      { heading: 'Scenarios (the exact output each tool returns: coggit_status text, coggit_add/coggit_resolve JSON)', entries: scenarioEntries },
     ]
   },
 })

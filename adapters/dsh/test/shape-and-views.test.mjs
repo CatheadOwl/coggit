@@ -172,9 +172,9 @@ test('toJsonValue projects undefined (props omitted, array items -> null)', asyn
   assert.deepEqual(toJsonValue({ nested: { x: undefined } }), { nested: {} })
 })
 
-test('statusProjection hit emits the core HIT projection without leaking internals', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view } = statusProjection({
+test('statusText hit renders core status text with trailing hints (stale leaf)', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true,
     sourcePath: 'coggit/src/views.ts',
     nodeKind: 'file',
@@ -218,48 +218,29 @@ test('statusProjection hit emits the core HIT projection without leaking interna
       triage: [],
     },
   })
-  // The hit view is core's canonical StatusAgentPresentation — the same
-  // structured projection the upstream CLI/MCP text render.
-  assert.equal('node' in view, false, 'view must not leak the cyclic node')
-  assert.equal('inspection' in view, false, 'view must not leak the raw inspection subtree')
-  assert.equal('project' in view, false, 'view must not leak the project URI context')
-  assert.equal('handbookId' in view, false, 'handbookId is redundant with surfaceHints')
-  assert.equal('found' in view, false, 'a hit omits found')
-  assert.equal('pathHints' in view, false, 'empty pathHints is omitted')
-  assert.equal('ownStatus' in view, false, 'ownStatus is not part of the canonical agent presentation')
-  assert.equal('descendantStatus' in view, false, 'descendantStatus is not part of the canonical agent presentation')
-  assert.equal('triage' in view, false, 'triage is replaced by rows + legends in the agent presentation')
-  assert.equal(view.sourcePath, 'coggit/src/views.ts')
-  assert.equal(view.cognitionPath, 'coggit/src/views.ts.md')
-  assert.equal(view.cognitionPresence, 'present')
-  assert.equal(view.status, 'stale')
-  assert.equal(view.ownIssueCount, 1)
-  assert.equal(view.descendantIssueCount, 0)
-  assert.deepEqual(view.ownIssues[0], {
-    sourcePath: 'coggit/src/views.ts',
-    level: 'WARN',
-    issueTags: ['stale-cognition'],
-    actionTags: ['sync-leaf', 'resolve'],
-    optionalActionTags: [],
-  })
-  assert.deepEqual(view.descendantIssues, [])
-  assert.deepEqual(view.issueLegend, [{
-    level: 'WARN',
-    tag: 'stale-cognition',
-    description: 'Cognition is out of date with source.',
-    hints: [],
-  }])
-  assert.deepEqual(view.actionLegend, [
-    { tag: 'sync-leaf', role: 'recommended', description: 'Read leaf handbook and sync cognition with source.' },
-    { tag: 'resolve', role: 'recommended', description: 'Accept the reviewed pair after sync.' },
-  ])
+  // The hit text is core's canonical agent presentation (the same renderer
+  // the CLI/MCP deliver), plus this surface's trailing hint lines.
+  assert.ok(text.includes('Status: Stale'), 'aggregated status header')
+  assert.ok(text.includes('Source: coggit/src/views.ts'))
+  assert.ok(text.includes('Cognition: coggit/src/views.ts.md'))
+  assert.ok(text.includes('Legend:'), 'issue legend renders once')
+  assert.ok(text.includes('WARN'), 'row severity level')
+  assert.ok(/stale-cognition\s*\|/.test(text), 'issue tag in the own row')
+  assert.ok(text.includes('actions=sync-leaf,resolve'), 'row action channel')
+  assert.ok(text.includes('Own issues: 1'))
+  assert.ok(text.includes('Descendant issues: 0'))
+  // Trailing hints: one blank line, then the own-node steps (handbook lead,
+  // resolve trail — the status-surface role contract role contract).
+  assert.ok(text.endsWith(
+    '\n\nBefore authoring or editing this cognition, load skill "coggit-handbook-leaf" with the skill tool.\nCall coggit_resolve with sourcePath="coggit/src/views.ts".',
+  ), 'stale hit ends with the handbook + resolve hints after a blank line')
 })
 
 
 
-test('statusProjection miss branch carries only found:false + sourcePath + pathHints', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view } = statusProjection({
+test('statusText miss renders core miss text with fuzzy candidates, no imperative hints', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: false,
     sourcePath: 'src/nope.ts',
     nodeKind: null,
@@ -273,63 +254,15 @@ test('statusProjection miss branch carries only found:false + sourcePath + pathH
     pathMissMessage: 'No source path matched.',
     pathHintMessage: 'Did you mean:',
   })
-  assert.equal(view.found, false)
-  assert.deepEqual(view.pathHints, ['src/note.ts'])
-  // A miss carries no status/issue fields (those only exist once a node is found).
-  assert.equal('cognitionPath' in view, false)
-  assert.equal('cognitionPresence' in view, false)
-  assert.equal('status' in view, false)
-  assert.equal('ownStatus' in view, false)
-  assert.equal('descendantStatus' in view, false)
-  assert.equal('ownIssues' in view, false)
-  assert.equal('descendantIssues' in view, false)
-  assert.equal('pathMissMessage' in view, false, 'miss prose is not a next-step signal')
-  assert.equal('pathHintMessage' in view, false, 'miss prose is not a next-step signal')
+  // Miss text is core's renderPathMissText: not-found line + lead-in + the
+  // backtick-wrapped candidate list. No status/issue sections exist on a miss.
+  assert.equal(text, 'No source path matched.\nDid you mean:\nTry: `src/note.ts`')
+  assert.equal(text.includes('Call coggit_'), false, 'a miss carries no imperative hint')
 })
 
-test('statusProjection miss with no fuzzy hints omits pathHints', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view } = statusProjection({
-    found: false,
-    sourcePath: 'zzz/unknown.ts',
-    nodeKind: null,
-    cognitionPath: null,
-    project: null,
-    status: null,
-    ownStatus: null,
-    descendantStatus: null,
-    handbookId: null,
-    pathHints: [],
-    pathMissMessage: 'Path not found.',
-  })
-  assert.equal(view.found, false)
-  assert.equal('pathHints' in view, false, 'empty pathHints is omitted')
-})
-
-test('statusProjection miss surfaces fuzzy candidates (no re-check)', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view, surfaceHints } = statusProjection({
-    found: false,
-    sourcePath: 'src/nope.ts',
-    nodeKind: null,
-    cognitionPath: null,
-    project: null,
-    status: null,
-    ownStatus: null,
-    descendantStatus: null,
-    handbookId: null,
-    suggestedActions: [],
-    pathHints: ['src/note.ts', 'src/notes.ts'],
-  })
-  assert.equal(view.found, false)
-  assert.deepEqual(surfaceHints, [
-    'Try one of these source-root-relative paths: "src/note.ts", "src/notes.ts".',
-  ])
-})
-
-test('statusProjection miss with no candidates yields empty surfaceHints', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { surfaceHints } = statusProjection({
+test('statusText miss without candidates falls back to core default miss line', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: false,
     sourcePath: 'zzz/unknown.ts',
     nodeKind: null,
@@ -341,12 +274,12 @@ test('statusProjection miss with no candidates yields empty surfaceHints', async
     handbookId: null,
     pathHints: [],
   })
-  assert.deepEqual(surfaceHints, [])
+  assert.equal(text, 'Path not found in any CogGit project: zzz/unknown.ts')
 })
 
-test('statusProjection hit filters the optional add action and emits no handbook hint (the status-surface role contract)', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view, surfaceHints } = statusProjection({
+test('statusText hit filters the optional add action and emits no handbook hint (the status-surface role contract)', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true,
     sourcePath: 'uncognized.ts',
     nodeKind: 'file',
@@ -373,17 +306,19 @@ test('statusProjection hit filters the optional add action and emits no handbook
       triage: [],
     },
   })
-  assert.equal('found' in view, false, 'a hit omits found')
-  assert.equal(view.cognitionPresence, 'missing')
   // the status-surface role contract (issue 20260906-1916): the `missing` fact is the on-demand
-  // affordance — no imperative add hint, no premature handbook hint on the
-  // status face (handbook addressing starts at the add success result).
-  assert.deepEqual(surfaceHints, [])
+  // affordance — the materialization line renders, but no imperative add hint
+  // and no premature handbook hint on the status face (handbook addressing
+  // starts at the add success result).
+  assert.ok(text.includes('Cognition: Not created (add on demand)'))
+  assert.equal(text.includes('coggit_add'), false, 'no imperative add hint')
+  assert.equal(text.includes('coggit-handbook'), false, 'no premature handbook hint')
+  assert.equal(text.includes('Call coggit_'), false, 'no trailing hints section')
 })
 
-test('statusProjection hit on a fresh node emits no hints', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { surfaceHints } = statusProjection({
+test('statusText hit on a fresh node emits no hints', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true,
     sourcePath: 'foo.ts',
     nodeKind: 'file',
@@ -411,13 +346,15 @@ test('statusProjection hit on a fresh node emits no hints', async () => {
     },
   })
   // Fresh node: no actions, and the status face never emits the top-level
-  // handbook hint (issue 20260906-1916) — `surfaceHints` is empty.
-  assert.deepEqual(surfaceHints, [])
+  // handbook hint (issue 20260906-1916) — no trailing hints section.
+  assert.ok(text.includes('Status: Fresh'))
+  assert.equal(text.includes('coggit-handbook'), false)
+  assert.equal(text.includes('Call coggit_'), false)
 })
 
-test('statusProjection hit maps the core resolve next step to coggit_resolve', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view, surfaceHints } = statusProjection({
+test('statusText hit maps the core resolve next step to coggit_resolve', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true,
     sourcePath: 'foo.ts',
     nodeKind: 'file',
@@ -450,17 +387,16 @@ test('statusProjection hit maps the core resolve next step to coggit_resolve', a
       triage: [],
     },
   })
-  assert.equal(view.status, 'stale')
+  assert.ok(text.includes('Status: Stale'))
   // Top-level handbookId is suppressed: the sync action already carries handbookId='leaf'.
-  assert.deepEqual(surfaceHints, [
-    'Before authoring or editing this cognition, load skill "coggit-handbook-leaf" with the skill tool.',
-    'Call coggit_resolve with sourcePath="foo.ts".',
-  ])
+  assert.ok(text.endsWith(
+    '\n\nBefore authoring or editing this cognition, load skill "coggit-handbook-leaf" with the skill tool.\nCall coggit_resolve with sourcePath="foo.ts".',
+  ))
 })
 
-test('statusProjection hit with null status and no actions does NOT prepend coggit_add', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { surfaceHints } = statusProjection({
+test('statusText hit with null status and no actions does NOT prepend coggit_add', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true,
     sourcePath: 'mystery.ts',
     nodeKind: 'file',
@@ -487,12 +423,12 @@ test('statusProjection hit with null status and no actions does NOT prepend cogg
       triage: [],
     },
   })
-  assert.deepEqual(surfaceHints, [], 'status null alone is not a create-cognition signal')
+  assert.equal(text.includes('coggit_add'), false, 'status null alone is not a create-cognition signal')
 })
 
-test('statusProjection hit includes triage with mapped surfaceHints', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view, surfaceHints } = statusProjection({
+test('statusText hit includes the triage rows with own hints (stale folder + stale descendant)', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true, sourcePath: 'coggit/src', nodeKind: 'folder', cognitionPath: 'coggit/src/README.md',
     project: null, status: 'stale', ownStatus: 'stale', descendantStatus: 'stale',
     handbookId: 'skeleton', pathHints: [], suggestedActions: [
@@ -544,32 +480,25 @@ test('statusProjection hit includes triage with mapped surfaceHints', async () =
       ],
     },
   })
-  assert.equal(view.ownIssueCount, 1)
-  assert.equal(view.descendantIssueCount, 1)
+  assert.ok(text.includes('Own issues: 1'))
+  assert.ok(text.includes('Descendant issues: 1'))
   // Own row carries the folder's sync-skeleton+resolve; descendant row carries
-  // the descendant's sync-leaf+resolve — both tags defined once in the legends.
-  assert.deepEqual(view.ownIssues[0].actionTags, ['sync-skeleton', 'resolve'])
-  assert.deepEqual(view.descendantIssues[0], {
-    sourcePath: 'coggit/src/views.ts',
-    level: 'WARN',
-    issueTags: ['stale-cognition'],
-    actionTags: ['sync-leaf', 'resolve'],
-    optionalActionTags: [],
-  })
-  assert.deepEqual(view.actionLegend.map(e => e.tag), ['sync-leaf', 'sync-skeleton', 'resolve'])
-  assert.equal(view.actionLegend.find(e => e.tag === 'sync-leaf').role, 'recommended')
-  // Top-level surfaceHints carry the own node's steps (folder sync-lead + resolve).
-  assert.deepEqual(surfaceHints, [
-    'Before authoring or editing this cognition, load skill "coggit-handbook-skeleton" with the skill tool.',
-    'Call coggit_resolve with sourcePath="coggit/src".',
-  ])
+  // the descendant's sync-leaf+resolve — both tags defined once in the legend.
+  assert.ok(/actions=sync-skeleton,resolve/.test(text), 'own row action channel')
+  const descendantRow = text.split('\n').find(l => l.includes('source=coggit/src/views.ts'))
+  assert.ok(descendantRow, 'descendant row renders')
+  assert.ok(descendantRow.includes('actions=sync-leaf,resolve'), 'descendant row action channel')
+  // Top-level trailing hints carry the own node's steps (folder sync-lead + resolve).
+  assert.ok(text.endsWith(
+    '\n\nBefore authoring or editing this cognition, load skill "coggit-handbook-skeleton" with the skill tool.\nCall coggit_resolve with sourcePath="coggit/src".',
+  ))
 })
 
 
 
-test('statusProjection hit routes descendant next steps only through triage (own-fresh folder)', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view, surfaceHints } = statusProjection({
+test('statusText hit routes descendant next steps only through the rows (own-fresh folder)', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true, sourcePath: 'coggit/src', nodeKind: 'folder', cognitionPath: 'coggit/src/README.md',
     project: null, status: 'stale', ownStatus: 'fresh', descendantStatus: 'stale',
     handbookId: 'skeleton', pathHints: [], suggestedActions: [],
@@ -602,32 +531,26 @@ test('statusProjection hit routes descendant next steps only through triage (own
       ],
     },
   })
-  // The own node is fresh: no own rows, and the top-level channel carries NO
+  // The own node is fresh: no own rows, and the trailing hints carry NO
   // resolve hint for the descendant and NO top-level handbook hint (issue
   // 20260906-1916: the status face never emits the top-level handbookId —
   // handbook addressing belongs to the stale step-local sync action or the
   // add success result, not to a fresh own node).
-  assert.equal(view.ownIssueCount, 0)
-  assert.deepEqual(view.ownIssues, [])
-  assert.deepEqual(surfaceHints, [])
+  assert.ok(text.includes('Own issues: 0'))
+  assert.equal(text.includes('Call coggit_'), false, 'no own-node imperative hints')
+  assert.equal(text.includes('coggit-handbook'), false)
   // The stale descendant is routed through its descendant row: its sync-leaf +
-  // resolve tags come from the shared actionLegend (core's descendant-routing
-  // routing; matches the CLI text surface, which also shows the row + legend).
-  assert.equal(view.descendantIssueCount, 1)
-  assert.deepEqual(view.descendantIssues[0], {
-    sourcePath: 'coggit/src/views.ts',
-    level: 'WARN',
-    issueTags: ['stale-cognition'],
-    actionTags: ['sync-leaf', 'resolve'],
-    optionalActionTags: [],
-  })
-  assert.deepEqual(view.actionLegend.map(e => e.tag), ['sync-leaf', 'resolve'])
+  // resolve tags come from the shared action legend (core's descendant
+  // routing; matches the CLI/MCP text surface, which also shows row + legend).
+  assert.ok(text.includes('Descendant issues: 1'))
+  const descendantRow = text.split('\n').find(l => l.includes('source=coggit/src/views.ts'))
+  assert.ok(descendantRow, 'descendant row renders')
+  assert.ok(descendantRow.includes('actions=sync-leaf,resolve'))
 })
 
-
-test('statusProjection hit with empty triage yields triage.entries = []', async () => {
-  const { statusProjection } = await import(fromLib('views'))
-  const { view } = statusProjection({
+test('statusText hit on an all-fresh root renders plain counts and no hints', async () => {
+  const { statusText } = await import(fromLib('views'))
+  const text = statusText({
     found: true, sourcePath: '.', nodeKind: 'root', cognitionPath: 'README.md',
     project: null, status: 'fresh', ownStatus: 'fresh', descendantStatus: null,
     handbookId: null, pathHints: [], suggestedActions: [],
@@ -640,12 +563,11 @@ test('statusProjection hit with empty triage yields triage.entries = []', async 
       triage: [],
     },
   })
-  assert.equal(view.ownIssueCount, 0)
-  assert.equal(view.descendantIssueCount, 0)
-  assert.deepEqual(view.ownIssues, [])
-  assert.deepEqual(view.descendantIssues, [])
-  assert.deepEqual(view.issueLegend, [])
-  assert.deepEqual(view.actionLegend, [])
+  assert.ok(text.includes('Own issues: 0'))
+  assert.ok(text.includes('Descendant issues: 0'))
+  assert.equal(text.includes('Legend:'), false)
+  assert.equal(text.includes('Actions:'), false)
+  assert.equal(text.includes('Call coggit_'), false)
 })
 
 

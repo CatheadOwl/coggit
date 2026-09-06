@@ -44,20 +44,24 @@ test('removed tools are absent from the registered surface', async () => {
   }
 })
 
-test('each tool declares a json output with render and execute callbacks', async () => {
+test('add/resolve declare a json output; status declares a text output; all carry callbacks', async () => {
   const { registerCoggitTools } = await import(fromLib('tools'))
   const ctx = makeCtx({})
   registerCoggitTools(ctx)
   for (const def of ctx.defs) {
-    // defineTool normalizes the 'json' shorthand to a JSON-schema node; assert
-    // the output declaration survived with render + execute, not its literal spec.
     assert.ok(def.output, 'tool must declare an output')
     assert.equal(typeof def.output.render, 'function')
     assert.equal(typeof def.execute, 'function')
   }
+  // The status face delivers core's canonical agent-facing TEXT (FR
+  // 20260907-dsh-status-view-core-text-rendering); add/resolve stay JSON.
+  const status = ctx.defs.find(d => d.name === 'coggit_status')
+  assert.equal(status.output.schema.type, 'string', 'status output is text')
+  const blocks = status.output.render({}, 'Status: Fresh\nSource: .')
+  assert.deepEqual(blocks, [{ type: 'text', text: 'Status: Fresh\nSource: .' }])
 })
 
-test('coggit_status defaults sourcePath and projects a JSON-safe view', async () => {
+test('coggit_status defaults sourcePath and returns core status text', async () => {
   const { registerCoggitTools } = await import(fromLib('tools'))
   const statusResult = {
     found: true, sourcePath: '.', nodeKind: 'root', project: { label: 'ws' },
@@ -81,24 +85,15 @@ test('coggit_status defaults sourcePath and projects a JSON-safe view', async ()
 
   const statusTool = ctx.defs.find(d => d.name === 'coggit_status')
   const out = await statusTool.execute({}, exec)
-  assert.equal('node' in out, false, 'status view must drop the cyclic node')
-  assert.equal('inspection' in out, false, 'status view must drop the raw inspection')
-  assert.equal('handbookId' in out, false)
-  assert.equal('found' in out, false, 'a hit omits found')
-  assert.equal('nodeKind' in out, false)
-  assert.equal('projectLabel' in out, false)
-  assert.equal(out.sourcePath, '.', 'omitted sourcePath defaults to "."')
-  assert.equal(out.cognitionPath, 'README.md')
-  assert.equal(out.cognitionPresence, 'present')
-  assert.equal(out.status, 'fresh')
-  // Follows core StatusAgentPresentation (canonical compact status view).
-  assert.equal(out.ownIssueCount, 0)
-  assert.equal(out.descendantIssueCount, 0)
-  assert.deepEqual(out.ownIssues, [])
-  assert.deepEqual(out.descendantIssues, [])
-  assert.deepEqual(out.issueLegend, [])
-  assert.deepEqual(out.actionLegend, [])
-  assert.ok(Array.isArray(out.surfaceHints))
+  assert.equal(typeof out, 'string', 'status output is the canonical text, not JSON')
+  assert.ok(out.includes('Status: Fresh'))
+  assert.ok(out.includes('Source: .'), 'omitted sourcePath defaults to "."')
+  assert.ok(out.includes('Cognition: README.md'))
+  assert.ok(out.includes('Own issues: 0'))
+  assert.ok(out.includes('Descendant issues: 0'))
+  // A fresh root carries no legend and no trailing hints section.
+  assert.equal(out.includes('Legend:'), false)
+  assert.equal(out.includes('Call coggit_'), false)
 })
 
 test('coggit_add forwards kind/overwrite and projects a success view', async () => {
