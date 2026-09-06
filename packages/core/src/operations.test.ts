@@ -255,11 +255,14 @@ suite('core operations', () => {
     assert.deepStrictEqual(result.issues, []);
     // The missing-cognition issue is dropped by the default `maintained` filter,
     // but the add next step is synthesized from the first-class node signal
-    // (`cognitionPresence === 'missing'`), so it survives the filter.
+    // (`cognitionPresence === 'missing'`), so it survives the filter. Its role
+    // is `optional-on-demand` (the status-surface role contract): adapters must not promote it into an
+    // imperative hint.
     assert.deepStrictEqual(result.suggestedActions, [{
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
+      role: 'optional-on-demand',
       sourcePath: 'src/missing.ts',
     }]);
   });
@@ -281,6 +284,7 @@ suite('core operations', () => {
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
+      role: 'optional-on-demand',
       sourcePath: 'src/missing.ts',
     }]);
   });
@@ -335,11 +339,13 @@ suite('core operations', () => {
       code: 'sync-cognition-with-source',
       label: 'Sync cognition with source changes',
       handbookId: 'leaf',
+      role: 'recommended',
       sourcePath: 'src/stale.ts',
     }, {
       code: 'resolve-stale-cognition',
       label: 'After syncing, accept the pair as reviewed',
       operation: 'resolve',
+      role: 'recommended',
       sourcePath: 'src/stale.ts',
     }, {
       code: 'fill-in-cognition-content',
@@ -479,6 +485,7 @@ suite('core operations', () => {
       code: 'recheck-status',
       label: 'Re-check the current status of this source path.',
       operation: 'status',
+      role: 'recommended',
       sourcePath: 'src/file.ts',
     }]);
   });
@@ -684,6 +691,7 @@ suite('core operations', () => {
       code: 'recheck-status',
       label: 'Re-check the current status of this source path.',
       operation: 'status',
+      role: 'recommended',
       sourcePath: 'src/tracked.ts',
     }]);
   });
@@ -851,11 +859,13 @@ suite('core operations', () => {
       code: 'sync-cognition-with-source',
       label: 'Sync cognition with source changes',
       handbookId: 'leaf',
+      role: 'recommended',
       sourcePath: 'src/stale.ts',
     }, {
       code: 'resolve-stale-cognition',
       label: 'After syncing, accept the pair as reviewed',
       operation: 'resolve',
+      role: 'recommended',
       sourcePath: 'src/stale.ts',
     }]);
   });

@@ -139,11 +139,13 @@ suite('status subtree triage', () => {
         code: 'sync-cognition-with-source',
         label: SYNC_COGNITION_ACTION_LABEL,
         handbookId: 'leaf',
+        role: 'recommended',
         sourcePath: 'src/src/stale.ts',
       }, {
         code: 'resolve-stale-cognition',
         label: 'After syncing, accept the pair as reviewed',
         operation: 'resolve',
+        role: 'recommended',
         sourcePath: 'src/src/stale.ts',
       }],
     }]);
@@ -215,6 +217,7 @@ suite('status subtree triage', () => {
       code: 'sync-cognition-with-source',
       label: SYNC_FOLDER_README_ACTION_LABEL,
       handbookId: 'skeleton',
+      role: 'recommended',
       sourcePath: 'src/src/feature',
     });
   });
@@ -288,6 +291,7 @@ suite('status subtree triage', () => {
       code: 'create-cognition',
       label: 'Create cognition file',
       operation: 'add',
+      role: 'optional-on-demand',
       sourcePath: 'src/src/missing.ts',
     });
   });

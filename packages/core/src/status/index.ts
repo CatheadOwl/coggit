@@ -300,6 +300,9 @@ function synthesizeNodeOperationActions(
 			code: 'create-cognition',
 			label: 'Create cognition file',
 			operation: 'add',
+			// the status-surface role contract: `add` is conditional materialization, never a default
+			// imperative next step — adapters must not promote it into a hint.
+			role: 'optional-on-demand',
 			sourcePath,
 		});
 	}
@@ -316,6 +319,7 @@ function synthesizeNodeOperationActions(
 					? SYNC_COGNITION_ACTION_LABEL
 					: SYNC_FOLDER_README_ACTION_LABEL,
 				handbookId,
+				role: 'recommended',
 				sourcePath,
 			});
 		}
@@ -323,6 +327,7 @@ function synthesizeNodeOperationActions(
 			code: 'resolve-stale-cognition',
 			label: 'After syncing, accept the pair as reviewed',
 			operation: 'resolve',
+			role: 'recommended',
 			sourcePath,
 		});
 	}

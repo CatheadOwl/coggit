@@ -47,6 +47,7 @@ export type {
   ResolveOperationResult,
   CoggitHandbookCatalogEntry,
   CoggitOperationAction,
+  CoggitOperationActionRole,
   CoggitOperationIssue,
   CoggitProjectContext,
   CoreOperationId,

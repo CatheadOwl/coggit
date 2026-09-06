@@ -366,14 +366,14 @@ function projectAction(action: CoggitOperationAction): ProjectedAction | null {
   if (action.handbookId === 'leaf') {
     return {
       tag: 'sync-leaf',
-      role: 'recommended',
+      role: action.role ?? 'recommended',
       description: 'Read leaf handbook and sync cognition with source.',
     };
   }
   if (action.handbookId === 'skeleton') {
     return {
       tag: 'sync-skeleton',
-      role: 'recommended',
+      role: action.role ?? 'recommended',
       description: 'Read skeleton handbook and sync folder README.',
     };
   }
@@ -382,13 +382,13 @@ function projectAction(action: CoggitOperationAction): ProjectedAction | null {
     case 'add':
       return {
         tag: 'add',
-        role: 'optional-on-demand',
+        role: action.role ?? 'optional-on-demand',
         description: 'Optional materialization: create cognition only on demand.',
       };
     case 'resolve':
       return {
         tag: 'resolve',
-        role: 'recommended',
+        role: action.role ?? 'recommended',
         description: 'Accept the reviewed pair after sync.',
       };
     // Operation-backed diagnostic affordances (inspect/re-check). Reserved: the

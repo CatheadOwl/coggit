@@ -32,6 +32,7 @@ export type {
 	SnapshotOperationScope,
 	CoggitProjectContext,
 	CoggitOperationAction,
+	CoggitOperationActionRole,
 	CoreOperationId,
 } from './operationTypes';
 

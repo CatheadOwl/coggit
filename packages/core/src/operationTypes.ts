@@ -30,10 +30,22 @@ export const CORE_OPERATION_IDS = ['snapshot', 'status', 'add', 'resolve', 'rout
 
 export type CoreOperationId = typeof CORE_OPERATION_IDS[number];
 
+/**
+ * Surfacing role for adapter presentation (the status-surface role contract). `recommended` actions
+ * may render as imperative next-step hints; `optional-on-demand` actions
+ * (canonical case: `add` materialization) must not be promoted into an
+ * imperative hint on a default maintained view — the status fact line is the
+ * affordance; `diagnostic` actions are evidence affordances, not workflow
+ * commands. An absent role leaves presentation to surface discretion.
+ */
+export type CoggitOperationActionRole = 'recommended' | 'optional-on-demand' | 'diagnostic';
+
 export interface CoggitOperationAction {
 	code: string;
 	label: string;
 	operation?: CoreOperationId;
+	/** Surfacing role (see {@link CoggitOperationActionRole}); set by core at synthesis time. */
+	role?: CoggitOperationActionRole;
 	/**
 	 * Read-before-edit asset reference for authoring steps (e.g. the stale
 	 * sync step). Same opaque id as the top-level `StatusOperationResult

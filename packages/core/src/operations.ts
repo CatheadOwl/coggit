@@ -35,6 +35,7 @@ import { projectContext as projectContextFromProject } from './project';
 
 export type {
   CoggitOperationAction,
+  CoggitOperationActionRole,
   CoggitProjectContext,
   CoreOperationId,
   SnapshotOperationScope,
@@ -820,6 +821,7 @@ function recheckStatusAction(sourcePath: string): CoggitOperationAction {
     code: 'recheck-status',
     label: 'Re-check the current status of this source path.',
     operation: 'status',
+    role: 'recommended',
     sourcePath,
   };
 }
