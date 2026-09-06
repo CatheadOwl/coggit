@@ -21,6 +21,7 @@ export interface RelatesResolveResult {
 /** Structural subset of the frozen `DeclarativeRelatesProvider` this provider implements. */
 export interface CognitionLinkRelatesProvider {
   name: string
+  description: string
   kind: string
   priority: number
   resolve(ctx: {
@@ -30,6 +31,7 @@ export interface CognitionLinkRelatesProvider {
 }
 
 const PROVIDER_NAME = 'cognition-link-enricher'
+const PROVIDER_DESCRIPTION = 'Links each mentioned path to its paired CogGit cognition document, marked stale or fresh (CogGit cognition-link).'
 const PROVIDER_KIND = 'cognition-link'
 // canonical band (0–99), ahead of breadcrumb-description's annotation band (100–199).
 const PROVIDER_PRIORITY = 10
@@ -54,6 +56,7 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
   let snapshot: CoggitSnapshot | undefined
   return {
     name: PROVIDER_NAME,
+    description: PROVIDER_DESCRIPTION,
     kind: PROVIDER_KIND,
     priority: PROVIDER_PRIORITY,
     resolve: async ({ path, input }) => {

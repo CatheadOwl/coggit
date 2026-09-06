@@ -162,6 +162,8 @@ test('registerCognitionLinkProvider registers a declarative provider via ctx.inj
   registerCognitionLinkProvider(ctx)
   assert.ok(registered, 'registerRelates must be called')
   assert.equal(registered.name, 'cognition-link-enricher')
+  assert.equal(typeof registered.description, 'string')
+  assert.ok(registered.description.length > 0)
   assert.equal(registered.kind, 'cognition-link')
   assert.equal(registered.priority, 10)
   assert.equal(typeof registered.resolve, 'function')
