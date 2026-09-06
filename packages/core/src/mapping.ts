@@ -334,6 +334,90 @@ export function projectRelativeToSourceIdentity(
   return stripRootName(rootName(root.projectRootUri, root.sourceRootUri), projectRelative);
 }
 
+/**
+ * Cognitive-side mirror of {@link projectRelativeToSourceIdentity}: strip the
+ * configured `cognitionRoot` name instead. Non-prefixed paths pass through
+ * unchanged.
+ */
+export function projectRelativeToCognitionIdentity(
+  root: CoggitWorkspaceRoot,
+  projectRelative: string,
+): string {
+  return stripRootName(rootName(root.projectRootUri, root.cognitionRootUri), projectRelative);
+}
+
+// ─── Project-relative classification ─────────────────────────────────────
+
+/**
+ * Result of classifying one project-relative path against one workspace root
+ * via {@link projectRelativePair}.
+ */
+export type ProjectRelativePair =
+  | { side: 'source'; sourcePath: string }
+  | { side: 'cognition'; sourcePath: string };
+
+/**
+ * Classify one project-relative path against one workspace root.
+ *
+ * Pure string work over the pairing convention; no IO, no registry lookup.
+ *
+ * - Separated layout (cognition root is a named sibling of the source root):
+ *   a path under the cognition root maps to its paired source
+ *   ({@link sourceIdentityToProjectRelative} coordinates) with side
+ *   `'cognition'`; free-form cognition documents (`CODE_MAP.md`) and the
+ *   cognition root directory itself return `undefined`. Any other path is
+ *   side `'source'` with the canonicalized input (separators normalized to
+ *   `/`), including paths outside the source root prefix (legacy fallback).
+ * - Sibling layout (cognition root is `.`): source and cognition live in one
+ *   tree, so classification is the pairing convention alone. `x.ext.md` and
+ *   `README.md` readings map to their paired source with side `'cognition'` —
+ *   NOTE this is a naming-convention heuristic, not an existence fact: a real
+ *   source `README.md` is indistinguishable from a folder cognition here.
+ *   Paths with no pairing convention are side `'source'`.
+ */
+export function projectRelativePair(
+  root: CoggitWorkspaceRoot,
+  projectRelativePath: string,
+): ProjectRelativePair | undefined {
+  const normalized = projectRelativePath
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/gu, '');
+  if (normalized === '' || normalized === '.') {
+    return { side: 'source', sourcePath: normalized === '' ? '.' : normalized };
+  }
+
+  const cognitionName = rootName(root.projectRootUri, root.cognitionRootUri);
+  const separated = cognitionName !== '.' && cognitionName !== '';
+  if (!separated || isUnderRootName(cognitionName, normalized)) {
+    const cognitionIdentity = stripRootName(cognitionName, normalized);
+    const mapped = cognitionIdentityToSourceIdentity(cognitionIdentity);
+    if (mapped) {
+      return {
+        side: 'cognition',
+        sourcePath: sourceIdentityToProjectRelative(root, mapped.sourceIdentity),
+      };
+    }
+    if (separated) {
+      // Free-form cognition document or the cognition root directory itself.
+      return undefined;
+    }
+    // Sibling layout: no pairing convention → the shared-tree path is a
+    // source path.
+  }
+
+  return { side: 'source', sourcePath: normalized };
+}
+
+function isUnderRootName(rootName: string, normalizedProjectRelative: string): boolean {
+  if (rootName === '.' || rootName === '') {
+    return true;
+  }
+  return (
+    normalizedProjectRelative === rootName ||
+    normalizedProjectRelative.startsWith(`${rootName}/`)
+  );
+}
+
 function rootName(projectRootUri: UriComponents, rootUri: UriComponents): string {
   return toRelativeUriPath(projectRootUri, rootUri);
 }

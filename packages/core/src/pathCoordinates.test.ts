@@ -8,6 +8,7 @@ import {
   sourceIdentityToProjectRelative,
   cognitionIdentityToProjectRelative,
   projectRelativeToSourceIdentity,
+  projectRelativePair,
 } from './mapping';
 
 function uri(path: string): UriComponents {
@@ -77,5 +78,86 @@ suite('path-coordinate contract', () => {
     assert.strictEqual(typeof context.sourcePathRule, 'string');
     assert.ok(!('sourceRootUri' in context));
     assert.ok(!('cognitionRootUri' in context));
+  });
+
+  suite('projectRelativePair classification (separated layout)', () => {
+    test('source-side paths return the canonicalized input', () => {
+      const root = makeRoot();
+      assert.deepStrictEqual(projectRelativePair(root, 'codebase/src/a.ts'), {
+        side: 'source',
+        sourcePath: 'codebase/src/a.ts',
+      });
+      // Outside any root prefix: legacy fallback, still source side.
+      assert.deepStrictEqual(projectRelativePair(root, 'src/a.ts'), {
+        side: 'source',
+        sourcePath: 'src/a.ts',
+      });
+    });
+
+    test('cognition-side leaf and folder readings map to their paired source', () => {
+      const root = makeRoot();
+      assert.deepStrictEqual(projectRelativePair(root, 'codebase_cognition/a/b.ts.md'), {
+        side: 'cognition',
+        sourcePath: 'codebase/a/b.ts',
+      });
+      assert.deepStrictEqual(projectRelativePair(root, 'codebase_cognition/x/README.md'), {
+        side: 'cognition',
+        sourcePath: 'codebase/x',
+      });
+    });
+
+    test('free-form cognition docs and the cognition root itself are undefined', () => {
+      const root = makeRoot();
+      assert.strictEqual(projectRelativePair(root, 'codebase_cognition/CODE_MAP.md'), undefined);
+      assert.strictEqual(projectRelativePair(root, 'codebase_cognition'), undefined);
+    });
+
+    test('backslash input is normalized', () => {
+      const root = makeRoot();
+      assert.deepStrictEqual(projectRelativePair(root, 'codebase_cognition\\a\\b.ts.md'), {
+        side: 'cognition',
+        sourcePath: 'codebase/a/b.ts',
+      });
+      assert.deepStrictEqual(projectRelativePair(root, 'codebase\\src\\a.ts'), {
+        side: 'source',
+        sourcePath: 'codebase/src/a.ts',
+      });
+    });
+  });
+
+  suite('projectRelativePair classification (sibling layout)', () => {
+    function makeSiblingRoot(): CoggitWorkspaceRoot {
+      const root = makeRoot();
+      root.sourceRootUri = root.projectRootUri;
+      root.cognitionRootUri = root.projectRootUri;
+      return root;
+    }
+
+    test('paired readings map to their paired source', () => {
+      const root = makeSiblingRoot();
+      assert.deepStrictEqual(projectRelativePair(root, 'src/a.ts.md'), {
+        side: 'cognition',
+        sourcePath: 'src/a.ts',
+      });
+      // README heuristic: a shared-tree README.md is classified as the
+      // folder cognition pairing, not as a source file.
+      assert.deepStrictEqual(projectRelativePair(root, 'src/README.md'), {
+        side: 'cognition',
+        sourcePath: 'src',
+      });
+    });
+
+    test('non-paired paths fall through to the source side', () => {
+      const root = makeSiblingRoot();
+      assert.deepStrictEqual(projectRelativePair(root, 'src/a.ts'), {
+        side: 'source',
+        sourcePath: 'src/a.ts',
+      });
+      // Plain markdown with no source-like extension has no pairing.
+      assert.deepStrictEqual(projectRelativePair(root, 'src/notes.md'), {
+        side: 'source',
+        sourcePath: 'src/notes.md',
+      });
+    });
   });
 });

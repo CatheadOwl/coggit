@@ -149,10 +149,12 @@ export {
 } from './status';
 export {
   normalizeSourcePathInput,
+  projectRelativePair,
   toCognitionFileUri,
   toCognitionFolderReadmeUri,
   toRelativeUriPath,
 } from './mapping';
+export type { ProjectRelativePair } from './mapping';
 export {
   PATH_HINT_MESSAGE,
   PATH_MISS_MESSAGE,
