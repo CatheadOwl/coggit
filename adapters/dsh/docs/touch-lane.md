@@ -22,7 +22,9 @@ On the existing `registerRelates` provider:
 
 ```ts
 sources: ['prompt', 'touch'],
-touchSubjects(touchedPath) {
+touchSubjects(touchedPath, context) {
+  // context: TouchSubjectContext { cwd, sessionId? } — the session cwd the
+  // sensor normalized the path against (record time) / the step's cwd (pre-step)
   if (isSourceSide(touchedPath)) return [touchedPath]
   const paired = pairedSourceOf(touchedPath) // *.ts.md / folder README.md -> paired source
   return paired !== undefined ? [paired, touchedPath] : []
@@ -31,26 +33,27 @@ touchSubjects(touchedPath) {
 
 `touchSubjects` and the prompt-side subject (the mentioned path itself — no
 `subjectOf`) must land in the same subject space, or cross-source once-dedupe
-does not engage. The projection is pure string work over the workspace roots
-(see `projectTouchedPath` in `cognition-link-provider.ts`), composed from
-`@coggit/core` mapping helpers (`cognitionIdentityToSourceIdentity`,
-`sourceIdentityToProjectRelative`, `toRelativeUriPath`) — no new SDK surface
-required.
+does not engage. The projection is pure string work over the roots of
+`context.cwd`, composed from the `@coggit/core` public pairing classification
+(`projectRelativePair`) — no new SDK surface required.
 
-Known limitation: the framework calls `touchSubjects(path)` without session
-context, while root names are per-project config data. The provider therefore
-keeps a roots cache refreshed on every turn (`resolve` receives `input.cwd`)
-and projects against the union of cached roots. Cold-start touches recorded
-before the first resolve of a session degrade to a missed invalidation — the
-worst case is a repeat suppression, never a wrong injection. The structural
-fix (session context at record time) belongs to the framework, filed there.
+Known limitation: the framework's `TouchSubjectContext` (`cwd` + optional
+`sessionId`) identifies the project, but roots come from the async project
+discovery while `touchSubjects` is synchronous. The provider keeps a
+`Map<cwd, roots>` warmed by every turn (`resolve` sees `input.cwd`) and
+consulted through `context.cwd`; an unwarmed cwd returns no subjects and is
+warmed in the background for the next call. The residual cold start is one
+missed invalidation for the first touches of a brand-new cwd — never a wrong
+injection, and no cross-project union contamination (the earlier union-cache
+degradation is retired by this context-based lookup).
 
 ## Pseudo-paths and origin metadata
 
 Touches re-offered as subjects enter `resolve` as pseudo-paths with
 `origin: 'touch'` and `touchTool: 'read' | 'edit'` (open string, closed set by
 convention). `path.origin` / `path.touchTool` distinguish the agent's own
-actions (`edit`) from organic reads.
+actions (`edit`) from organic reads. At record time the same touch reaches
+`touchSubjects` with `TouchSubjectContext` (`cwd`, `sessionId?`).
 
 ## Rendering policy (lives entirely on this side)
 

@@ -31,6 +31,17 @@ export interface ResolvedPromptPathLike {
   touchTool?: string
 }
 
+/**
+ * Structural subset of the frozen `TouchSubjectContext` the framework hands to
+ * `touchSubjects`: the session cwd the sensor normalized the path against
+ * (record time) or the current step's cwd (pre-step consumption), plus the
+ * touch-owning session when the caller has one.
+ */
+export interface TouchSubjectContextLike {
+  cwd: string
+  sessionId?: string
+}
+
 /** Structural subset of the frozen `DeclarativeRelatesProvider` this provider implements. */
 export interface CognitionLinkRelatesProvider {
   name: string
@@ -42,9 +53,10 @@ export interface CognitionLinkRelatesProvider {
   /**
    * Reverse touch projection onto this provider's subjects (the paired source
    * path, project-relative). Pure path computation via the SDK's pairing
-   * convention (`projectRelativePair`) — no FS access.
+   * convention (`projectRelativePair`) against the roots of `context.cwd` —
+   * no FS access.
    */
-  touchSubjects?(touchedPath: string): string[]
+  touchSubjects?(touchedPath: string, context: TouchSubjectContextLike): string[]
   resolve(ctx: {
     path: ResolvedPromptPathLike
     input: { cwd: string; turnId: string }
@@ -94,12 +106,13 @@ export function resolveCognitionLink(result: StatusOperationResult): RelatesReso
 export function createCognitionLinkProvider(coggit: CoggitService): CognitionLinkRelatesProvider {
   let cachedTurnId: string | undefined
   let snapshot: CoggitSnapshot | undefined
-  // Roots for the touch projection, refreshed per turn from the calling
-  // session's cwd: the framework's record-time `touchSubjects` callback
-  // carries no session context, so the union of seen roots is projected
-  // against (cold-start touches degrade to a missed invalidation, never a
-  // wrong injection — see docs/touch-lane.md).
-  let cachedRoots: CoggitWorkspaceRoot[] = []
+  // Roots per workspace root, warmed by `resolve` (which sees `input.cwd` per
+  // turn) and consulted by `touchSubjects` through its explicit
+  // `TouchSubjectContext.cwd`. A cwd not yet warmed returns no subjects this
+  // call and is warmed in the background for the next one — the residual
+  // cold-start is a missed invalidation for the first touches of a brand-new
+  // cwd, never a wrong injection (see docs/touch-lane.md).
+  const rootsByCwd = new Map<string, CoggitWorkspaceRoot[]>()
   const lastRendered = new Map<string, RenderedPairState>()
   return {
     name: PROVIDER_NAME,
@@ -107,9 +120,18 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
     kind: PROVIDER_KIND,
     priority: PROVIDER_PRIORITY,
     sources: ['prompt', 'touch'],
-    touchSubjects: (touchedPath) => {
+    touchSubjects: (touchedPath, context) => {
+      const roots = rootsByCwd.get(context.cwd)
+      if (roots === undefined) {
+        // Unknown cwd: no subjects this call; warm it in the background so
+        // the next touch of this cwd projects exactly.
+        if (hasCoggitConfig(context.cwd)) {
+          void coggit.roots(context.cwd).then((warmed) => rootsByCwd.set(context.cwd, warmed))
+        }
+        return []
+      }
       const subjects = new Set<string>()
-      for (const root of cachedRoots) {
+      for (const root of roots) {
         const pair = projectRelativePair(root, touchedPath)
         if (pair !== undefined) subjects.add(pair.sourcePath)
       }
@@ -121,7 +143,7 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
       if (!hasCoggitConfig(input.cwd)) return undefined
       if (cachedTurnId !== input.turnId) {
         snapshot = await coggit.buildSnapshot(input.cwd)
-        cachedRoots = await coggit.roots(input.cwd)
+        rootsByCwd.set(input.cwd, await coggit.roots(input.cwd))
         cachedTurnId = input.turnId
       }
       const result = await coggit.statusWithSnapshot(input.cwd, path.path, snapshot!)

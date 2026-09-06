@@ -177,19 +177,21 @@ test('touchSubjects: cold cache projects nothing; warmed cache maps both sides o
     }
     const provider = createCognitionLinkProvider(coggit)
 
-    // Cold cache: no roots seen yet, nothing to project (documented degradation).
-    assert.deepEqual(provider.touchSubjects('codebase/a/b.ts.md'), [])
+    // Cold cwd: no roots warmed yet, nothing to project (documented degradation).
+    assert.deepEqual(provider.touchSubjects('codebase/a/b.ts.md', { cwd: root }), [])
 
     // Warm the cache via one resolve.
     await provider.resolve({ path: { path: 'codebase/a/b.ts' }, input: { cwd: root, turnId: 't1' } })
 
     // Cognition-side touch reverse-projects to the paired source.
-    assert.deepEqual(provider.touchSubjects('codebase_cognition/a/b.ts.md'), ['codebase/a/b.ts'])
-    assert.deepEqual(provider.touchSubjects('codebase_cognition/x/README.md'), ['codebase/x'])
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/a/b.ts.md', { cwd: root }), ['codebase/a/b.ts'])
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/x/README.md', { cwd: root }), ['codebase/x'])
     // Free-form cognition docs have no pairing: no subject.
-    assert.deepEqual(provider.touchSubjects('codebase_cognition/CODE_MAP.md'), [])
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/CODE_MAP.md', { cwd: root }), [])
     // Source-side touch keeps the path itself as the subject (prompt-side mirror).
-    assert.deepEqual(provider.touchSubjects('codebase/a/b.ts'), ['codebase/a/b.ts'])
+    assert.deepEqual(provider.touchSubjects('codebase/a/b.ts', { cwd: root }), ['codebase/a/b.ts'])
+    // Another cwd stays isolated: no union contamination across projects.
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/a/b.ts.md', { cwd: 'D:/elsewhere' }), [])
     assert.equal(ownStatus, 'fresh')
   } finally {
     await removeTempDir(root)
