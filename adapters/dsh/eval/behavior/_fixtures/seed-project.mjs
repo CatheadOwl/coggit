@@ -6,7 +6,7 @@
  */
 import { writeFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { initProject } from '@coggit/core'
+import { addOperation, discoverCoggitProjects, initProject } from '@coggit/core'
 import { createNodeCoggitServices, pathToUriComponents } from '@coggit/runtime-node'
 
 /** Initialize `.coggit/` at the workspace root with `src` -> `src_cognition`. */
@@ -18,6 +18,17 @@ export async function seedProject(workspace) {
   })
   await mkdir(join(workspace, 'src'), { recursive: true })
   await writeFile(join(workspace, 'src', 'example.ts'), 'export const value = 42\n')
+}
+
+/**
+ * Seed a fresh cognition pair for `src/example.ts` through the SDK's own add
+ * path, so touch-lane cases start from a present, fresh cognition document
+ * (the enricher's never→fresh branch) without a model-side `coggit_add` call.
+ */
+export async function seedFreshCognition(workspace) {
+  const services = createNodeCoggitServices({ workspacePath: workspace })
+  const projects = await discoverCoggitProjects(services)
+  await addOperation(projects, 'src/example.ts')
 }
 
 /** Recursively collect file names under `dir` (empty when absent). */
