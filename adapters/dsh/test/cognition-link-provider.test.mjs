@@ -93,6 +93,22 @@ test('resolveCognitionLink collapses source miss, missing, and not-applicable to
   assert.equal(resolveCognitionLink(hit({ presence: 'not-applicable' })), undefined)
 })
 
+function uri(path) {
+  return { scheme: 'test', authority: '', path, query: '', fragment: '' }
+}
+
+function separatedRoot() {
+  return {
+    id: 'root',
+    label: 'root',
+    workspaceFolder: { uri: uri('/workspace'), name: 'workspace', index: 0 },
+    configUri: uri('/workspace/.coggit/config.yaml'),
+    projectRootUri: uri('/workspace'),
+    sourceRootUri: uri('/workspace/codebase'),
+    cognitionRootUri: uri('/workspace/codebase_cognition'),
+  }
+}
+
 test('createCognitionLinkProvider builds one snapshot per turn and reuses it across paths', async () => {
   const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
   const root = await makeTempDir('coggit-link')
@@ -104,6 +120,7 @@ test('createCognitionLinkProvider builds one snapshot per turn and reuses it acr
         buildCount += 1
         return { build: buildCount }
       },
+      async roots() { return [separatedRoot()] },
       async statusWithSnapshot(_cwd, sourcePath) {
         return hit({ cognitionPath: `cog/${sourcePath}`, sourcePath })
       },
@@ -120,7 +137,9 @@ test('createCognitionLinkProvider builds one snapshot per turn and reuses it acr
     const turn2 = { cwd: root, turnId: 't2' }
     const r3 = await provider.resolve({ path: { path: 'a.ts' }, input: turn2 })
     assert.equal(buildCount, 2, 'a new turn rebuilds the snapshot')
-    assert.deepEqual(r3, { href: 'cog/a.ts', meta: { stale: 'false' } })
+    // Steady state (same pair state as the last render): silent — the
+    // snapshot is still rebuilt per turn, but nothing new is said.
+    assert.equal(r3, undefined)
   } finally {
     await removeTempDir(root)
   }
@@ -133,12 +152,94 @@ test('createCognitionLinkProvider short-circuits unconfigured workspaces without
     let buildCount = 0
     const coggit = {
       async buildSnapshot() { buildCount += 1; return {} },
+      async roots() { return [] },
       async statusWithSnapshot() { throw new Error('must not be called on an unconfigured workspace') },
     }
     const provider = createCognitionLinkProvider(coggit)
     const out = await provider.resolve({ path: { path: 'a.ts' }, input: { cwd: root, turnId: 't1' } })
     assert.equal(out, undefined)
     assert.equal(buildCount, 0, 'no snapshot build on an unconfigured workspace')
+  } finally {
+    await removeTempDir(root)
+  }
+})
+
+test('touchSubjects: cold cache projects nothing; warmed cache maps both sides onto paired sources', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const root = await makeTempDir('coggit-link-touch')
+  try {
+    await createInitializedProject(root)
+    let ownStatus = 'fresh'
+    const coggit = {
+      async buildSnapshot() { return {} },
+      async roots() { return [separatedRoot()] },
+      async statusWithSnapshot(_cwd, sourcePath) { return hit({ ownStatus, sourcePath, cognitionPath: `cog/${sourcePath}` }) },
+    }
+    const provider = createCognitionLinkProvider(coggit)
+
+    // Cold cache: no roots seen yet, nothing to project (documented degradation).
+    assert.deepEqual(provider.touchSubjects('codebase/a/b.ts.md'), [])
+
+    // Warm the cache via one resolve.
+    await provider.resolve({ path: { path: 'codebase/a/b.ts' }, input: { cwd: root, turnId: 't1' } })
+
+    // Cognition-side touch reverse-projects to the paired source.
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/a/b.ts.md'), ['codebase/a/b.ts'])
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/x/README.md'), ['codebase/x'])
+    // Free-form cognition docs have no pairing: no subject.
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/CODE_MAP.md'), [])
+    // Source-side touch keeps the path itself as the subject (prompt-side mirror).
+    assert.deepEqual(provider.touchSubjects('codebase/a/b.ts'), ['codebase/a/b.ts'])
+    assert.equal(ownStatus, 'fresh')
+  } finally {
+    await removeTempDir(root)
+  }
+})
+
+test('rendering policy: self-edit reconciles silently, steady state is silent, a flip re-emits with updated marker', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const root = await makeTempDir('coggit-link-render')
+  try {
+    await createInitializedProject(root)
+    let ownStatus = 'fresh'
+    const coggit = {
+      async buildSnapshot() { return {} },
+      async roots() { return [separatedRoot()] },
+      async statusWithSnapshot(_cwd, sourcePath) { return hit({ ownStatus, sourcePath, cognitionPath: `cog/${sourcePath}` }) },
+    }
+    const provider = createCognitionLinkProvider(coggit)
+    const subject = 'codebase/a/b.ts'
+
+    // never -> fresh: plain link.
+    const first = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: 't1' } })
+    assert.deepEqual(first, { href: `cog/${subject}`, meta: { stale: 'false' } })
+
+    // Same state again (new turn, e.g. re-mention): steady state, silent.
+    const steady = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: 't2' } })
+    assert.equal(steady, undefined)
+
+    // The agent edits the source: reconcile, never narrate.
+    ownStatus = 'stale'
+    const selfEdit = await provider.resolve({
+      path: { path: subject, origin: 'touch', touchTool: 'edit' },
+      input: { cwd: root, turnId: 't3' },
+    })
+    assert.equal(selfEdit, undefined)
+
+    // Steady again after the reconcile (record was refreshed to stale).
+    const steadyStale = await provider.resolve({
+      path: { path: subject, origin: 'touch', touchTool: 'read' },
+      input: { cwd: root, turnId: 't4' },
+    })
+    assert.equal(steadyStale, undefined)
+
+    // External change flips the state: one item again, marked updated.
+    ownStatus = 'fresh'
+    const flipped = await provider.resolve({
+      path: { path: subject, origin: 'touch', touchTool: 'read' },
+      input: { cwd: root, turnId: 't5' },
+    })
+    assert.deepEqual(flipped, { href: `cog/${subject}`, meta: { stale: 'false', updated: 'true' } })
   } finally {
     await removeTempDir(root)
   }
@@ -166,5 +267,7 @@ test('registerCognitionLinkProvider registers a declarative provider via ctx.inj
   assert.ok(registered.description.length > 0)
   assert.equal(registered.kind, 'cognition-link')
   assert.equal(registered.priority, 10)
+  assert.deepEqual(registered.sources, ['prompt', 'touch'])
+  assert.equal(typeof registered.touchSubjects, 'function')
   assert.equal(typeof registered.resolve, 'function')
 })

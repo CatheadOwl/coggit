@@ -1,6 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis'
-import { tryGetCognitionPath } from '@coggit/core'
-import type { CoggitSnapshot, StatusOperationResult } from '@coggit/core'
+import { projectRelativePair, tryGetCognitionPath } from '@coggit/core'
+import type { CoggitSnapshot, CoggitWorkspaceRoot, StatusOperationResult } from '@coggit/core'
 
 import { hasCoggitConfig } from './service.js'
 import type { CoggitService } from './service.js'
@@ -18,16 +18,43 @@ export interface RelatesResolveResult {
   meta?: Record<string, string>
 }
 
+/**
+ * Structural subset of the frozen `ResolvedPromptPath` this provider reads.
+ * `origin` is `'prompt-parse'` for prompt mentions and `'touch'` for tool-touch
+ * pseudo-paths; `touchTool` is set only for touches (`'read' | 'edit'` by
+ * convention — open string upstream).
+ */
+export interface ResolvedPromptPathLike {
+  path: string
+  kind?: 'file' | 'directory'
+  origin?: string
+  touchTool?: string
+}
+
 /** Structural subset of the frozen `DeclarativeRelatesProvider` this provider implements. */
 export interface CognitionLinkRelatesProvider {
   name: string
   description: string
   kind: string
   priority: number
+  /** Signal sources consumed; `['prompt', 'touch']` subscribes to the tool-touch sensor lane. */
+  sources?: Array<'prompt' | 'touch'>
+  /**
+   * Reverse touch projection onto this provider's subjects (the paired source
+   * path, project-relative). Pure path computation via the SDK's pairing
+   * convention (`projectRelativePair`) — no FS access.
+   */
+  touchSubjects?(touchedPath: string): string[]
   resolve(ctx: {
-    path: { path: string }
+    path: ResolvedPromptPathLike
     input: { cwd: string; turnId: string }
   }): Promise<RelatesResolveResult | undefined>
+}
+
+/** What was last rendered for one subject: the append-only history anchor of the rendering policy. */
+interface RenderedPairState {
+  cognitionPath: string
+  stale: boolean
 }
 
 const PROVIDER_NAME = 'cognition-link-enricher'
@@ -48,27 +75,77 @@ export function resolveCognitionLink(result: StatusOperationResult): RelatesReso
 }
 
 /**
- * Declarative provider: builds one snapshot per turn (`input.turnId`), reuses
- * it across paths, then discards it when the turn changes (reconcile-on-read).
+ * Declarative provider with the touch lane (prompt-middleware W11). The
+ * rendering policy lives entirely here — the framework only does pending,
+ * invalidation, and re-run:
+ *
+ * - steady state: same `{ cognitionPath, stale }` as the last render returns
+ *   `undefined` (one snapshot query per touch, zero injection);
+ * - the agent's own edit reconciles the record silently (`origin: 'touch'` +
+ *   `touchTool: 'edit'` — narrating the agent's own action is noise);
+ * - a state flip after a previous render re-emits the link with an
+ *   `updated: 'true'` meta marker: injections are append-only history, the
+ *   one cheap line is the only invalidation notice.
+ *
+ * One snapshot (and roots cache) per turn (`input.turnId`), reused across
+ * paths, discarded when the turn changes (reconcile-on-read). Design record:
+ * `docs/touch-lane.md`.
  */
 export function createCognitionLinkProvider(coggit: CoggitService): CognitionLinkRelatesProvider {
   let cachedTurnId: string | undefined
   let snapshot: CoggitSnapshot | undefined
+  // Roots for the touch projection, refreshed per turn from the calling
+  // session's cwd: the framework's record-time `touchSubjects` callback
+  // carries no session context, so the union of seen roots is projected
+  // against (cold-start touches degrade to a missed invalidation, never a
+  // wrong injection — see docs/touch-lane.md).
+  let cachedRoots: CoggitWorkspaceRoot[] = []
+  const lastRendered = new Map<string, RenderedPairState>()
   return {
     name: PROVIDER_NAME,
     description: PROVIDER_DESCRIPTION,
     kind: PROVIDER_KIND,
     priority: PROVIDER_PRIORITY,
+    sources: ['prompt', 'touch'],
+    touchSubjects: (touchedPath) => {
+      const subjects = new Set<string>()
+      for (const root of cachedRoots) {
+        const pair = projectRelativePair(root, touchedPath)
+        if (pair !== undefined) subjects.add(pair.sourcePath)
+      }
+      return [...subjects]
+    },
     resolve: async ({ path, input }) => {
       // Unconfigured workspace: no snapshot build (avoids a per-turn full scan)
       // and no relates item — miss / missing / not-applicable collapse here.
       if (!hasCoggitConfig(input.cwd)) return undefined
       if (cachedTurnId !== input.turnId) {
         snapshot = await coggit.buildSnapshot(input.cwd)
+        cachedRoots = await coggit.roots(input.cwd)
         cachedTurnId = input.turnId
       }
       const result = await coggit.statusWithSnapshot(input.cwd, path.path, snapshot!)
-      return resolveCognitionLink(result)
+      const link = resolveCognitionLink(result)
+      if (link?.href === undefined) {
+        lastRendered.delete(path.path)
+        return undefined
+      }
+      const current: RenderedPairState = {
+        cognitionPath: link.href,
+        stale: link.meta?.stale === 'true',
+      }
+      // The agent's own edit: reconcile the record, never narrate it back.
+      if (path.origin === 'touch' && path.touchTool === 'edit') {
+        lastRendered.set(path.path, current)
+        return undefined
+      }
+      const previous = lastRendered.get(path.path)
+      lastRendered.set(path.path, current)
+      if (previous === undefined) return link
+      if (previous.cognitionPath === current.cognitionPath && previous.stale === current.stale) {
+        return undefined
+      }
+      return { ...link, meta: { ...link.meta, updated: 'true' } }
     },
   }
 }
