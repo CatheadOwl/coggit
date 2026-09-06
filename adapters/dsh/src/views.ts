@@ -62,14 +62,16 @@ function pathHintsHint(pathHints: string[]): string {
  * `StatusAgentPresentation` (tested there). Future non-model consumers
  * (e.g. a GUI status panel) take structured data from the core SDK, not from
  * this face. Hit/miss is discriminated by content (`Path not found…` lead vs
- * `Status:`/`Source:` header), not by JSON shape.
+ * `Status:`/`Source:` header), not by JSON shape. (Branch key: core's
+ * invariant that `inspection` is present iff the path was found; MCP's
+ * `statusText` branches on `!found || !inspection` under the same invariant.)
  *
  * Hints are `statusActionHints(result)` — the action channel only (never the
  * top-level `handbookId` emission; the status-surface role contract filter as documented there).
  */
 export function statusText(result: StatusOperationResult): string {
   const inspection = result.inspection
-  if (!inspection) {
+  if (!inspection || !result.found) {
     return renderPathMissText(result)
   }
 
