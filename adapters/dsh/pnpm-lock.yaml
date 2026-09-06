@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: false
   excludeLinksFromLockfile: false
 
+overrides:
+  '@coggit/core': link:../../packages/core
+
 importers:
 
   .:
@@ -12,8 +15,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1(react@18.3.1)
       '@coggit/core':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: link:../../packages/core
+        version: link:../../packages/core
       '@coggit/runtime-node':
         specifier: ^0.2.0
         version: 0.2.0
@@ -73,10 +76,6 @@ packages:
       '@deepseek-ai/dsh-util-values': '*'
       '@deepseek-ai/schemastery': '*'
       react: '*'
-
-  '@coggit/core@0.2.0':
-    resolution: {integrity: sha512-/QK6osactB6I/pyXdwluGbJpfdw8PXg9LqTJgB949TvjxM60jBvatL8wiz3aCNJC3uTqZJSdjvH8Bju0Fk68ew==}
-    engines: {node: '>=18'}
 
   '@coggit/runtime-node@0.2.0':
     resolution: {integrity: sha512-kQQbx1LV+LdHo0j1blCyfOrP+sy1NSJIFw2LncvJpsTSuZ7NgdH7QMX84sichJuSBLjhyFgUdKtC/U7vcQ3NHQ==}
@@ -416,11 +415,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@coggit/core@0.2.0': {}
-
   '@coggit/runtime-node@0.2.0':
     dependencies:
-      '@coggit/core': 0.2.0
+      '@coggit/core': link:../../packages/core
       '@parcel/watcher': 2.6.0
 
   '@parcel/watcher-android-arm64@2.6.0':

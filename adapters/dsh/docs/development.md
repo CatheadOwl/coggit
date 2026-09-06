@@ -42,10 +42,17 @@ Dependency faces (asymmetric by rule):
   (the host-maintained install closure — this package is an installed-closure
   consumer, not a source consumer). Rebuild: `pnpm --dir . relink`. A bare
   `pnpm install` purges the junction — always re-run `relink` after install.
-- **Library face** — `@coggit/core` + `@coggit/runtime-node` as registry
-  versions (`^0.2.0`, installed from npm; no `link:` into `../../packages/*`).
-  `@catheadowl/dsh-extras` and dev-only `@catheadowl/dsh-eval` are registry
-  versions too.
+- **Library face** — `@coggit/runtime-node`, `@catheadowl/dsh-extras`, and
+  dev-only `@catheadowl/dsh-eval` as registry versions (`^0.2.0` / `^0.1.0`,
+  installed from npm). `@coggit/core` is the one standing local channel: a
+  committed `overrides` entry in `pnpm-workspace.yaml`
+  (`link:../../packages/core`) points dev-time resolution at the monorepo
+  checkout, because core changes land in this repository before any registry
+  release. It is install-time only — `pnpm publish` packs the `^0.2.0`
+  manifest, and `pnpm-workspace.yaml` / the lockfile never enter the tarball
+  — so there is no add/remove switch around releases. Disabling the override
+  is a one-off clean-registry verification pass (comment it out, reinstall,
+  `pnpm --dir . verify`), not a release ritual.
 - **Host source (the only residual)** — `build:client` uses the host's tsdown
   and the unpublished `clientBundle` preset via the machine-level `DSH_REPO`
   anchor (no committed path carries it; the script fails loud with remedy when

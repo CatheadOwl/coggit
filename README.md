@@ -81,7 +81,7 @@ This repository is a pnpm-workspace monorepo with one package per delivery surfa
 | Shared format | [`packages/format`](packages/format) | `@coggit/format` (private, bundled) | Pure status/tree text rendering. |
 | MCP runtime support | [`packages/mcp-runtime-support`](packages/mcp-runtime-support) | `@coggit/mcp-runtime-support` (private, bundled) | User-level MCP runtime install / launcher management. |
 
-The published npm surface is `@coggit/cli`, `@coggit/core`, `@coggit/runtime-node`, `@coggit/mcp`, and `@coggit/dsh`; the VS Code extension ships as a Marketplace VSIX, and `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into their consumers. The dsh adapter lives in this repository as an independent sibling project under [`adapters/dsh`](adapters/dsh) with its own install — see its README.
+The published npm surface is `@coggit/cli`, `@coggit/core`, `@coggit/runtime-node`, `@coggit/mcp`, and `@coggit/dsh`; the VS Code extension ships as a Marketplace VSIX, and `@coggit/format` / `@coggit/mcp-runtime-support` are private and bundled into their consumers. The dsh adapter lives in this repository as an independent sibling project under [`adapters/dsh`](adapters/dsh) with its own install, lockfile, and dev dependency channels (`@coggit/core` via a local override, host peers via a relink junction) — the contributor workflow is documented in [`adapters/dsh/docs/development.md`](adapters/dsh/docs/development.md).
 
 ## Quick start
 

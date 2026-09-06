@@ -17,3 +17,13 @@ minimumReleaseAgeExclude:
   - '@catheadowl/dsh-eval@0.1.0'
   - '@coggit/core@0.2.0'
   - '@coggit/runtime-node@0.2.0'
+
+# Standing local-resolution channel for `@coggit/core`: the adapter
+# co-develops against the monorepo checkout (core changes land here before
+# any registry release). Install-time only — overrides never enter the
+# packed tarball (`pnpm publish` ships the `^0.2.0` manifest untouched), so
+# no add/remove switch ritual is needed around releases. A clean-registry
+# verification pass (comment out, reinstall, `pnpm --dir . verify`) is the
+# only reason to ever disable this.
+overrides:
+  '@coggit/core': 'link:../../packages/core'
