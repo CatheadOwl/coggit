@@ -56,9 +56,10 @@ export interface StatusMissView {
  * format. Rows carry `level`/`issueTags`/`actionTags`/`optionalActionTags`,
  * legend entries define each tag once, and counts split own vs descendant.
  * A node with no paired cognition is NOT an issue — it is the materialization
- * branch: `cognitionPresence: "missing"` with empty rows/legends, and the
- * create-cognition add action carried by `surfaceHints` (core's
- * materialization-branch decision).
+ * branch: `cognitionPresence: "missing"` with empty rows/legends and NO
+ * imperative hint (the status-surface role contract: that fact is the on-demand affordance; the
+ * optional `add` action carries role `optional-on-demand` in core and is
+ * filtered out of `surfaceHints`).
  * The adapter only appends its `surfaceHints` addressing (tool calls / skill
  * loads); nothing here is re-derived from issue `code` or `status: null`.
  */
@@ -81,7 +82,10 @@ function pathHintsHint(pathHints: string[]): string {
  * Core emits operation-bearing `add`/`resolve` actions from node signals (the
  * materialization branch for `cognitionPresence: 'missing'`, the ordered
  * sync+resolve pair for stale), so there is no branch on `status`, issue
- * `code`, or `cognitionPresence` here: the loop maps whatever core emitted.
+ * `code`, or `cognitionPresence` here: the loop maps whatever core emitted —
+ * except actions core itself marks `optional-on-demand` (the status-surface role contract filter) and
+ * the top-level `handbookId` emission (status-face rule, see
+ * `statusActionHints`).
  * Descendant actions stay in core's own-node-only top-level channel boundary:
  * top-level `surfaceHints` carries the current node's steps; descendant next
  * steps appear in `descendantIssues` rows as action tags (defined once in
@@ -108,7 +112,7 @@ export function statusProjection(result: StatusOperationResult): { view: StatusR
 
   return {
     view: projectStatusAgentPresentation(inspection),
-    surfaceHints: surfaceHints(result),
+    surfaceHints: statusActionHints(result),
   }
 }
 // ─── Add / resolve projections ───────────────────────────────────────────────
@@ -247,6 +251,12 @@ export interface SurfaceHintInput {
 }
 
 function actionSurfaceHint(action: CoggitOperationAction): string | null {
+  // the status-surface role contract (issue 20260906-1916): optional-on-demand actions (`add`
+  // materialization) must not be promoted into imperative hints — the
+  // `cognitionPresence: "missing"` fact is the on-demand affordance.
+  if (action.role === 'optional-on-demand') {
+    return null
+  }
   if (action.operation !== undefined) {
     const args: string[] = []
     if (action.scope !== undefined) args.push(`scope="${action.scope}"`)
@@ -275,6 +285,24 @@ export function surfaceHints(result: SurfaceHintInput): string[] {
     if (!hasStepLocal) {
       hints.push(`Before authoring or editing this cognition, load skill "${handbookSkillName(result.handbookId)}" with the skill tool.`)
     }
+  }
+  return hints
+}
+
+/**
+ * Status-face hints: action channel only, never the top-level `handbookId`
+ * emission (issue 20260906-1916). Handbook addressing on the status face is
+ * legitimate only from a step-local sync action (the stale pair); the
+ * top-level emission was a premature third copy on fresh/missing nodes —
+ * authoring actually starts at the `coggit_add` success result, which keeps
+ * its `surfaceHints` handbook line (the handbook-emission rule: one-time session precondition,
+ * not a repeated next hint).
+ */
+function statusActionHints(result: SurfaceHintInput): string[] {
+  const hints: string[] = []
+  for (const action of result.suggestedActions ?? []) {
+    const hint = actionSurfaceHint(action)
+    if (hint !== null) hints.push(hint)
   }
   return hints
 }

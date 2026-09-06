@@ -344,7 +344,7 @@ test('statusProjection miss with no candidates yields empty surfaceHints', async
   assert.deepEqual(surfaceHints, [])
 })
 
-test('statusProjection hit maps the core add next step to coggit_add', async () => {
+test('statusProjection hit filters the optional add action and emits no handbook hint (the status-surface role contract)', async () => {
   const { statusProjection } = await import(fromLib('views'))
   const { view, surfaceHints } = statusProjection({
     found: true,
@@ -357,7 +357,7 @@ test('statusProjection hit maps the core add next step to coggit_add', async () 
     descendantStatus: null,
     handbookId: 'leaf',
     pathHints: [],
-    suggestedActions: [{ code: 'create-cognition', label: 'Create cognition file', operation: 'add', sourcePath: 'uncognized.ts' }],
+    suggestedActions: [{ code: 'create-cognition', label: 'Create cognition file', operation: 'add', role: 'optional-on-demand', sourcePath: 'uncognized.ts' }],
     inspection: {
       sourcePath: 'uncognized.ts',
       cognitionPath: 'uncognized.ts.md',
@@ -368,20 +368,20 @@ test('statusProjection hit maps the core add next step to coggit_add', async () 
       descendantStatus: null,
       issueSummary: { total: 0, own: 0, descendant: 0 },
       subtreeIssues: { own: [], descendant: [] },
-      suggestedActions: [{ code: 'create-cognition', label: 'Create cognition file', operation: 'add', sourcePath: 'uncognized.ts' }],
+      suggestedActions: [{ code: 'create-cognition', label: 'Create cognition file', operation: 'add', role: 'optional-on-demand', sourcePath: 'uncognized.ts' }],
       handbookId: 'leaf',
       triage: [],
     },
   })
   assert.equal('found' in view, false, 'a hit omits found')
   assert.equal(view.cognitionPresence, 'missing')
-  assert.deepEqual(surfaceHints, [
-    'Call coggit_add with sourcePath="uncognized.ts".',
-    'Before authoring or editing this cognition, load skill "coggit-handbook-leaf" with the skill tool.',
-  ])
+  // the status-surface role contract (issue 20260906-1916): the `missing` fact is the on-demand
+  // affordance — no imperative add hint, no premature handbook hint on the
+  // status face (handbook addressing starts at the add success result).
+  assert.deepEqual(surfaceHints, [])
 })
 
-test('statusProjection hit with no operation actions yields only the handbook hint', async () => {
+test('statusProjection hit on a fresh node emits no hints', async () => {
   const { statusProjection } = await import(fromLib('views'))
   const { surfaceHints } = statusProjection({
     found: true,
@@ -410,9 +410,9 @@ test('statusProjection hit with no operation actions yields only the handbook hi
       triage: [],
     },
   })
-  assert.deepEqual(surfaceHints, [
-    'Before authoring or editing this cognition, load skill "coggit-handbook-leaf" with the skill tool.',
-  ])
+  // Fresh node: no actions, and the status face never emits the top-level
+  // handbook hint (issue 20260906-1916) — `surfaceHints` is empty.
+  assert.deepEqual(surfaceHints, [])
 })
 
 test('statusProjection hit maps the core resolve next step to coggit_resolve', async () => {
@@ -603,12 +603,13 @@ test('statusProjection hit routes descendant next steps only through triage (own
     },
   })
   // The own node is fresh: no own rows, and the top-level channel carries NO
-  // resolve hint for the descendant — only the standing handbook hint.
+  // resolve hint for the descendant and NO top-level handbook hint (issue
+  // 20260906-1916: the status face never emits the top-level handbookId —
+  // handbook addressing belongs to the stale step-local sync action or the
+  // add success result, not to a fresh own node).
   assert.equal(view.ownIssueCount, 0)
   assert.deepEqual(view.ownIssues, [])
-  assert.deepEqual(surfaceHints, [
-    'Before authoring or editing this cognition, load skill "coggit-handbook-skeleton" with the skill tool.',
-  ])
+  assert.deepEqual(surfaceHints, [])
   // The stale descendant is routed through its descendant row: its sync-leaf +
   // resolve tags come from the shared actionLegend (core's descendant-routing
   // routing; matches the CLI text surface, which also shows the row + legend).
