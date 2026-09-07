@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@catheadowl/dsh-extras':
-        specifier: ^0.1.1
-        version: 0.1.1(react@18.3.1)
+        specifier: ^0.1.2
+        version: 0.1.2(react@18.3.1)
       '@coggit/core':
         specifier: link:../../packages/core
         version: link:../../packages/core
@@ -45,8 +45,8 @@ packages:
     peerDependencies:
       '@deepseek-ai/dsh-llm': '*'
 
-  '@catheadowl/dsh-extras@0.1.1':
-    resolution: {integrity: sha512-He0uGl7yoSKAFroZr+L0Scc+v0JJB3+OcL829Vao1vXHwg5/GATxPl9+2/5CzkkyatpZXeBmQB+RTLOafpUU+Q==}
+  '@catheadowl/dsh-extras@0.1.2':
+    resolution: {integrity: sha512-JSV18lDCCZfAiYfPNvPtIOtcaUEDjPzmzXUitRk0WrdxlYhDuwsTQLYVDK/d2ibm1O3igOqe2znQmfzx0yeYqw==}
     peerDependencies:
       '@deepseek-ai/cordis': '*'
       '@deepseek-ai/dsh-agent': '*'
@@ -62,7 +62,6 @@ packages:
       '@deepseek-ai/dsh-client-ui-slots': '*'
       '@deepseek-ai/dsh-client-ui-workspace': '*'
       '@deepseek-ai/dsh-commands': '*'
-      '@deepseek-ai/dsh-jobs': '*'
       '@deepseek-ai/dsh-llm': '*'
       '@deepseek-ai/dsh-session': '*'
       '@deepseek-ai/dsh-session-persistence-jsonl': '*'
@@ -404,7 +403,7 @@ snapshots:
 
   '@catheadowl/dsh-eval@0.1.0': {}
 
-  '@catheadowl/dsh-extras@0.1.1(react@18.3.1)':
+  '@catheadowl/dsh-extras@0.1.2(react@18.3.1)':
     dependencies:
       '@types/mdast': 4.0.4
       mdast-util-from-markdown: 2.0.3

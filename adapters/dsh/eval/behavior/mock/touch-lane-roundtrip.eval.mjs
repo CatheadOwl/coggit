@@ -24,16 +24,28 @@ import { seedProject, seedFreshCognition } from '../_fixtures/seed-project.mjs'
 const COGNITION_HREF = 'src_cognition/example.ts.md'
 const PROMPT_MIDDLEWARE = 'prompt-middleware'
 
-/** Exactly `count` prompt-middleware user messages mention the cognition href. */
+/**
+ * Exactly `count` prompt-middleware user messages mention the cognition href.
+ * The single injection must also carry NO meta suffix: fresh is the default
+ * state (steady-state silence = the provider writes no meta key), so any
+ * `(stale` in the rendered text is the old always-write-stale regression.
+ */
 function cognitionLinkInjectedOnce(trace) {
   const injections = trace.userMessages
     .filter(message => message.source?.plugin === PROMPT_MIDDLEWARE)
     .filter(message => message.text.includes(COGNITION_HREF))
+  if (injections.length !== 1) {
+    return {
+      ok: false,
+      message: `expected exactly 1 ${PROMPT_MIDDLEWARE} injection mentioning ${COGNITION_HREF}, saw ${injections.length}`,
+    }
+  }
+  const noisy = injections.filter(message => message.text.includes('(stale'))
   return {
-    ok: injections.length === 1,
-    message: injections.length === 1
+    ok: noisy.length === 0,
+    message: noisy.length === 0
       ? ''
-      : `expected exactly 1 ${PROMPT_MIDDLEWARE} injection mentioning ${COGNITION_HREF}, saw ${injections.length}`,
+      : `fresh pair injected with a stale meta suffix (steady-state silence broken): ${JSON.stringify(noisy.map(message => message.text))}`,
   }
 }
 
@@ -56,7 +68,7 @@ export default {
   expect: [
     firstTool('read'),
     {
-      describe: `exactly one ${PROMPT_MIDDLEWARE} injection mentions ${COGNITION_HREF}`,
+      describe: `exactly one ${PROMPT_MIDDLEWARE} injection mentions ${COGNITION_HREF}, bare (no stale suffix)`,
       check: cognitionLinkInjectedOnce,
     },
     finalTextIncludes('Mock touch lane round trip complete.'),

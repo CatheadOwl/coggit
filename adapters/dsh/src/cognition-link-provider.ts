@@ -78,12 +78,14 @@ const PROVIDER_PRIORITY = 10
 /**
  * Pure projection: a `cognition-link` item for a status hit, `undefined` for
  * source miss / missing cognition / not-applicable (those collapse to `null`
- * in `tryGetCognitionPath`). `stale` is carried as a meta marker only.
+ * in `tryGetCognitionPath`). `meta` is the model-visible annotation channel:
+ * keys are written only when they carry information (steady-state silence is
+ * the provider's job, not the renderer's), so `stale` is set only when stale.
  */
 export function resolveCognitionLink(result: StatusOperationResult): RelatesResolveResult | undefined {
   const hit = tryGetCognitionPath(result)
   if (hit === null) return undefined
-  return { href: hit.cognitionPath, meta: { stale: String(hit.stale) } }
+  return hit.stale ? { href: hit.cognitionPath, meta: { stale: 'true' } } : { href: hit.cognitionPath }
 }
 
 /**
@@ -152,9 +154,12 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
         lastRendered.delete(path.path)
         return undefined
       }
+      // Staleness comes from the status hit itself, not from `link.meta` (the
+      // annotation channel is silent when fresh — see resolveCognitionLink).
+      const stale = tryGetCognitionPath(result)?.stale === true
       const current: RenderedPairState = {
         cognitionPath: link.href,
-        stale: link.meta?.stale === 'true',
+        stale,
       }
       // The agent's own edit: reconcile the record, never narrate it back.
       if (path.origin === 'touch' && path.touchTool === 'edit') {

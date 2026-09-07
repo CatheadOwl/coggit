@@ -70,11 +70,10 @@ function miss() {
   }
 }
 
-test('resolveCognitionLink projects a fresh hit to { href, meta } with stale false', async () => {
+test('resolveCognitionLink projects a fresh hit to { href } — steady-state silence means no meta key', async () => {
   const { resolveCognitionLink } = await import(fromLib('cognition-link-provider'))
   assert.deepEqual(resolveCognitionLink(hit({ ownStatus: 'fresh' })), {
     href: 'src/app/main.ts.md',
-    meta: { stale: 'false' },
   })
 })
 
@@ -131,8 +130,8 @@ test('createCognitionLinkProvider builds one snapshot per turn and reuses it acr
     const r1 = await provider.resolve({ path: { path: 'a.ts' }, input: turn1 })
     const r2 = await provider.resolve({ path: { path: 'b.ts' }, input: turn1 })
     assert.equal(buildCount, 1, 'one turn builds the snapshot exactly once')
-    assert.deepEqual(r1, { href: 'cog/a.ts', meta: { stale: 'false' } })
-    assert.deepEqual(r2, { href: 'cog/b.ts', meta: { stale: 'false' } })
+    assert.deepEqual(r1, { href: 'cog/a.ts' })
+    assert.deepEqual(r2, { href: 'cog/b.ts' })
 
     const turn2 = { cwd: root, turnId: 't2' }
     const r3 = await provider.resolve({ path: { path: 'a.ts' }, input: turn2 })
@@ -212,9 +211,9 @@ test('rendering policy: self-edit reconciles silently, steady state is silent, a
     const provider = createCognitionLinkProvider(coggit)
     const subject = 'codebase/a/b.ts'
 
-    // never -> fresh: plain link.
+    // never -> fresh: plain link, no meta (fresh is the default, silence).
     const first = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: 't1' } })
-    assert.deepEqual(first, { href: `cog/${subject}`, meta: { stale: 'false' } })
+    assert.deepEqual(first, { href: `cog/${subject}` })
 
     // Same state again (new turn, e.g. re-mention): steady state, silent.
     const steady = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: 't2' } })
@@ -235,13 +234,14 @@ test('rendering policy: self-edit reconciles silently, steady state is silent, a
     })
     assert.equal(steadyStale, undefined)
 
-    // External change flips the state: one item again, marked updated.
+    // External change flips the state: one item again, marked updated. The
+    // fresh side writes no `stale` key — `updated` alone carries the change.
     ownStatus = 'fresh'
     const flipped = await provider.resolve({
       path: { path: subject, origin: 'touch', touchTool: 'read' },
       input: { cwd: root, turnId: 't5' },
     })
-    assert.deepEqual(flipped, { href: `cog/${subject}`, meta: { stale: 'false', updated: 'true' } })
+    assert.deepEqual(flipped, { href: `cog/${subject}`, meta: { updated: 'true' } })
   } finally {
     await removeTempDir(root)
   }

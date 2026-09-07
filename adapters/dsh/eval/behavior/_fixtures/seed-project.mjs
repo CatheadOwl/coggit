@@ -6,7 +6,7 @@
  */
 import { writeFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { addOperation, discoverCoggitProjects, initProject } from '@coggit/core'
+import { addOperation, discoverCoggitProjects, initProject, statusOperation } from '@coggit/core'
 import { createNodeCoggitServices, pathToUriComponents } from '@coggit/runtime-node'
 
 /** Initialize `.coggit/` at the workspace root with `src` -> `src_cognition`. */
@@ -29,6 +29,23 @@ export async function seedFreshCognition(workspace) {
   const services = createNodeCoggitServices({ workspacePath: workspace })
   const projects = await discoverCoggitProjects(services)
   await addOperation(projects, 'src/example.ts')
+  // Materialize the lazy acceptance evidence: the registry's accepted-pair
+  // entry is resolved against the file content on the first status read, so
+  // a source rewrite BEFORE this point is simply folded into the acceptance
+  // (the pair reads fresh). Stale-seeding below relies on the acceptance
+  // being on record first.
+  await statusOperation(projects, 'src/example.ts')
+}
+
+/**
+ * Seed a stale cognition pair for `src/example.ts`: fresh add first, then an
+ * out-of-band source rewrite (plain fs write, no tool) so the pair reads
+ * stale — the enricher's stale branch with the `(stale)` meta suffix, without
+ * any model-side edit.
+ */
+export async function seedStaleCognition(workspace) {
+  await seedFreshCognition(workspace)
+  await writeFile(join(workspace, 'src', 'example.ts'), 'export const value = 43\n')
 }
 
 /** Recursively collect file names under `dir` (empty when absent). */
