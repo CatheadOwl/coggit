@@ -125,6 +125,3 @@ change, no concurrency change beyond making each event's rewrite set closed.
 
 - `registry/sourceRelocation.ts` imports `sourcePathToKey` without using it —
   dead import, possibly a leftover from an earlier re-key attempt.
-- The registry cognition documents reference `[[registry-path-contract.md]]`
-  as the path-anchor SSOT, but no such file exists in the cognition tree —
-  broken link to relocate or restore.
