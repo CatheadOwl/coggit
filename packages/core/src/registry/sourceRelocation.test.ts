@@ -136,19 +136,35 @@ suite('registrySourceRelocation — registry sourcePath rewrite policy', () => {
     assert.strictEqual(registry.getEntry('moved')?.sourcePath, 'dst/x/src/a.ts');
   });
 
-  test('root prefix (fromSourcePath ".") matches nothing', async () => {
+  test('root relocation (fromSourcePath ".") matches nothing, either kind', async () => {
     const registry = await createRegistry({
       entry: makeEntry('src/a.ts'),
+      root: makeEntry('.'),
     });
 
-    const changed = applyRegistrySourceRelocations(registry, [{
-      kind: 'prefix',
-      fromSourcePath: '.',
-      toSourcePath: 'moved',
-    }]);
+    const changed = applyRegistrySourceRelocations(registry, [
+      { kind: 'prefix', fromSourcePath: '.', toSourcePath: 'moved' },
+      { kind: 'exact', fromSourcePath: '.', toSourcePath: 'moved' },
+    ]);
 
     assert.strictEqual(changed, false);
     assert.strictEqual(registry.getEntry('entry')?.sourcePath, 'src/a.ts');
+    assert.strictEqual(registry.getEntry('root')?.sourcePath, '.');
+  });
+
+  test('relocation to the same sourcePath is not counted as a change', async () => {
+    const registry = await createRegistry({
+      entry: makeEntry('src/watch/watcher.ts'),
+    });
+
+    const changed = applyRegistrySourceRelocations(registry, [{
+      kind: 'exact',
+      fromSourcePath: 'src/watch/watcher.ts',
+      toSourcePath: 'src/watch/watcher.ts',
+    }]);
+
+    assert.strictEqual(changed, false);
+    assert.strictEqual(registry.getEntry('entry')?.sourcePath, 'src/watch/watcher.ts');
   });
 
   test('returns false when no records match the relocation', async () => {
@@ -175,6 +191,11 @@ suite('registrySourceRelocation — registry sourcePath rewrite policy', () => {
       { kind: 'prefix', fromSourcePath: 'src/watch', toSourcePath: 'a' },
       { kind: 'prefix', fromSourcePath: 'src/watch', toSourcePath: 'b' },
     ]), /duplicate prefix fromSourcePath/);
+
+    assert.throws(() => applyRegistrySourceRelocations(registry, [
+      { kind: 'exact', fromSourcePath: 'src/watch/watcher.ts', toSourcePath: 'a' },
+      { kind: 'exact', fromSourcePath: 'src/watch/watcher.ts', toSourcePath: 'b' },
+    ]), /duplicate exact fromSourcePath/);
 
     assert.strictEqual(registry.getEntry('entry')?.sourcePath, 'src/watch/watcher.ts');
   });

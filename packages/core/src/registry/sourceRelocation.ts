@@ -78,16 +78,17 @@ function resolveRelocationDestination(
   let bestToSourcePath: string | undefined;
 
   for (const relocation of relocations) {
+    if (relocation.fromSourcePath === '.') {
+      // Root relocations are unsupported: '.' matches nothing for either kind.
+      continue;
+    }
+
     if (relocation.kind === 'exact') {
       // An exact match is the most specific rule possible; equality is unique
       // within a valid batch, so it wins immediately.
       if (sourcePath === relocation.fromSourcePath) {
         return relocation.toSourcePath;
       }
-      continue;
-    }
-
-    if (relocation.fromSourcePath === '.') {
       continue;
     }
 
