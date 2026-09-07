@@ -51,8 +51,8 @@ The intended loop, matching the CogGit MCP guidance:
 
 1. `any_routes` over the workspace/cognition root → find the document to read or the surface to look at.
 2. `coggit_status` for that `sourcePath` → read the status text, issue/action-tag rows, and legends *before* explaining or editing, and *again after* editing. Omitting `sourcePath` diagnoses the whole project (the root's own status plus every issue-bearing subtree node), so it also serves as the entry point; an uncognized path inspected directly renders `Cognition: Not created (add on demand)`.
-3. If cognition is missing → `coggit_add` (keep `overwrite` false unless the user asks to regenerate), then load the handbook skill named in `surfaceHints` with the `skill` tool before completing the template.
-4. If cognition is stale → load the handbook skill named in `surfaceHints` (it leads the resolve call), sync the paired doc, then `coggit_resolve`.
+3. If cognition is missing → `coggit_add` (keep `overwrite` false unless the user asks to regenerate), then load the handbook skill named in the add result's `surfaceHints` with the `skill` tool before completing the template.
+4. If cognition is stale → load the handbook skill named in the status text's trailing hint lines (it leads the resolve call), sync the paired doc, then `coggit_resolve`.
 
 A status/read operation never mutates; only `coggit_add` (writes a file) and `coggit_resolve` (re-records acceptance) change state.
 
