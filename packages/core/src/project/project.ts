@@ -983,6 +983,11 @@ async function inferRegistrySourceRelocation(
  * 2026-08-23 registry incident). Registry keys stay untouched — keys are
  * cognition identities and are re-derived by reconcile once the cognition
  * files move.
+ *
+ * Closed-set rule (the closed-set batch relocation design): every prefix relocation is paired with an
+ * `exact` relocation for the node itself, because `prefix` matches strict
+ * descendants only. The batch is applied with most-specific-match semantics,
+ * so folder records move via their explicit `exact` relocation.
  */
 async function applySourceRenameRelocations(
   services: CoggitServices,
@@ -998,7 +1003,7 @@ async function applySourceRenameRelocations(
     newSourcePath,
     newUri,
   );
-  const relocations = [relocation];
+  const relocations = closedRelocationSet(relocation);
   const parentRelocation = await inferRegistrySourceParentRelocation(
     services.fs,
     root,
@@ -1006,10 +1011,29 @@ async function applySourceRenameRelocations(
     newSourcePath,
   );
   if (parentRelocation) {
-    relocations.push(parentRelocation);
+    relocations.push(...closedRelocationSet(parentRelocation));
   }
 
   return applyRegistrySourceRelocations(registry, relocations, 'source-rename');
+}
+
+/**
+ * Expand one inferred relocation into its closed set: a `prefix` relocation
+ * (directory move) gains a paired `exact` relocation for the node itself;
+ * `exact` relocations are already closed.
+ */
+function closedRelocationSet(relocation: RegistrySourceRelocation): RegistrySourceRelocation[] {
+  if (relocation.kind === 'exact') {
+    return [relocation];
+  }
+  return [
+    {
+      kind: 'exact',
+      fromSourcePath: relocation.fromSourcePath,
+      toSourcePath: relocation.toSourcePath,
+    },
+    relocation,
+  ];
 }
 
 async function inferRegistrySourceParentRelocation(
