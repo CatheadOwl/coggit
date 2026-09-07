@@ -449,43 +449,18 @@ export async function openCoggitProject(
       }
 
       try {
-        const relocation = await inferRegistrySourceRelocation(
-          services.fs,
+        const updated = await applySourceRenameRelocations(
+          services,
+          root,
+          runtime.registry,
           oldSourcePath,
           newSourcePath,
           newUri,
         );
-        const updated = applyRegistrySourceRelocations(
-          runtime.registry,
-          [relocation],
-          'source-rename',
-        );
         if (updated) {
           await runtime.registry.flush();
-          return true;
         }
-
-        const parentRelocation = await inferRegistrySourceParentRelocation(
-          services.fs,
-          root,
-          oldSourcePath,
-          newSourcePath,
-        );
-        if (!parentRelocation) {
-          return false;
-        }
-
-        const parentUpdated = applyRegistrySourceRelocations(
-          runtime.registry,
-          [parentRelocation],
-          'source-rename.parent',
-        );
-        if (!parentUpdated) {
-          return false;
-        }
-
-        await runtime.registry.flush();
-        return true;
+        return updated;
       } catch (error) {
         if (!(error instanceof RegistryRevisionMismatchError) || !services.registry) {
           throw error;
@@ -504,45 +479,20 @@ export async function openCoggitProject(
         if (!recovered || !recovered.registry) {
           return false;
         }
+        runtime = recovered;
 
-        const recoveryRelocation = await inferRegistrySourceRelocation(
-          services.fs,
+        const recoveryUpdated = await applySourceRenameRelocations(
+          services,
+          root,
+          recovered.registry,
           oldSourcePath,
           newSourcePath,
           newUri,
         );
-        const recoveryUpdated = applyRegistrySourceRelocations(
-          recovered.registry,
-          [recoveryRelocation],
-          'source-rename',
-        );
         if (recoveryUpdated) {
           await recovered.registry.flush();
-          runtime = recovered;
-          return true;
         }
-
-        const recoveryParentRelocation = await inferRegistrySourceParentRelocation(
-          services.fs,
-          root,
-          oldSourcePath,
-          newSourcePath,
-        );
-        if (!recoveryParentRelocation) {
-          runtime = recovered;
-          return false;
-        }
-
-        const recoveryParentUpdated = applyRegistrySourceRelocations(
-          recovered.registry,
-          [recoveryParentRelocation],
-          'source-rename.parent',
-        );
-        if (recoveryParentUpdated) {
-          await recovered.registry.flush();
-        }
-        runtime = recovered;
-        return recoveryParentUpdated;
+        return recoveryUpdated;
       }
       },
     ),
@@ -1022,6 +972,46 @@ async function inferRegistrySourceRelocation(
   };
 }
 
+/**
+ * Apply the rename evidence for one reported source rename atomically:
+ * the exact (or prefix) relocation for the renamed node itself, plus — when
+ * the old parent directory is gone from disk and the new parent exists — a
+ * prefix relocation so folder and sibling records move in the same locked
+ * write. Bulk moves (`git mv` of a directory) arrive as per-file rename
+ * events; the previous flow stopped after the exact relocation for the
+ * reported file, leaving folder and sibling sourcePaths stale (see the
+ * 2026-08-23 registry incident). Registry keys stay untouched — keys are
+ * cognition identities and are re-derived by reconcile once the cognition
+ * files move.
+ */
+async function applySourceRenameRelocations(
+  services: CoggitServices,
+  root: CoggitWorkspaceRoot,
+  registry: Registry,
+  oldSourcePath: string,
+  newSourcePath: string,
+  newUri: UriComponents,
+): Promise<boolean> {
+  const relocation = await inferRegistrySourceRelocation(
+    services.fs,
+    oldSourcePath,
+    newSourcePath,
+    newUri,
+  );
+  const relocations = [relocation];
+  const parentRelocation = await inferRegistrySourceParentRelocation(
+    services.fs,
+    root,
+    oldSourcePath,
+    newSourcePath,
+  );
+  if (parentRelocation) {
+    relocations.push(parentRelocation);
+  }
+
+  return applyRegistrySourceRelocations(registry, relocations, 'source-rename');
+}
+
 async function inferRegistrySourceParentRelocation(
   fs: CoggitServices['fs'],
   root: CoggitWorkspaceRoot,
@@ -1034,11 +1024,10 @@ async function inferRegistrySourceParentRelocation(
     return undefined;
   }
 
-  const oldBasename = oldSourcePath.split('/').pop();
-  const newBasename = newSourcePath.split('/').pop();
-  if (oldBasename !== newBasename) {
-    return undefined;
-  }
+  // Basename equality is not required: the rename evidence is the reported
+  // move itself, and a moved directory may also rename the file. The
+  // existence checks below are the safety gate — the old parent must be gone
+  // and the new parent must exist as a directory.
 
   const oldParentExists = await fs.stat(joinRelativePath(root.projectRootUri, oldParent));
   const newParentExists = await fs.stat(joinRelativePath(root.projectRootUri, newParent));

@@ -141,6 +141,13 @@ function makeRoot(): CoggitWorkspaceRoot {
   };
 }
 
+function makeRepoWideRoot(): CoggitWorkspaceRoot {
+  return {
+    ...makeRoot(),
+    sourceRootUri: uri('/workspace'),
+  };
+}
+
 function makeEntry(overrides: Partial<PathKeyRecord> = {}): PathKeyRecord {
   return {
     sourcePath: 'src/new/foo.ts',
@@ -578,6 +585,102 @@ suite('project — source rename tracking', () => {
     assert.strictEqual(changed, true);
     assert.strictEqual(fs.readFileCount, 0);
     assert.deepStrictEqual(fs.readDirectoryCalls, ['/workspace/src/watch']);
+  });
+
+  test('relocates folder and sibling records when a moved directory also renames the file', async () => {
+    const fs = new MockFileSystem();
+    fs.addDirectory('/workspace/cognition');
+    const mainSource = 'main source with enough content to matter';
+    fs.addFile('/workspace/src/mcp-server/main.ts', mainSource);
+    fs.addFile('/workspace/src/mcp-server/x.ts', 'sibling source');
+    fs.addFile('/workspace/cognition/mcp-server/README.md', 'cognition readme');
+    fs.addFile('/workspace/cognition/mcp-server/main.ts.md', 'cognition main');
+    fs.addFile('/workspace/cognition/mcp-server/x.ts.md', 'cognition x');
+
+    const provider = new CountingRegistryProvider(makeRegistryFile({
+      'mcp-server/': makeEntry({
+        sourcePath: 'src/mcp-server',
+        type: 'folder',
+      }),
+      'mcp-server/main.ts': makeEntry({
+        sourcePath: 'src/mcp-server/main.ts',
+      }),
+      'mcp-server/x.ts': makeEntry({
+        sourcePath: 'src/mcp-server/x.ts',
+      }),
+    }));
+    const services = createCoggitServices(
+      fs,
+      new MockConfigProvider(),
+      { create: () => provider } satisfies RegistryProviderFactory,
+    );
+    const project = await openCoggitProject(services, makeRepoWideRoot());
+    fs.remove('/workspace/src/mcp-server');
+    fs.remove('/workspace/src/mcp-server/main.ts');
+    fs.remove('/workspace/src/mcp-server/x.ts');
+    fs.addFile('/workspace/packages/mcp/src/mcp-stdio.ts', mainSource);
+    fs.addFile('/workspace/packages/mcp/src/x.ts', 'sibling source');
+
+    const changed = await project.applySourceRename(
+      uri('/workspace/src/mcp-server/main.ts'),
+      uri('/workspace/packages/mcp/src/mcp-stdio.ts'),
+    );
+
+    assert.strictEqual(changed, true);
+    const saved = await provider.load();
+    // Keys are cognition identities and stay put until the cognition files
+    // move; every sourcePath must land at the new location in this write.
+    assert.strictEqual(
+      saved?.entries['mcp-server/main.ts']?.sourcePath,
+      'packages/mcp/src/mcp-stdio.ts',
+    );
+    assert.strictEqual(saved?.entries['mcp-server/']?.sourcePath, 'packages/mcp/src');
+    assert.strictEqual(saved?.entries['mcp-server/x.ts']?.sourcePath, 'packages/mcp/src/x.ts');
+  });
+
+  test('relocates folder and sibling records when a bulk move collapses the source folder', async () => {
+    const fs = new MockFileSystem();
+    fs.addDirectory('/workspace/cognition');
+    fs.addFile('/workspace/src/mcp-server/main.ts', 'main source');
+    fs.addFile('/workspace/src/mcp-server/x.ts', 'sibling source');
+    fs.addFile('/workspace/cognition/mcp-server/README.md', 'cognition readme');
+    fs.addFile('/workspace/cognition/mcp-server/main.ts.md', 'cognition main');
+    fs.addFile('/workspace/cognition/mcp-server/x.ts.md', 'cognition x');
+
+    const provider = new CountingRegistryProvider(makeRegistryFile({
+      'mcp-server/': makeEntry({
+        sourcePath: 'src/mcp-server',
+        type: 'folder',
+      }),
+      'mcp-server/main.ts': makeEntry({
+        sourcePath: 'src/mcp-server/main.ts',
+      }),
+      'mcp-server/x.ts': makeEntry({
+        sourcePath: 'src/mcp-server/x.ts',
+      }),
+    }));
+    const services = createCoggitServices(
+      fs,
+      new MockConfigProvider(),
+      { create: () => provider } satisfies RegistryProviderFactory,
+    );
+    const project = await openCoggitProject(services, makeRepoWideRoot());
+    fs.remove('/workspace/src/mcp-server');
+    fs.remove('/workspace/src/mcp-server/main.ts');
+    fs.remove('/workspace/src/mcp-server/x.ts');
+    fs.addFile('/workspace/packages/mcp/src/main.ts', 'main source');
+    fs.addFile('/workspace/packages/mcp/src/x.ts', 'sibling source');
+
+    const changed = await project.applySourceRename(
+      uri('/workspace/src/mcp-server/x.ts'),
+      uri('/workspace/packages/mcp/src/x.ts'),
+    );
+
+    assert.strictEqual(changed, true);
+    const saved = await provider.load();
+    assert.strictEqual(saved?.entries['mcp-server/']?.sourcePath, 'packages/mcp/src');
+    assert.strictEqual(saved?.entries['mcp-server/main.ts']?.sourcePath, 'packages/mcp/src/main.ts');
+    assert.strictEqual(saved?.entries['mcp-server/x.ts']?.sourcePath, 'packages/mcp/src/x.ts');
   });
 
   test('does not persist directory entry source fact when fingerprint is unchanged', async () => {
