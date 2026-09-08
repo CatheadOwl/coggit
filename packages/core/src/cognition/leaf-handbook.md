@@ -7,6 +7,12 @@ A leaf is the atomic unit of cognition for one source file.
 It records the design intent, hidden contract, rejected alternative, or
 non-obvious boundary that would be lost if a reader only inspected the code.
 
+## Description Metadata Rule
+
+The `description` frontmatter field describes the paired source file, not
+this cognition file: write the one-line role of the mirrored source, as the
+template placeholder already encodes. Do not self-describe the document.
+
 ## Creation Rule
 
 Not every source file needs a leaf.

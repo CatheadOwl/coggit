@@ -7,6 +7,13 @@ A skeleton is the stable cognition file for a directory or layer.
 It is the local constitution: identity, contract, invariants, and principles
 that should remain true while implementation changes.
 
+## Description Metadata Rule
+
+The `description` frontmatter field describes the paired source folder, not
+this cognition file: write the one-line identity of the mirrored folder or
+layer, as the template placeholder already encodes. Do not self-describe the
+document.
+
 ## Scope
 
 A skeleton belongs to folder- or layer-level truth:
