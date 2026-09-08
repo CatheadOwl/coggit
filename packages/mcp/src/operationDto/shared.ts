@@ -23,7 +23,7 @@ export const operationActionSchema = z.object({
   code: z.string(),
   label: z.string(),
   tool: z.enum(['coggit_snapshot', 'coggit_status', 'coggit_add', 'coggit_resolve', 'coggit_routes']).optional(),
-  /** Surfacing role (the status-surface role contract), passed through losslessly from core actions. */
+  /** Surfacing role (status-surface role contract), passed through losslessly from core actions. */
   role: z.enum(['recommended', 'optional-on-demand', 'diagnostic']).optional(),
   handbookUri: z.string().optional(),
   sourcePath: z.string().optional(),

@@ -31,7 +31,7 @@ export const CORE_OPERATION_IDS = ['snapshot', 'status', 'add', 'resolve', 'rout
 export type CoreOperationId = typeof CORE_OPERATION_IDS[number];
 
 /**
- * Surfacing role for adapter presentation (the status-surface role contract). `recommended` actions
+ * Surfacing role for adapter presentation (status-surface role contract). `recommended` actions
  * may render as imperative next-step hints; `optional-on-demand` actions
  * (canonical case: `add` materialization) must not be promoted into an
  * imperative hint on a default maintained view — the status fact line is the

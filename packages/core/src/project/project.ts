@@ -984,7 +984,7 @@ async function inferRegistrySourceRelocation(
  * cognition identities and are re-derived by reconcile once the cognition
  * files move.
  *
- * Closed-set rule (the closed-set batch relocation design): every prefix relocation is paired with an
+ * Closed-set rule (closed-set batch relocation design): every prefix relocation is paired with an
  * `exact` relocation for the node itself, because `prefix` matches strict
  * descendants only. The batch is applied with most-specific-match semantics,
  * so folder records move via their explicit `exact` relocation.

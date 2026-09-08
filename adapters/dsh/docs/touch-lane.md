@@ -1,9 +1,10 @@
 # Touch Lane Consumer Design (cognition-link × prompt-middleware W11)
 
 Status: active · Scope: `@coggit/dsh` consumer side only. Framework authority lives
-with the prompt-middleware project (dsh-extra): the sensor-seam decision (tool-touch sensor seam),
-the touchSubjects-lane decision (touchSubjects lane C), and the `tool-touch sensor lane` section of
-`modules/prompt/docs/contract.md` in the extras checkout. This document records
+with the prompt-middleware project (dsh-extra): its workunit ADR series records
+the tool-touch sensor seam and the touchSubjects lane decisions, and the
+`tool-touch sensor lane` section of `modules/prompt/docs/contract.md` in the
+extras checkout carries the current contract. This document records
 only how this adapter declares and renders; it does not restate framework
 decisions.
 
@@ -13,8 +14,9 @@ decisions.
   `origin` / `touchTool`) via `@catheadowl/dsh-extras`, registry range after the
   carrying release; until then a local resolution channel (`link:` to the
   dsh-extra extras checkout, DEP-2) — dev-only, not committed.
-- Hard constraint (the sensor-seam decision consequence): this plugin never attaches its own
-  `tools/result` hook; everything goes through the declarative API.
+- Hard constraint (a consequence of the sensor-seam decision referenced above):
+  this plugin never attaches its own `tools/result` hook; everything goes
+  through the declarative API.
 
 ## Declaration
 

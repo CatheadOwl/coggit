@@ -52,7 +52,8 @@ function pathHintsHint(pathHints: string[]): string {
  * - MISS: core's `renderPathMissText` (not-found line plus fuzzy candidates)
  *   — the same miss text the MCP surface renders.
  * - HIT: core's `renderStatusAgentInspectionText` (legend-once + one-line
- *   rows + `actions=`/`optional=` channels, the the status-surface role contract decision shape)
+ *   rows + `actions=`/`optional=` channels, the status-surface role-contract
+ *   decision shape)
  *   followed, after a blank line, by this adapter's `surfaceHints` lines.
  *
  * Text, not JSON, is the deliberate paradigm (FR 20260907-dsh-status-view-
@@ -67,7 +68,8 @@ function pathHintsHint(pathHints: string[]): string {
  * `statusText` branches on `!found || !inspection` under the same invariant.)
  *
  * Hints are `statusActionHints(result)` — the action channel only (never the
- * top-level `handbookId` emission; the status-surface role contract filter as documented there).
+ * top-level `handbookId` emission; the role-contract filter as documented
+ * there).
  */
 export function statusText(result: StatusOperationResult): string {
   const inspection = result.inspection
@@ -215,7 +217,8 @@ export interface SurfaceHintInput {
 }
 
 function actionSurfaceHint(action: CoggitOperationAction): string | null {
-  // the status-surface role contract (issue 20260906-1916): optional-on-demand actions (`add`
+  // Status-surface role contract (issue 20260906-1916): optional-on-demand
+  // actions (`add`
   // materialization) must not be promoted into imperative hints — the
   // `cognitionPresence: "missing"` fact is the on-demand affordance.
   if (action.role === 'optional-on-demand') {
@@ -259,7 +262,8 @@ export function surfaceHints(result: SurfaceHintInput): string[] {
  * legitimate only from a step-local sync action (the stale pair); the
  * top-level emission was a premature third copy on fresh/missing nodes —
  * authoring actually starts at the `coggit_add` success result, which keeps
- * its `surfaceHints` handbook line (the handbook-emission rule: one-time session precondition,
+ * its `surfaceHints` handbook line (one-time session precondition per the
+ * handbook-emission rule,
  * not a repeated next hint).
  */
 function statusActionHints(result: SurfaceHintInput): string[] {

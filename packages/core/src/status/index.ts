@@ -300,7 +300,7 @@ function synthesizeNodeOperationActions(
 			code: 'create-cognition',
 			label: 'Create cognition file',
 			operation: 'add',
-			// the status-surface role contract: `add` is conditional materialization, never a default
+			// Status-surface role contract: `add` is conditional materialization, never a default
 			// imperative next step — adapters must not promote it into a hint.
 			role: 'optional-on-demand',
 			sourcePath,

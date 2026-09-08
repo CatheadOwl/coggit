@@ -230,7 +230,7 @@ test('statusText hit renders core status text with trailing hints (stale leaf)',
   assert.ok(text.includes('Own issues: 1'))
   assert.ok(text.includes('Descendant issues: 0'))
   // Trailing hints: one blank line, then the own-node steps (handbook lead,
-  // resolve trail — the status-surface role contract role contract).
+  // resolve trail — status-surface role contract).
   assert.ok(text.endsWith(
     '\n\nBefore authoring or editing this cognition, load skill "coggit-handbook-leaf" with the skill tool.\nCall coggit_resolve with sourcePath="coggit/src/views.ts".',
   ), 'stale hit ends with the handbook + resolve hints after a blank line')
@@ -277,7 +277,7 @@ test('statusText miss without candidates falls back to core default miss line', 
   assert.equal(text, 'Path not found in any CogGit project: zzz/unknown.ts')
 })
 
-test('statusText hit filters the optional add action and emits no handbook hint (the status-surface role contract)', async () => {
+test('statusText hit filters the optional add action and emits no handbook hint (role contract)', async () => {
   const { statusText } = await import(fromLib('views'))
   const text = statusText({
     found: true,
@@ -306,7 +306,7 @@ test('statusText hit filters the optional add action and emits no handbook hint 
       triage: [],
     },
   })
-  // the status-surface role contract (issue 20260906-1916): the `missing` fact is the on-demand
+  // Status-surface role contract (issue 20260906-1916): the `missing` fact is the on-demand
   // affordance — the materialization line renders, but no imperative add hint
   // and no premature handbook hint on the status face (handbook addressing
   // starts at the add success result).

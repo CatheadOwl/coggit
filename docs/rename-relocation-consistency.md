@@ -16,8 +16,9 @@ Design analysis for the registry source-rename defect observed on 2026-08-23
 > (`relocateSourcePath`'s leading equality branch rewrites the node itself for
 > `prefix` relocations), and the order-dependence, while real, did not fire
 > under early-return. Both remain *latent* fragilities of
-> `applyRegistrySourceRelocations` and are the basis of the proposed hardening
-> (meta the closed-set batch relocation design + spec). Read the sections below as that hardening case, not
+> `applyRegistrySourceRelocations` and are the basis of the hardening design
+> (closed-set, most-specific-match batch relocation; see the spec referenced
+> by the repo docs index). Read the sections below as that hardening case, not
 > as the incident explanation; the authoritative incident record is the
 > Resolution section of the TODO issue.
 

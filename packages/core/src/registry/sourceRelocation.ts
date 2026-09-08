@@ -13,7 +13,8 @@ export type RegistrySourceRelocation =
     };
 
 /**
- * Batch application with most-specific-match semantics (the closed-set batch relocation design):
+ * Batch application with most-specific-match semantics (closed-set batch
+ * relocation design):
  * every relocation is matched against the entry's original (pre-batch)
  * `sourcePath`; when several match, `exact` beats `prefix` and a longer
  * prefix beats a shorter one. Each matched entry is rewritten exactly once,

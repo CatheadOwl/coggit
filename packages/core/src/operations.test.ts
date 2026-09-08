@@ -256,7 +256,7 @@ suite('core operations', () => {
     // The missing-cognition issue is dropped by the default `maintained` filter,
     // but the add next step is synthesized from the first-class node signal
     // (`cognitionPresence === 'missing'`), so it survives the filter. Its role
-    // is `optional-on-demand` (the status-surface role contract): adapters must not promote it into an
+    // is `optional-on-demand` (status-surface role contract): adapters must not promote it into an
     // imperative hint.
     assert.deepStrictEqual(result.suggestedActions, [{
       code: 'create-cognition',
