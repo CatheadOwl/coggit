@@ -1,6 +1,6 @@
-import type { CoggitProject, UriComponents } from './interfaces';
-import type { AffectedResult, CoggitSnapshot } from './types';
-import { isEqualOrChildUri, uriKey } from './uri-utils';
+import type { CoggitProject, UriComponents } from '../interfaces';
+import type { AffectedResult, CoggitSnapshot } from '../types';
+import { isEqualOrChildUri, uriKey } from '../uri-utils';
 import {
   applyWatchEventToProjects,
   planWatchRefresh,

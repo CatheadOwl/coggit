@@ -10,10 +10,10 @@ import {
   RegistryRevisionMismatchError,
 } from '../registry/index';
 import { scanCognitionDirectory, reconcileRegistry } from '../registry/reconcile';
-import { discoverCognitionEntries } from '../cognitionDiscovery';
+import { discoverCognitionEntries } from '../cognition/cognitionDiscovery';
 import { discoverWorkspaceRoots } from './workspace';
 import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey } from '../snapshot';
-import { buildCognitionRoutes } from '../cognitionRoutes';
+import { buildCognitionRoutes } from '../cognition/cognitionRoutes';
 import { noOpProjectLockManager } from '../locks';
 import {
   detectMisplacedCognitionEntries,

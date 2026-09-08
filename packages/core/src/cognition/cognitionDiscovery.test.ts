@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 
 import { discoverCognitionEntries } from './cognitionDiscovery';
-import type { FileStat, FileSystem, UriComponents } from './interfaces';
+import type { FileStat, FileSystem, UriComponents } from '../interfaces';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;

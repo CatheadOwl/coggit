@@ -19,7 +19,7 @@
 
 import type { FileSystem, UriComponents } from '../interfaces';
 import { Registry } from './index';
-import { discoverCognitionEntries } from '../cognitionDiscovery';
+import { discoverCognitionEntries } from '../cognition/cognitionDiscovery';
 import { computeBlobHash } from '../hash';
 import type { PathKeyRecord } from '../types';
 

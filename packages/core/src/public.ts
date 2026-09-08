@@ -238,4 +238,4 @@ export type {
   AcceptedPair,
   CognitionRoutes,
 } from './types';
-export type { BuildCognitionRoutesOptions } from './cognitionRoutes';
+export type { BuildCognitionRoutesOptions } from './cognition/cognitionRoutes';

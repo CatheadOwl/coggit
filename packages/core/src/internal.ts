@@ -17,10 +17,10 @@ export {
   applyWatchEventToProjects,
   planWatchRefresh,
   selectWatchRefreshMode,
-} from './watchPipeline';
+} from './watch/watchPipeline';
 export {
   createWatchHost,
-} from './watchHost';
+} from './watch/watchHost';
 export type {
   NormalizedWatchEvent,
   WatchBatchRefreshMode,
@@ -29,7 +29,7 @@ export type {
   WatchEventDomain,
   WatchFileChangeKind,
   WatchRefreshMode,
-} from './watchPipeline';
+} from './watch/watchPipeline';
 export type {
   WatchHost,
   WatchHostObservationResult,
@@ -39,7 +39,7 @@ export type {
   WatchObservationHandler,
   WatchObserver,
   WatchObserverSubscription,
-} from './watchHost';
+} from './watch/watchHost';
 export {
   ADD_OPERATION_ERROR_CODES,
   CORE_OPERATION_IDS,

@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 
 import { parseCognitionDocumentFacts } from './cognitionDocumentFacts';
-import { computeBlobHash } from './hash';
+import { computeBlobHash } from '../hash';
 
 function diagnosticCodes(content: string, path = 'src/example.ts.md'): string[] {
 	return parseCognitionDocumentFacts(path, content).diagnostics.map((diagnostic) => diagnostic.code);

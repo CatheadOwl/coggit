@@ -5,7 +5,7 @@ import { computeCognitionIdentity, computeSourceFactIdentity } from './hash';
 import { RuntimeAcceptanceEvidence, buildSnapshotFromProjects, createCoggitServices, openCoggitProject } from './project';
 import { statusOperation } from './operations';
 import { REGISTRY_SCHEMA_VERSION } from './registry/index';
-import { applyWatchEventToProjects, planWatchRefresh } from './watchPipeline';
+import { applyWatchEventToProjects, planWatchRefresh } from './watch/watchPipeline';
 import {
   createWatchHost,
   type WatchHostObservationResult,
@@ -13,7 +13,7 @@ import {
   type WatchObservationHandler,
   type WatchObserver,
   type WatchObserverSubscription,
-} from './watchHost';
+} from './watch/watchHost';
 
 interface Entry {
   isDirectory: boolean;

@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 
-import type { FileStat, FileSystem, UriComponents } from './interfaces';
-import type { CoggitProjectContext, CoggitWorkspaceRoot, PathKeyRecord } from './types';
+import type { FileStat, FileSystem, UriComponents } from '../interfaces';
+import type { CoggitProjectContext, CoggitWorkspaceRoot, PathKeyRecord } from '../types';
 import {
   buildCognitionRoutes,
   type CognitionRoutesRegistryLookup,

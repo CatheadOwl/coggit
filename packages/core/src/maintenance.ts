@@ -1,5 +1,5 @@
 import type { FileSystem } from './interfaces';
-import { discoverCognitionEntries, type CognitionDiscovery } from './cognitionDiscovery';
+import { discoverCognitionEntries, type CognitionDiscovery } from './cognition/cognitionDiscovery';
 import type {
 	CoggitWorkspaceRoot,
 	OrphanedCognitionEntry,

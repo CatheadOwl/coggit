@@ -1,4 +1,4 @@
-import type { FileSystem, UriComponents } from './interfaces';
+import type { FileSystem, UriComponents } from '../interfaces';
 import { parseCognitionDocumentFacts } from './cognitionDocumentFacts';
 import type {
   CoggitProjectContext,
@@ -11,9 +11,9 @@ import type {
   CognitionHeading,
   CognitionMetadataQuality,
   PathKeyRecord,
-} from './types';
-import { joinUriPath, uriRelativePath } from './uri-utils';
-import { cognitionIdentityToProjectRelative } from './mapping';
+} from '../types';
+import { joinUriPath, uriRelativePath } from '../uri-utils';
+import { cognitionIdentityToProjectRelative } from '../mapping';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;

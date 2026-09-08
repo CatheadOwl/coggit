@@ -53,7 +53,7 @@ export type {
 	CognitionContextQuality,
 	CognitionContextStatus,
 	RoutesProjectionNode,
-} from './cognitionTypes';
+} from './cognition/cognitionTypes';
 
 export type {
 	AcceptedPair,

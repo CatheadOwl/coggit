@@ -7,7 +7,7 @@ import {
 	detectStrayCognitionEntries,
 	detectUnboundCognitionEntries,
 } from './maintenance';
-import { discoverCognitionEntries } from './cognitionDiscovery';
+import { discoverCognitionEntries } from './cognition/cognitionDiscovery';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;

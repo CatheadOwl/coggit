@@ -18,7 +18,7 @@ import type {
   UnboundCognitionEntry,
   RegistryProvider,
 } from './types';
-import type { BuildCognitionRoutesOptions } from './cognitionRoutes';
+import type { BuildCognitionRoutesOptions } from './cognition/cognitionRoutes';
 import type { CoggitLogger } from './logger';
 import type { ProjectLockManager } from './locks';
 

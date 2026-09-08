@@ -1,7 +1,7 @@
 import { parseDocument } from 'yaml';
 
-import { computeBlobHash } from './hash';
-import { cognitionPathToKey } from './identity';
+import { computeBlobHash } from '../hash';
+import { cognitionPathToKey } from '../identity';
 import type {
 	CognitionDocumentDiagnostic,
 	CognitionDocumentFacts,
@@ -9,7 +9,7 @@ import type {
 	CognitionFrontmatter,
 	CognitionFrontmatterMetadata,
 	CognitionHeading,
-} from './types';
+} from '../types';
 
 export interface ParseCognitionDocumentFactsOptions {
 	mtimeMs?: number;

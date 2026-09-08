@@ -1,8 +1,8 @@
-import { calculateAffected } from './affected';
-import { buildMappingIndex } from './snapshot';
-import type { CoggitProject, UriComponents } from './interfaces';
-import type { AffectedResult, CoggitSnapshot } from './types';
-import { isEqualOrChildUri, uriKey } from './uri-utils';
+import { calculateAffected } from '../affected';
+import { buildMappingIndex } from '../snapshot';
+import type { CoggitProject, UriComponents } from '../interfaces';
+import type { AffectedResult, CoggitSnapshot } from '../types';
+import { isEqualOrChildUri, uriKey } from '../uri-utils';
 
 export type WatchFileChangeKind = 'change' | 'create' | 'delete';
 export type WatchEventDomain = 'source' | 'cognition' | 'config';

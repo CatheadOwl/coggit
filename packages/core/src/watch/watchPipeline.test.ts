@@ -1,13 +1,13 @@
 import * as assert from 'assert';
 
-import type { CoggitProject, UriComponents } from './interfaces';
+import type { CoggitProject, UriComponents } from '../interfaces';
 import {
   applyWatchEventToProjects,
   planWatchRefresh,
   selectWatchRefreshMode,
   type NormalizedWatchEvent,
 } from './watchPipeline';
-import type { CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot } from './types';
+import type { CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot } from '../types';
 
 function uri(path: string): UriComponents {
   return {

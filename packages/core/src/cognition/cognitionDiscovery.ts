@@ -1,8 +1,8 @@
-import type { FileSystem, UriComponents } from './interfaces';
-import { cognitionPathToKey, isTrackedCognitionFile } from './identity';
-import { inferSourceUriCandidatesFromCognitionUri } from './mapping';
-import type { CognitionDiscoveryEntry, SourceCandidateState } from './types';
-import { joinUriPath, uriRelativePath } from './uri-utils';
+import type { FileSystem, UriComponents } from '../interfaces';
+import { cognitionPathToKey, isTrackedCognitionFile } from '../identity';
+import { inferSourceUriCandidatesFromCognitionUri } from '../mapping';
+import type { CognitionDiscoveryEntry, SourceCandidateState } from '../types';
+import { joinUriPath, uriRelativePath } from '../uri-utils';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;
