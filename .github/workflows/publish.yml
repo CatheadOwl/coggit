@@ -3,8 +3,8 @@ name: Publish npm
 # Publishes the npm-lane packages in dependency order. All four published
 # packages are on the registry; version bumps ride a `v*` tag.
 #
-# Requires the NPM_TOKEN repo secret: a npm Granular Access Token with
-# "Read and write" packages permission (granular tokens bypass interactive 2FA).
+# Authentication is OIDC trusted publishing (npm trusts CatheadOwl/coggit +
+# this workflow); no npm token secret is involved.
 
 on:
   push:
@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
@@ -65,13 +65,13 @@ jobs:
       PUBLISH_LIST: core runtime-node cli mcp
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
@@ -94,8 +94,6 @@ jobs:
         run: node scripts/verify-publish-face.mjs
 
       - name: Publish (pnpm, workspace:* rewrite)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -e
           for pkg in $PUBLISH_LIST; do
