@@ -1,0 +1,4 @@
+{
+  "injectionBlock": "relates:\n  src/example.ts:\n    - [cognition-link] src_cognition/example.ts.md (stale)",
+  "provenance": "Renderer shape captured from prompt-middleware's renderRelates (label/kind + href + meta suffix). Re-capture if the renderer's line format ever changes; the surface-contract tests guard the vocabulary, not this layout."
+}

@@ -22,10 +22,27 @@ import type {
 } from '@coggit/core'
 import { createNodeCoggitServices } from '@coggit/runtime-node'
 
-/** Deliberately empty: the workspace is NOT a config — it follows each calling session's cwd (see leaf). */
-export interface Config {}
+/**
+ * Host-level prompt-surface config. The workspace is NOT a config — it follows
+ * each calling session's cwd (see leaf); these keys only choose what the
+ * model-visible prompt surface renders.
+ */
+export interface Config {
+  /**
+   * Core system-prompt form rendered by the `coggit:overview` section. The
+   * `standard` value forward-declares FR 20260824's form: until the installed
+   * `@coggit/core` provides it, rendering fails loud rather than silently
+   * falling back to `minimal` (a silent fallback would fake the eval arm).
+   */
+  systemPromptKind?: 'minimal' | 'standard'
+  /** Render the `coggit:cognition-link` section — the dsh-side stitching of the injection-line vocabulary. */
+  cognitionLinkDirective?: boolean
+}
 
-export const ConfigSchema: z<Config> = z.object({})
+export const ConfigSchema: z<Config> = z.object({
+  systemPromptKind: z.union(['minimal', 'standard']).default('minimal'),
+  cognitionLinkDirective: z.boolean().default(false),
+})
 
 declare module '@deepseek-ai/cordis' {
   interface Context {

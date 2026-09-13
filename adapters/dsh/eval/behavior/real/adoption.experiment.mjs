@@ -1,0 +1,113 @@
+/**
+ * The cognition-link adoption experiment: three arms over
+ * adoption-before-edit.eval.mjs, measuring whether the standing directive
+ * (the `coggit:cognition-link` section) moves the model from "sees the link"
+ * to "reads the paired cognition before editing".
+ *
+ *   baseline   — current surface (minimal overview, bare injection lines);
+ *                this is the frozen failure baseline: the arm that must lose.
+ *   treatment  — same surface + the directive (rowConfig flips the
+ *                `coggit` row's `cognitionLinkDirective` config key).
+ *   control    — provider disabled (`prompt` row's `disabledProviders`), the
+ *                mechanism-absent arm; it isolates "injection presence" from
+ *                "copy strength" (baseline−control = mechanism, treatment−
+ *                baseline = copy).
+ *
+ * Guard: the injection must be PRESENT in baseline/treatment runs and ABSENT
+ * in control runs — a leak fakes a treatment effect, a silent delivery
+ * failure fakes a null result. The framework enforces this per run and marks
+ * a zero-guard-clean arm INVALID.
+ *
+ * Requires the behavior-experiment surface (dsh-eval ADR 0006 / EVAL-023,
+ * `@catheadowl/dsh-eval/experimental` — no compat promise until published;
+ * the pinned devDep must be bumped past that release first). Run host-side
+ * (credential + spawn capability):
+ *
+ *   node adapters/dsh/eval/behavior/real/adoption.experiment.mjs [--n 10] [--dry]
+ */
+import { fileURLToPath } from 'node:url'
+
+import baseCase, { COGNITION_HREF, SOURCE_PATH } from './adoption-before-edit.eval.mjs'
+
+// The experiment surface rides the experimental entry (no compat promise
+// until the release carrying it); fail with a pointer instead of a bare
+// module-not-found while the devDep still pins an older version.
+const experimental = await import('@catheadowl/dsh-eval/experimental').catch(() => {
+  console.error('adoption.experiment: requires @catheadowl/dsh-eval with the behavior-experiment surface (experimental entry, dsh-extra ADR 0006 / EVAL-023). Bump the devDependency past that release first.')
+  process.exit(1)
+})
+const { executeBehaviorExperiment, writeBehaviorArtifacts, defineBehaviorExperiment, resolveDshCliChain } = experimental
+
+// Pre-registered sample size. Pilot = 10/arm (signal check only); the
+// confirmatory re-registers 30/arm — at α=0.05, power≈0.8 that detects an
+// absolute ≥30pp shift in the binary adoption rate, which the decision rule
+// declares the minimum operationally relevant effect.
+const RUNS = Number.parseInt(argValue('--n') ?? '10', 10)
+const DRY = process.argv.includes('--dry')
+
+function isPromptMiddlewareInjection(message) {
+  return message.source?.plugin === 'prompt-middleware' && message.text.includes('cognition-link')
+}
+
+function extractMetrics(trace) {
+  const injectionSeen = trace.userMessages.some(isPromptMiddlewareInjection)
+  const calls = trace.toolCalls ?? []
+  // `arguments` is the raw JSON string; the parsed object is `parsedArguments`
+  // (EvalTrace contract). Paths may arrive absolute, so match by suffix, the
+  // same convention the relates A/B metrics use.
+  const isMirrorRead = (call) => call.name === 'read' && String(call.parsedArguments?.file_path ?? '').replaceAll('\\', '/').includes(COGNITION_HREF)
+  const isSourceEdit = (call) => call.name === 'edit' && String(call.parsedArguments?.file_path ?? '').replaceAll('\\', '/').includes(SOURCE_PATH)
+  const firstIndex = (predicate) => calls.findIndex(predicate)
+  const mirrorReadIndex = firstIndex(isMirrorRead)
+  const sourceEditIndex = firstIndex(isSourceEdit)
+  return {
+    injectionSeen,
+    mirrorReads: calls.filter(isMirrorRead).length,
+    sourceEdited: sourceEditIndex !== -1,
+    // The primary metric: a cognition read happens at all AND precedes the
+    // first source edit (−1 means "not before", including "never").
+    adopted: mirrorReadIndex !== -1 && (sourceEditIndex === -1 || mirrorReadIndex < sourceEditIndex),
+  }
+}
+
+// The extras bundle prompt-row config, restated under rowConfig's whole-replace
+// semantics (same convention as the relates A/B control arm; values mirror the
+// bundle's own prompt row) so the control arm differs ONLY in disabledProviders.
+const PROMPT_ROW_CONFIG = {
+  providerTimeoutMs: 2000,
+  totalTimeoutMs: 5000,
+  renderBudgetChars: 4000,
+}
+
+const experiment = defineBehaviorExperiment({
+  id: 'cognition-link-adoption',
+  hypothesis: 'The standing cognition-link directive raises the rate at which the model reads the paired cognition document before editing the mentioned source file, without lowering task completion.',
+  arms: [
+    { id: 'baseline' },
+    { id: 'treatment', overrides: { rowConfig: { coggit: { cognitionLinkDirective: true } } } },
+    { id: 'control', overrides: { rowConfig: { prompt: { ...PROMPT_ROW_CONFIG, disabledProviders: ['cognition-link-enricher'] } } } },
+  ],
+  runs: RUNS,
+  metrics: extractMetrics,
+  guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control'),
+  decisionRule: 'H1 holds iff treatment adoption rate exceeds baseline by ≥30pp absolute AND control adoption ≤ baseline AND sourceEdited rate does not drop in treatment vs baseline. Adoption up while sourceEdited down is recorded as tricky, not folded into the verdict. Pilot (n=10/arm) screens for signal only; the confirmatory verdict is pre-registered at n=30/arm.',
+})
+
+if (DRY) {
+  console.log(`cognition-link-adoption dry run: ${experiment.arms.length} arms × ${RUNS} runs over ${baseCase.id}`)
+  process.exit(0)
+}
+
+const { cli } = resolveDshCliChain({ repoFlag: process.env.DSH_REPO || undefined, startDir: import.meta.dirname })
+const result = await executeBehaviorExperiment(experiment, baseCase, {
+  profile: process.env.DSH_EVAL_PROFILE ?? 'coggit-headless',
+  cliPath: cli,
+})
+const outDir = fileURLToPath(new URL(`.runs/${experiment.id}-${new Date().toISOString().replaceAll(/[:.]/g, '-')}/`, import.meta.url))
+writeBehaviorArtifacts(result, outDir)
+console.log(`artifacts: ${outDir}`)
+
+function argValue(flag) {
+  const index = process.argv.indexOf(flag)
+  return index === -1 ? undefined : process.argv[index + 1]
+}

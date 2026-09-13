@@ -90,3 +90,11 @@ cognition content identity is a local change when needed.
 - `write` entering the closed set.
 - Cognition-side write invalidation: one extra mapping line in `touchSubjects`
   (already covered by the reverse projection above).
+
+## Standing directive (adjacent face)
+
+The rendering policy here decides WHEN a line appears; the standing
+`coggit:cognition-link` section (config key `cognitionLinkDirective`,
+`COGNITION_LINK_DIRECTIVE` in `src/index.ts`) decides what the line OBLIGES.
+Boundary: this document stays provider-side; the directive's design concept
+lives with the coggit-dsh cognition (model-visible-directive).

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Prompt-surface config keys: `systemPromptKind` (`'minimal'` | `'standard'`,
+  default `'minimal'` — `'standard'` fails loud until the installed
+  `@coggit/core` provides it) and `cognitionLinkDirective` (default `false`).
+- `coggit:cognition-link` system-prompt section: the standing directive that
+  binds the injected `[cognition-link]` lines and their `(stale)` / `(updated)`
+  markers to a default action with an allowed, accounted deviation.
+- Surface-contract tests (token stitching, frozen failure baseline) and the
+  eval layer: surface comprehension review + the three-arm cognition-link
+  adoption experiment (see `eval/README.md`; the experiment needs the dsh-eval
+  behavior-experiment release and never runs in CI).
+
 ## [0.2.1] - 2026-09-06
 
 ### Added

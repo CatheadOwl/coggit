@@ -101,12 +101,14 @@ The `--test-isolation=none` flag is required in this environment: `node --test` 
 Agent-level verification uses the shared `@catheadowl/dsh-eval` framework (registry devDependency; host CLI located through the node_modules resolution layer). Behavior cases check tool choice and real tool round-trips; the comprehension review asks whether a fresh model can understand the projected output and infer the next action:
 
 ```bash
-pnpm --dir . eval:mock   # deterministic layer, no API key: scripted model drives the real tool pipeline
-pnpm --dir . eval        # real-model intent cases (skips without a credential)
-pnpm --dir . eval:review # repeated fresh-model design review, human-graded against rubric
+pnpm --dir . eval:mock            # deterministic layer, no API key: scripted model drives the real tool pipeline
+pnpm --dir . eval                 # real-model intent cases (skips without a credential)
+pnpm --dir . eval:review          # repeated fresh-model design review, human-graded against rubric
+pnpm --dir . eval:review:surface  # surface review: prompt-face comprehension (baseline vs +directive snippets)
+pnpm --dir . eval:adoption        # cognition-link adoption experiment: 3 arms × N runs (host-side; needs the dsh-eval behavior-experiment release)
 ```
 
-The normalized layout is documented in the `eval/README.md` file in this directory (not shipped in the npm tarball): behavior cases live under `eval/behavior/{real,mock}/`, while the separate `eval/comprehension/` experiment keeps frozen raw inputs, a blind prompt, and a hidden rubric. Generated artifacts stay under nearby `.runs/` directories. A rebuilt `lib/` is required first (`pnpm --dir . build`).
+The normalized layout is documented in the `eval/README.md` file in this directory (not shipped in the npm tarball): behavior cases live under `eval/behavior/{real,mock}/`, while the separate `eval/comprehension/` experiments keep frozen raw inputs, a blind prompt, and a hidden rubric. Generated artifacts stay under nearby `.runs/` directories. A rebuilt `lib/` is required first (`pnpm --dir . build`). The adoption experiment is pre-registered (hypothesis, arms, guard, decision rule in its definition) and is an experiment, not a gate: it never runs in `pnpm test`/CI.
 
 ## What still needs a dsh profile (rare)
 

@@ -3,6 +3,7 @@ import type { Context } from '@deepseek-ai/cordis'
 // service itself is provided by the host profile. No runtime import.
 import type {} from '@deepseek-ai/dsh-skill'
 import { getCognitionHandbook, getCoggitSystemPrompt, handbookCatalog } from '@coggit/core'
+import type { CoggitSystemPromptKind } from '@coggit/core'
 
 import {
   CoggitService,
@@ -23,6 +24,19 @@ export type { Config as CoggitConfig } from './service.js'
 export const name = 'coggit'
 
 export const inject = ['tools', 'skills', 'systemPrompt']
+
+/**
+ * The dsh-side standing directive binding the `[cognition-link]` lines (and
+ * their `(stale)` / `(updated)` markers) to a default action with an allowed,
+ * accounted deviation. Rendered by the `coggit:cognition-link` section when
+ * `cognitionLinkDirective` is on; the token-stitching contract for this text
+ * is enforced by `test/surface-contract.test.mjs`.
+ */
+export const COGNITION_LINK_DIRECTIVE = [
+  'When a [cognition-link] line names a path you are about to read or edit, read the linked cognition document before acting on that source file; if you skip it, say why in one line.',
+  '(stale) marks a cognition that is out of date with its source — treat the source as current.',
+  '(updated) marks a pair whose state changed since the link was last shown — read the cognition again before relying on an earlier impression.',
+].join(' ')
 
 export const Config = ConfigSchema
 
@@ -65,8 +79,27 @@ export async function apply(ctx: Context, config: CoggitConfig): Promise<void> {
   ctx.systemPrompt.section({
     name: 'coggit:overview',
     order: 117,
-    text: (context) => hasCoggitConfig(context.agent?.session.header.cwd ?? process.cwd())
-      ? getCoggitSystemPrompt('minimal').content
+    text: (context) => {
+      if (!hasCoggitConfig(context.agent?.session.header.cwd ?? process.cwd())) return ''
+      // The config domain forward-declares FR 20260824's `standard` form, so
+      // the value can outrun the installed core's union — resolve at runtime
+      // and fail loud. A silent `minimal` fallback would fake the eval arm
+      // (same failure class the prompt-middleware `persona` field died of).
+      const prompt = getCoggitSystemPrompt(config.systemPromptKind as CoggitSystemPromptKind)
+      if (prompt === undefined) {
+        throw new Error(`coggit: systemPromptKind '${String(config.systemPromptKind)}' is not provided by the installed @coggit/core`)
+      }
+      return prompt.content
+    },
+  })
+
+  // The injection-vocabulary directive (see COGNITION_LINK_DIRECTIVE). Same
+  // lazy workspace gating and the same band, one slot behind the overview.
+  ctx.systemPrompt.section({
+    name: 'coggit:cognition-link',
+    order: 118,
+    text: (context) => hasCoggitConfig(context.agent?.session.header.cwd ?? process.cwd()) && config.cognitionLinkDirective === true
+      ? COGNITION_LINK_DIRECTIVE
       : '',
   })
 

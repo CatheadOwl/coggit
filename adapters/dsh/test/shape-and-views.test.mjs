@@ -43,7 +43,7 @@ test('apply registers handbook skills as model-only runtime skills', async () =>
   }
 })
 
-test('apply registers the top-level guidance as one system-prompt section', async () => {
+test('apply registers the guidance sections (overview + cognition-link directive)', async () => {
   const mod = await import(fromLib('index'))
   const sections = []
   const ctx = {
@@ -56,10 +56,44 @@ test('apply registers the top-level guidance as one system-prompt section', asyn
     get(name) { if (name === 'coggit') return {}; throw new Error('unexpected ctx.get(' + name + ')') },
   }
   await mod.apply(ctx, {})
-  assert.equal(sections.length, 1)
-  assert.equal(sections[0].name, 'coggit:overview')
-  assert.equal(sections[0].order, 117)
-  assert.equal(typeof sections[0].text, 'function', 'text is a lazy provider, not a static string')
+  assert.deepEqual(
+    sections.map(s => [s.name, s.order]),
+    [['coggit:overview', 117], ['coggit:cognition-link', 118]],
+  )
+  for (const section of sections) {
+    assert.equal(typeof section.text, 'function', `${section.name} text is a lazy provider, not a static string`)
+  }
+})
+
+test('cognition-link section stays empty unless cognitionLinkDirective is on', async () => {
+  const mod = await import(fromLib('index'))
+  const collect = []
+  const makeCtx = () => ({
+    plugin: async () => {},
+    skills: { register() {} },
+    tools: { register() {} },
+    systemPrompt: { section(section) { collect.push(section) } },
+    inject() {},
+    on() {},
+    get(name) { if (name === 'coggit') return {}; throw new Error('unexpected ctx.get(' + name + ')') },
+  })
+
+  const configured = await makeTempDir('coggit-directive')
+  try {
+    await createInitializedProject(configured)
+    const context = { agent: { session: { header: { cwd: configured } } } }
+
+    await mod.apply(makeCtx(), {})
+    const offText = collect.find(s => s.name === 'coggit:cognition-link').text
+    assert.equal(offText(context), '', 'directive off (default) → empty section')
+
+    collect.length = 0
+    await mod.apply(makeCtx(), { cognitionLinkDirective: true })
+    const onText = collect.find(s => s.name === 'coggit:cognition-link').text
+    assert.equal(onText(context), mod.COGNITION_LINK_DIRECTIVE, 'directive on → the directive text renders')
+  } finally {
+    await removeTempDir(configured)
+  }
 })
 
 test('section text hides the overview on an unconfigured workspace and renders it when configured', async () => {

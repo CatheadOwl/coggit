@@ -58,7 +58,12 @@ A status/read operation never mutates; only `coggit_add` (writes a file) and `co
 
 ## Configuration
 
-The plugin takes **no configuration** (the `Config` schema is empty, reserved for future deployment-wide options). The workspace deliberately follows runtime facts instead of config:
+Two prompt-surface keys (loader-row config; everything else deliberately stays un-configured, and the workspace still follows runtime facts instead of config):
+
+- `systemPromptKind` (`'minimal'` | `'standard'`, default `'minimal'`) — the core form rendered by the `coggit:overview` section. `'standard'` forward-declares the form owned by the surface-neutral standard-prompt FR: until the installed `@coggit/core` provides it, rendering fails loud instead of silently falling back to `minimal`.
+- `cognitionLinkDirective` (boolean, default `false`) — render the `coggit:cognition-link` section: the standing directive that binds the injected `[cognition-link]` lines (and their `(stale)` / `(updated)` markers) to a default action with an allowed, accounted deviation. Its token-stitching contract is mechanically enforced by `test/surface-contract.test.mjs`.
+
+How the workspace is still picked at runtime, not by config:
 
 - Model-facing tools: the calling session's `SessionHeader.cwd` (the workspace the GUI session was created in).
 - Web init UI: the browser passes the workspace of the currently selected session (most recently active workspace as fallback) over the `coggitInit/*` Remote; absent selection falls back to the server cwd.

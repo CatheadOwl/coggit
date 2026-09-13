@@ -58,10 +58,12 @@
     "dev:local": "node scripts/dev-local.mjs",
     "dev:registry": "pnpm install && pnpm run relink",
     "check-types": "tsc --noEmit -p tsconfig.json",
-    "test": "node --test --test-isolation=none test/shape-and-views.test.mjs test/tools.test.mjs test/service.test.mjs test/cognition-link-provider.test.mjs test/workspace-resolve.test.mjs",
+    "test": "node --test --test-isolation=none test/shape-and-views.test.mjs test/tools.test.mjs test/service.test.mjs test/cognition-link-provider.test.mjs test/workspace-resolve.test.mjs test/surface-contract.test.mjs",
     "eval": "dsh-eval run eval/behavior/real",
     "eval:mock": "dsh-eval run --mode mock eval/behavior/mock",
-    "eval:review": "dsh-review eval/comprehension",
+    "eval:review": "dsh-review eval/comprehension/coggit.review.mjs",
+    "eval:review:surface": "dsh-review eval/comprehension/surface/surface.review.mjs",
+    "eval:adoption": "node eval/behavior/real/adoption.experiment.mjs",
     "verify": "pnpm run check-types && pnpm run build && pnpm run test"
   },
   "peerDependencies": {
