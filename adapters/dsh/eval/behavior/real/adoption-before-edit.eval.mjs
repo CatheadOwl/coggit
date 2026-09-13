@@ -5,12 +5,15 @@
  * the model consults the paired cognition before editing is the MEASURED
  * behavior (experiment metrics), not an asserted one.
  *
- * Single-run asserts only the completion contract via `inspect` (the file was
- * actually edited; nothing else was fabricated) — adoption rate across arms is
+ * Single-run asserts the completion contract via `inspect` plus one final-text
+ * anchor (the file was actually edited AND the reply carries the demanded new
+ * value; nothing else was fabricated) — adoption rate across arms is
  * the experiment's business.
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
+import { finalTextMatches } from '@catheadowl/dsh-eval'
 
 import { seedProject, seedFreshCognition } from '../_fixtures/seed-project.mjs'
 
@@ -29,9 +32,13 @@ export default {
     const edited = await readFile(join(workspace, SOURCE_PATH), 'utf8')
     if (!edited.includes('43')) throw new Error(`expected ${SOURCE_PATH} to contain 43 after the edit, saw: ${edited.trim()}`)
   },
-  // No `expect`: the adoption signal (read of the cognition href before the
-  // source edit) is extracted by the experiment's metrics, and pinning it as a
-  // single-run matcher would make a probabilistic measurement read like a
-  // deterministic contract.
-  expect: [],
+  // The adoption signal (read of the cognition href before the source edit)
+  // stays OUT of `expect`: it is extracted by the experiment's metrics, and
+  // pinning it as a single-run matcher would make a probabilistic measurement
+  // read like a deterministic contract. The one matcher here is the evidence
+  // anchor every case must carry: the task demands the value become 43, so the
+  // final text must carry that demanded outcome.
+  expect: [
+    finalTextMatches(/43/u),
+  ],
 }

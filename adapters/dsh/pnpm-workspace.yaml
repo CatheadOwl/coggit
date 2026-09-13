@@ -14,7 +14,7 @@ allowBuilds:
 autoInstallPeers: false
 
 minimumReleaseAgeExclude:
-  - '@catheadowl/dsh-eval@0.1.0'
+  - '@catheadowl/dsh-eval@0.3.0'
   - '@coggit/core@0.2.0'
   - '@coggit/runtime-node@0.2.0'
 

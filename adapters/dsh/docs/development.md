@@ -43,7 +43,7 @@ Dependency faces (asymmetric by rule):
   consumer, not a source consumer). Rebuild: `pnpm --dir . relink`. A bare
   `pnpm install` purges the junction — always re-run `relink` after install.
 - **Library face** — `@coggit/runtime-node`, `@catheadowl/dsh-extras`, and
-  dev-only `@catheadowl/dsh-eval` as registry versions (`^0.2.0` / `^0.1.0`,
+  dev-only `@catheadowl/dsh-eval` as registry versions (`^0.2.0` / `^0.3.0`,
   installed from npm). `@coggit/core` is the one standing local channel: a
   committed `overrides` entry in `pnpm-workspace.yaml`
   (`link:../../packages/core`) points dev-time resolution at the monorepo
