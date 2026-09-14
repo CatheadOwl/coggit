@@ -30,13 +30,17 @@ import { fileURLToPath } from 'node:url'
 import baseCase, { COGNITION_HREF, SOURCE_PATH } from './adoption-before-edit.eval.mjs'
 
 // The experiment surface rides the experimental entry (no compat promise
-// until the release carrying it); fail with a pointer instead of a bare
-// module-not-found while the devDep still pins an older version.
-const experimental = await import('@catheadowl/dsh-eval/experimental').catch(() => {
-  console.error('adoption.experiment: requires @catheadowl/dsh-eval with the behavior-experiment surface (experimental entry, dsh-extra ADR 0006 / EVAL-023). Bump the devDependency past that release first.')
+// until the release carrying it ships; 0.3.0 has the entry but not these
+// symbols). Fail with a pointer instead of a bare TypeError while the
+// installed release predates the surface.
+const { executeBehaviorExperiment, writeBehaviorArtifacts, defineBehaviorExperiment, resolveDshCliChain } = await import('@catheadowl/dsh-eval/experimental').then(
+  (experimental) => experimental,
+  () => ({}),
+)
+if (typeof defineBehaviorExperiment !== 'function') {
+  console.error('adoption.experiment: this @catheadowl/dsh-eval release does not carry the behavior-experiment surface (experimental entry, dsh-extra ADR 0006 / EVAL-023). Upgrade the devDependency once that release ships.')
   process.exit(1)
-})
-const { executeBehaviorExperiment, writeBehaviorArtifacts, defineBehaviorExperiment, resolveDshCliChain } = experimental
+}
 
 // Pre-registered sample size. Pilot = 10/arm (signal check only); the
 // confirmatory re-registers 30/arm — at α=0.05, power≈0.8 that detects an
