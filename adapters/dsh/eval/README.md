@@ -11,6 +11,9 @@ eval/
                 #   + adoption.experiment.mjs — the cognition-link adoption
                 #     experiment (3 arms × N runs; needs the dsh-eval
                 #     behavior-experiment release, see its header)
+                #   + convention.experiment.mjs — the cognition-gated (v2)
+                #     variant: the mirror carries an invariant the edit
+                #     violates; outcome metrics blindEdit / adjustedTo44
     mock/       # scripted model → real tool pipeline; deterministic
     _fixtures/  # shared workspace fixtures for behavior cases
   comprehension/
