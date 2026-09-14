@@ -247,6 +247,158 @@ test('rendering policy: self-edit reconciles silently, steady state is silent, a
   }
 })
 
+test('rendering state is per-session: a second session mentioning the same path still gets the link', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const root = await makeTempDir('coggit-link-cross-session')
+  try {
+    await createInitializedProject(root)
+    const coggit = {
+      async buildSnapshot() { return {} },
+      async roots() { return [separatedRoot()] },
+      async statusWithSnapshot(_cwd, sourcePath) { return hit({ sourcePath, cognitionPath: `cog/${sourcePath}` }) },
+    }
+    const provider = createCognitionLinkProvider(coggit)
+    const subject = 'codebase/a/b.ts'
+
+    // Session A renders the subject (issue 20260913 finding B shape).
+    const first = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: '1', session: { id: 'session-a' } } })
+    assert.deepEqual(first, { href: `cog/${subject}` })
+
+    // Session B mentions the same subject in the same turn number: it must
+    // get the link too — the process-global ledger silenced it before.
+    const second = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: '1', session: { id: 'session-b' } } })
+    assert.deepEqual(second, { href: `cog/${subject}` })
+
+    // Each session keeps its OWN steady state afterwards.
+    const steadyB = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: '2', session: { id: 'session-b' } } })
+    assert.equal(steadyB, undefined)
+    const steadyA = await provider.resolve({ path: { path: subject }, input: { cwd: root, turnId: '2', session: { id: 'session-a' } } })
+    assert.equal(steadyA, undefined)
+  } finally {
+    await removeTempDir(root)
+  }
+})
+
+test('the per-turn snapshot cache is scoped per session and cwd: a colliding turnId never reuses another session\'s snapshot', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const rootA = await makeTempDir('coggit-link-turn-a')
+  const rootB = await makeTempDir('coggit-link-turn-b')
+  try {
+    await createInitializedProject(rootA)
+    await createInitializedProject(rootB)
+    let buildCount = 0
+    const snapshotsSeen = []
+    const coggit = {
+      async buildSnapshot(cwd) {
+        buildCount += 1
+        return { tag: `${cwd}#${buildCount}` }
+      },
+      async roots() { return [separatedRoot()] },
+      async statusWithSnapshot(_cwd, sourcePath, snapshot) {
+        snapshotsSeen.push(snapshot)
+        return hit({ sourcePath, cognitionPath: `cog/${sourcePath}` })
+      },
+    }
+    const provider = createCognitionLinkProvider(coggit)
+
+    // Both sessions are on turn '1' with different cwds: turnId alone must
+    // not hit the cache — each session builds its own cwd-bound snapshot.
+    await provider.resolve({ path: { path: 'a.ts' }, input: { cwd: rootA, turnId: '1', session: { id: 'session-a' } } })
+    await provider.resolve({ path: { path: 'a.ts' }, input: { cwd: rootB, turnId: '1', session: { id: 'session-b' } } })
+    assert.equal(buildCount, 2, 'same turnId across sessions/cwds builds two snapshots')
+    assert.equal(snapshotsSeen[1].tag.includes(rootB), true, 'session B\'s status ran against session B\'s snapshot')
+
+    // Same session, same turn, another path: exactly one snapshot for the turn.
+    await provider.resolve({ path: { path: 'b.ts' }, input: { cwd: rootB, turnId: '1', session: { id: 'session-b' } } })
+    assert.equal(buildCount, 2)
+  } finally {
+    await removeTempDir(rootA)
+    await removeTempDir(rootB)
+  }
+})
+
+test('a failing status call is isolated per path: undefined for itself, warned, and the batch survives', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const root = await makeTempDir('coggit-link-per-path')
+  try {
+    await createInitializedProject(root)
+    let buildCount = 0
+    const coggit = {
+      async buildSnapshot() { buildCount += 1; return {} },
+      async roots() { return [separatedRoot()] },
+      async statusWithSnapshot(_cwd, sourcePath) {
+        if (sourcePath === 'bad.ts') throw new Error('boom')
+        return hit({ sourcePath, cognitionPath: `cog/${sourcePath}` })
+      },
+    }
+    const warnings = []
+    const provider = createCognitionLinkProvider(coggit, { warn: (message) => warnings.push(message) })
+    const input = { cwd: root, turnId: '1', session: { id: 's' } }
+
+    const bad = await provider.resolve({ path: { path: 'bad.ts' }, input })
+    assert.equal(bad, undefined, 'the failing path resolves to undefined instead of throwing')
+    assert.equal(warnings.length, 1)
+    assert.match(warnings[0], /status failed for bad\.ts: boom/)
+
+    const good = await provider.resolve({ path: { path: 'good.ts' }, input })
+    assert.deepEqual(good, { href: 'cog/good.ts' }, 'the sibling path still produces its item')
+    assert.equal(buildCount, 1, 'the turn snapshot is reused, not rebuilt after the failure')
+  } finally {
+    await removeTempDir(root)
+  }
+})
+
+test('a failing snapshot build stays loud but does not freeze the touch lane: roots warm first', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const root = await makeTempDir('coggit-link-snapshot-fail')
+  try {
+    await createInitializedProject(root)
+    const coggit = {
+      async buildSnapshot() { throw new Error('snapshot exploded') },
+      async roots() { return [separatedRoot()] },
+      async statusWithSnapshot() { throw new Error('unreachable') },
+    }
+    const warnings = []
+    const provider = createCognitionLinkProvider(coggit, { warn: (message) => warnings.push(message) })
+
+    // The batch failure propagates (the framework records the failed step)…
+    await assert.rejects(
+      provider.resolve({ path: { path: 'codebase/a/b.ts' }, input: { cwd: root, turnId: '1', session: { id: 's' } } }),
+      /snapshot exploded/,
+    )
+    assert.equal(warnings.length, 1)
+    assert.match(warnings[0], /snapshot build failed/)
+
+    // …but the roots were already warmed, so the touch lane keeps working
+    // (issue 20260913 finding C: the first-batch failure used to starve it).
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/a/b.ts.md', { cwd: root }), ['codebase/a/b.ts'])
+  } finally {
+    await removeTempDir(root)
+  }
+})
+
+test('the background roots warm in touchSubjects reports rejection instead of leaving it unhandled', async () => {
+  const { createCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
+  const root = await makeTempDir('coggit-link-warm-reject')
+  try {
+    await createInitializedProject(root)
+    const coggit = {
+      async buildSnapshot() { return {} },
+      async roots() { throw new Error('roots unavailable') },
+      async statusWithSnapshot() { return miss() },
+    }
+    const warnings = []
+    const provider = createCognitionLinkProvider(coggit, { warn: (message) => warnings.push(message) })
+
+    assert.deepEqual(provider.touchSubjects('codebase_cognition/a/b.ts.md', { cwd: root }), [])
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(warnings.length, 1)
+    assert.match(warnings[0], /background roots warm failed .* roots unavailable/)
+  } finally {
+    await removeTempDir(root)
+  }
+})
+
 test('registerCognitionLinkProvider registers a declarative provider via ctx.inject', async () => {
   const { registerCognitionLinkProvider } = await import(fromLib('cognition-link-provider'))
   let registered

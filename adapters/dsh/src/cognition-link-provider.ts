@@ -59,7 +59,7 @@ export interface CognitionLinkRelatesProvider {
   touchSubjects?(touchedPath: string, context: TouchSubjectContextLike): string[]
   resolve(ctx: {
     path: ResolvedPromptPathLike
-    input: { cwd: string; turnId: string }
+    input: { cwd: string; turnId: string; session?: { id: string } }
   }): Promise<RelatesResolveResult | undefined>
 }
 
@@ -68,6 +68,23 @@ interface RenderedPairState {
   cognitionPath: string
   stale: boolean
 }
+
+/**
+ * Per-session provider state. The framework's once ledger is keyed
+ * `(sessionId, provider, subject)`; this is the provider-side counterpart —
+ * steady-state silence is each session's own history, never the process's
+ * (issue 20260913 finding B). `cachedTurn` rides the same scope because
+ * `input.turnId` is a bare turn number: keying the snapshot by turnId alone
+ * crosses sessions, and the snapshot is also cwd-bound, so the cache key is
+ * `(turnId, cwd)` inside the session.
+ */
+interface SessionState {
+  lastRendered: Map<string, RenderedPairState>
+  cachedTurn?: { turnId: string; cwd: string; snapshot: CoggitSnapshot }
+}
+
+/** Fallback scope when the framework hands no session object: today's process-level behavior. */
+const ANONYMOUS_SESSION = 'session:anonymous'
 
 const PROVIDER_NAME = 'cognition-link-enricher'
 const PROVIDER_DESCRIPTION = 'Links each mentioned path to its paired CogGit cognition document, marked stale or fresh (CogGit cognition-link).'
@@ -88,34 +105,63 @@ export function resolveCognitionLink(result: StatusOperationResult): RelatesReso
   return hit.stale ? { href: hit.cognitionPath, meta: { stale: 'true' } } : { href: hit.cognitionPath }
 }
 
+function renderThrown(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 /**
  * Declarative provider with the touch lane (prompt-middleware W11). The
  * rendering policy lives entirely here — the framework only does pending,
  * invalidation, and re-run:
  *
  * - steady state: same `{ cognitionPath, stale }` as the last render returns
- *   `undefined` (one snapshot query per touch, zero injection);
+ *   `undefined` (one snapshot query per touch, zero injection) — scoped
+ *   per session, like the framework's once ledger;
  * - the agent's own edit reconciles the record silently (`origin: 'touch'` +
  *   `touchTool: 'edit'` — narrating the agent's own action is noise);
  * - a state flip after a previous render re-emits the link with an
  *   `updated: 'true'` meta marker: injections are append-only history, the
  *   one cheap line is the only invalidation notice.
  *
- * One snapshot (and roots cache) per turn (`input.turnId`), reused across
- * paths, discarded when the turn changes (reconcile-on-read). Design record:
+ * One snapshot per `(session, cwd, turn)` — `input.turnId` is a bare turn
+ * number, so the turn cache is scoped inside the session state and rebuilt
+ * when either turnId or cwd changes (reconcile-on-read). Failure boundaries
+ * (issue 20260913 findings A/C): each path's status call is isolated (one
+ * bad path yields `undefined`, never a thrown batch); the roots warm runs
+ * before and independent of the snapshot build, so a failing first batch
+ * cannot freeze the touch lane; every swallowed failure warns through
+ * `logger` — the framework's non-ok traces only reach debug. Design record:
  * `docs/touch-lane.md`.
  */
-export function createCognitionLinkProvider(coggit: CoggitService): CognitionLinkRelatesProvider {
-  let cachedTurnId: string | undefined
-  let snapshot: CoggitSnapshot | undefined
+export function createCognitionLinkProvider(coggit: CoggitService, logger?: Context['logger']): CognitionLinkRelatesProvider {
+  const warn = (message: string) => { logger?.warn(`cognition-link: ${message}`) }
+  const sessions = new Map<string, SessionState>()
   // Roots per workspace root, warmed by `resolve` (which sees `input.cwd` per
   // turn) and consulted by `touchSubjects` through its explicit
-  // `TouchSubjectContext.cwd`. A cwd not yet warmed returns no subjects this
-  // call and is warmed in the background for the next one — the residual
-  // cold-start is a missed invalidation for the first touches of a brand-new
-  // cwd, never a wrong injection (see docs/touch-lane.md).
+  // `TouchSubjectContext.cwd`. Warming is failure-isolated and ordered before
+  // the snapshot build, so a snapshot failure never starves the touch
+  // projection; an unwarmed cwd still returns no subjects this call and is
+  // warmed in the background for the next one — the residual cold-start is a
+  // missed invalidation for the first touches of a brand-new cwd, never a
+  // wrong injection (see docs/touch-lane.md).
   const rootsByCwd = new Map<string, CoggitWorkspaceRoot[]>()
-  const lastRendered = new Map<string, RenderedPairState>()
+  const warmRoots = async (cwd: string): Promise<void> => {
+    if (rootsByCwd.has(cwd)) return
+    try {
+      rootsByCwd.set(cwd, await coggit.roots(cwd))
+    } catch (error) {
+      warn(`roots warm failed for ${cwd}: ${renderThrown(error)} (the touch projection retries on the next miss)`)
+    }
+  }
+  const sessionState = (session: { id: string } | undefined): SessionState => {
+    const key = session?.id ?? ANONYMOUS_SESSION
+    let state = sessions.get(key)
+    if (state === undefined) {
+      state = { lastRendered: new Map() }
+      sessions.set(key, state)
+    }
+    return state
+  }
   return {
     name: PROVIDER_NAME,
     description: PROVIDER_DESCRIPTION,
@@ -128,7 +174,10 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
         // Unknown cwd: no subjects this call; warm it in the background so
         // the next touch of this cwd projects exactly.
         if (hasCoggitConfig(context.cwd)) {
-          void coggit.roots(context.cwd).then((warmed) => rootsByCwd.set(context.cwd, warmed))
+          coggit.roots(context.cwd).then(
+            (warmed) => rootsByCwd.set(context.cwd, warmed),
+            (error) => warn(`background roots warm failed for ${context.cwd}: ${renderThrown(error)}`),
+          )
         }
         return []
       }
@@ -143,15 +192,36 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
       // Unconfigured workspace: no snapshot build (avoids a per-turn full scan)
       // and no relates item — miss / missing / not-applicable collapse here.
       if (!hasCoggitConfig(input.cwd)) return undefined
-      if (cachedTurnId !== input.turnId) {
-        snapshot = await coggit.buildSnapshot(input.cwd)
-        rootsByCwd.set(input.cwd, await coggit.roots(input.cwd))
-        cachedTurnId = input.turnId
+      // Roots first, failure-isolated: the touch lane must survive a failing
+      // snapshot build (issue 20260913 finding C).
+      await warmRoots(input.cwd)
+      const state = sessionState(input.session)
+      let turn = state.cachedTurn
+      if (turn === undefined || turn.turnId !== input.turnId || turn.cwd !== input.cwd) {
+        // A snapshot build failure stays loud (the framework records the
+        // failed batch for this step); the warn keeps it observable outside
+        // debug-level traces, and the roots above are already warm.
+        try {
+          turn = { turnId: input.turnId, cwd: input.cwd, snapshot: await coggit.buildSnapshot(input.cwd) }
+        } catch (error) {
+          warn(`snapshot build failed for ${input.cwd}: ${renderThrown(error)}`)
+          throw error
+        }
+        state.cachedTurn = turn
       }
-      const result = await coggit.statusWithSnapshot(input.cwd, path.path, snapshot!)
+      let result: StatusOperationResult
+      try {
+        result = await coggit.statusWithSnapshot(input.cwd, path.path, turn.snapshot)
+      } catch (error) {
+        // Per-path isolation is the provider's job (the framework's v0
+        // contract does no per-path exception containment): one bad path
+        // yields `undefined` for itself, never a voided batch.
+        warn(`status failed for ${path.path}: ${renderThrown(error)}`)
+        return undefined
+      }
       const link = resolveCognitionLink(result)
       if (link?.href === undefined) {
-        lastRendered.delete(path.path)
+        state.lastRendered.delete(path.path)
         return undefined
       }
       // Staleness comes from the status hit itself, not from `link.meta` (the
@@ -163,11 +233,11 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
       }
       // The agent's own edit: reconcile the record, never narrate it back.
       if (path.origin === 'touch' && path.touchTool === 'edit') {
-        lastRendered.set(path.path, current)
+        state.lastRendered.set(path.path, current)
         return undefined
       }
-      const previous = lastRendered.get(path.path)
-      lastRendered.set(path.path, current)
+      const previous = state.lastRendered.get(path.path)
+      state.lastRendered.set(path.path, current)
       if (previous === undefined) return link
       if (previous.cognitionPath === current.cognitionPath && previous.stale === current.stale) {
         return undefined
@@ -180,7 +250,8 @@ export function createCognitionLinkProvider(coggit: CoggitService): CognitionLin
 /**
  * Soft-dependency registration: only when prompt-middleware is present, call
  * `registerRelates` (the declarative face) with a fresh provider bound to the
- * self-provided `coggit` service.
+ * self-provided `coggit` service and the host logger (the provider's
+ * failure-observability channel).
  */
 export function registerCognitionLinkProvider(ctx: Context): void {
   const coggit = ctx.get('coggit') as CoggitService
@@ -189,6 +260,6 @@ export function registerCognitionLinkProvider(ctx: Context): void {
       promptMiddleware: {
         registerRelates(provider: CognitionLinkRelatesProvider): unknown
       }
-    }).promptMiddleware.registerRelates(createCognitionLinkProvider(coggit))
+    }).promptMiddleware.registerRelates(createCognitionLinkProvider(coggit, ctx.logger))
   })
 }

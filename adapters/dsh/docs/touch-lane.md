@@ -43,9 +43,12 @@ Known limitation: the framework's `TouchSubjectContext` (`cwd` + optional
 `sessionId`) identifies the project, but roots come from the async project
 discovery while `touchSubjects` is synchronous. The provider keeps a
 `Map<cwd, roots>` warmed by every turn (`resolve` sees `input.cwd`) and
-consulted through `context.cwd`; an unwarmed cwd returns no subjects and is
-warmed in the background for the next call. The residual cold start is one
-missed invalidation for the first touches of a brand-new cwd — never a wrong
+consulted through `context.cwd`; the warm is failure-isolated and ordered
+BEFORE the snapshot build, so a failing first batch cannot starve the touch
+projection (issue 20260913 finding C). An unwarmed cwd returns no subjects
+and is warmed in the background for the next call (rejections warn through
+the logger, never an unhandled float). The residual cold start is one missed
+invalidation for the first touches of a brand-new cwd — never a wrong
 injection, and no cross-project union contamination (the earlier union-cache
 degradation is retired by this context-based lookup).
 
@@ -60,9 +63,36 @@ actions (`edit`) from organic reads. At record time the same touch reaches
 ## Rendering policy (lives entirely on this side)
 
 The framework does pending, invalidation, re-run; what a re-run says is the
-provider's business. `lastRendered` is a provider-closure `Map<subject,
-{ cognitionPath, stale }>` — session-memory, no persistence; snapshot reuse
-keeps the existing `input.turnId` closure pattern.
+provider's business. Provider state is **per session** (`Map<sessionId,
+{ lastRendered, cachedTurn }>`, ADR-DSH-002): `lastRendered` is each
+session's own `Map<subject, { cognitionPath, stale }>` — steady-state silence
+is per-session history, never process history, mirroring the framework's
+`(sessionId, provider, subject)` once ledger. The per-turn snapshot cache
+lives inside the session state keyed `(turnId, cwd)`: `input.turnId` is a
+bare turn number (it collides across sessions) and the snapshot is
+cwd-bound, so a single turnId-keyed slot would cross sessions AND compute
+status against the wrong workspace's snapshot. A missing `input.session`
+degrades to one anonymous scope (the pre-fix behavior). No persistence;
+session states are never evicted (matching the framework ledger's
+semantics — eviction would detonate a re-injection burst).
+
+Failure boundaries (issue 20260913):
+
+- each path's `statusWithSnapshot` call is isolated — a failure resolves
+  `undefined` for that path only and warns; the framework's v0 contract does
+  no per-path containment, so this is the provider's job;
+- a snapshot BUILD failure still propagates (the framework records the
+  failed batch — loud beats a silent zero) but warns first, and the roots
+  warm has already happened;
+- every swallowed or re-thrown failure logs through `logger.warn` (passed at
+  registration) — the framework's non-ok traces only reach debug, which made
+  "not delivered" and "ignored" indistinguishable in the wild.
+
+Known divergence (accepted): the framework clears its once ledger on surface
+replacement (`clearSession`); the provider observes no such event, so after
+a replacement the framework may re-offer while provider-side steady-state
+silence persists. The declarative face has no lifecycle hook — recorded
+here, not worked around.
 
 | Source | Transition | Action |
 |---|---|---|
