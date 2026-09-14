@@ -28,6 +28,7 @@
 import { fileURLToPath } from 'node:url'
 
 import baseCase, { COGNITION_HREF, SOURCE_PATH } from './adoption-before-edit.eval.mjs'
+import { COGNITION_LINK_DIRECTIVE } from '../../../lib/types/index.js'
 
 // The experiment surface rides the experimental entry (no compat promise
 // until the release carrying it ships; 0.3.0 has the entry but not these
@@ -55,6 +56,18 @@ function isPromptMiddlewareInjection(message) {
 
 function extractMetrics(trace) {
   const injectionSeen = trace.userMessages.some(isPromptMiddlewareInjection)
+  // The treatment's surface variant must actually reach the assembled system
+  // prompt — a config key the installed plugin silently ignores would fake a
+  // no-effect treatment. The host (0.1.5-rc.2, format v3) does not persist
+  // the system prompt into `request/header` (census records the vacancy as
+  // `headerWithoutSystem`), so this is measured ONLY when the channel exists;
+  // `null` marks the vacant channel and the guard degrades to delivery-only.
+  // The config→section hop itself is unit-verified (shape-and-views tests).
+  const headers = trace.requestHeaders ?? []
+  const systemChannelLive = headers.some((header) => typeof header.system === 'string' && header.system !== '')
+  const directiveSeen = systemChannelLive
+    ? headers.some((header) => String(header.system).includes(COGNITION_LINK_DIRECTIVE))
+    : null
   const calls = trace.toolCalls ?? []
   // `arguments` is the raw JSON string; the parsed object is `parsedArguments`
   // (EvalTrace contract). Paths may arrive absolute, so match by suffix, the
@@ -66,6 +79,7 @@ function extractMetrics(trace) {
   const sourceEditIndex = firstIndex(isSourceEdit)
   return {
     injectionSeen,
+    directiveSeen,
     mirrorReads: calls.filter(isMirrorRead).length,
     sourceEdited: sourceEditIndex !== -1,
     // The primary metric: a cognition read happens at all AND precedes the
@@ -93,7 +107,13 @@ const experiment = defineBehaviorExperiment({
   ],
   runs: RUNS,
   metrics: extractMetrics,
-  guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control'),
+  // Guard, two-sided when measurable: the injection must be present exactly
+  // outside the control arm, AND the directive exactly in the treatment arm.
+  // `directiveSeen === null` (system-prompt channel vacant on this host)
+  // degrades that side to delivery-only; a leaked directive into baseline
+  // still fakes a null copy effect when the channel is live.
+  guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control')
+    && (metrics.directiveSeen === null || metrics.directiveSeen === (arm === 'treatment')),
   decisionRule: 'H1 holds iff treatment adoption rate exceeds baseline by ≥30pp absolute AND control adoption ≤ baseline AND sourceEdited rate does not drop in treatment vs baseline. Adoption up while sourceEdited down is recorded as tricky, not folded into the verdict. Pilot (n=10/arm) screens for signal only; the confirmatory verdict is pre-registered at n=30/arm.',
 })
 
@@ -103,11 +123,13 @@ if (DRY) {
 }
 
 const { cli } = resolveDshCliChain({ repoFlag: process.env.DSH_REPO || undefined, startDir: import.meta.dirname })
+const outDir = fileURLToPath(new URL(`.runs/${experiment.id}-${new Date().toISOString().replaceAll(/[:.]/g, '-')}/`, import.meta.url))
 const result = await executeBehaviorExperiment(experiment, baseCase, {
   profile: process.env.DSH_EVAL_PROFILE ?? 'coggit-headless',
   cliPath: cli,
+  artifactsDir: outDir,
+  onRow: (row) => console.log(`  ${row.arm}#${row.index} ${row.failure ?? `ok adopted=${row.metrics?.adopted} inj=${row.metrics?.injectionSeen} dir=${row.metrics?.directiveSeen} guard=${row.guardOk}`}`),
 })
-const outDir = fileURLToPath(new URL(`.runs/${experiment.id}-${new Date().toISOString().replaceAll(/[:.]/g, '-')}/`, import.meta.url))
 writeBehaviorArtifacts(result, outDir)
 console.log(`artifacts: ${outDir}`)
 

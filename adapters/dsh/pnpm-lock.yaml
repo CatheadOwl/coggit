@@ -22,8 +22,8 @@ importers:
         version: 0.2.0
     devDependencies:
       '@catheadowl/dsh-eval':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.1
@@ -39,8 +39,8 @@ importers:
 
 packages:
 
-  '@catheadowl/dsh-eval@0.3.0':
-    resolution: {integrity: sha512-Gb9+xFY1ThU4uKmuRbwACHF5/FzodUm+di3V2R78aEJoZMIxJT1Y28uYtmq+Vpfb6RmESeX85KCUgy9trgEEIQ==}
+  '@catheadowl/dsh-eval@0.4.0':
+    resolution: {integrity: sha512-1wDwjW4kDDTAYLPsGRR+tfsHpP/vwNrXpAshFpqZp/NlTp1o4WOpxZODmDYQwAek18SF3R+KOtLwsGr3CKVgYg==}
     hasBin: true
     peerDependencies:
       '@deepseek-ai/dsh-llm': '*'
@@ -401,7 +401,7 @@ packages:
 
 snapshots:
 
-  '@catheadowl/dsh-eval@0.3.0': {}
+  '@catheadowl/dsh-eval@0.4.0': {}
 
   '@catheadowl/dsh-extras@0.1.2(react@18.3.1)':
     dependencies:
