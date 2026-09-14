@@ -63,8 +63,10 @@
     "eval:mock": "dsh-eval run --mode mock eval/behavior/mock",
     "eval:review": "dsh-review eval/comprehension/coggit.review.mjs",
     "eval:review:surface": "dsh-review eval/comprehension/surface/surface.review.mjs",
+    "eval:review:genre": "dsh-review eval/comprehension/genre/genre.review.mjs",
     "eval:adoption": "node eval/behavior/real/adoption.experiment.mjs",
     "eval:convention": "node eval/behavior/real/convention.experiment.mjs",
+    "eval:glance": "node eval/behavior/real/glance.experiment.mjs",
     "verify": "pnpm run check-types && pnpm run build && pnpm run test"
   },
   "peerDependencies": {

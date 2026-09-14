@@ -105,10 +105,12 @@ pnpm --dir . eval:mock            # deterministic layer, no API key: scripted mo
 pnpm --dir . eval                 # real-model intent cases (skips without a credential)
 pnpm --dir . eval:review          # repeated fresh-model design review, human-graded against rubric
 pnpm --dir . eval:review:surface  # surface review: prompt-face comprehension (baseline vs +directive snippets)
+pnpm --dir . eval:review:genre    # line-genre review: injected lines as addressed-to-you vs background metadata; snippet C tests the candidate genre clause
 pnpm --dir . eval:adoption        # cognition-link adoption experiment: 3 arms × N runs (host-side; needs the dsh-eval behavior-experiment release)
+pnpm --dir . eval:glance          # noise-salience glance experiment (round 3): multi-file workspace, multi-path prompt; glance rate + time-to-glance
 ```
 
-The normalized layout is documented in the `eval/README.md` file in this directory (not shipped in the npm tarball): behavior cases live under `eval/behavior/{real,mock}/`, while the separate `eval/comprehension/` experiments keep frozen raw inputs, a blind prompt, and a hidden rubric. Generated artifacts stay under nearby `.runs/` directories. A rebuilt `lib/` is required first (`pnpm --dir . build`). The adoption experiment is pre-registered (hypothesis, arms, guard, decision rule in its definition) and is an experiment, not a gate: it never runs in `pnpm test`/CI.
+The normalized layout is documented in the `eval/README.md` file in this directory (not shipped in the npm tarball): behavior cases live under `eval/behavior/{real,mock}/`, while the separate `eval/comprehension/` experiments keep frozen raw inputs, a blind prompt, and a hidden rubric. Generated artifacts stay under nearby `.runs/` directories. A rebuilt `lib/` is required first (`pnpm --dir . build`). The behavior experiments (adoption, convention, glance) are pre-registered (hypothesis, arms, guard, decision rule in their definitions) and are experiments, not gates: they never run in `pnpm test`/CI.
 
 ## What still needs a dsh profile (rare)
 

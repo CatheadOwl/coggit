@@ -5,7 +5,7 @@
  * `no-projects` error branch.
  */
 import { writeFile, mkdir, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { addOperation, discoverCoggitProjects, initProject, statusOperation } from '@coggit/core'
 import { createNodeCoggitServices, pathToUriComponents } from '@coggit/runtime-node'
 
@@ -74,6 +74,42 @@ export async function seedConventionCognition(workspace) {
     ].join('\n'),
   )
   await statusOperation(projects, 'src/example.ts')
+}
+
+/**
+ * Round-3 noise fixture (glance experiment): a multi-file project where every
+ * file carries a default-template cognition pair. The prompt mentions the
+ * target plus two distractor paths, so the rendered injection block carries
+ * several competing `[cognition-link]` lines — the wild shape the saturated
+ * single-file pilots lacked. Every mirror is default-template on purpose: the
+ * measured behavior is the glance, so no mirror may carry a payoff.
+ */
+const NOISY_SOURCES = {
+  'src/example.ts': 'export const value = 42\n',
+  'src/util/format.ts': 'export function format(x) { return String(x) }\n',
+  'src/util/ids.ts': 'let counter = 0\nexport function nextId() { return ++counter }\n',
+  'src/lib/config.ts': 'export const retries = 3\n',
+  'src/lib/runner.ts': 'export function run(step) { return step() }\n',
+  'src/api/routes.ts': 'export const routes = []\n',
+  'src/api/schema.ts': 'export const schema = { version: 1 }\n',
+}
+
+/** Seed the multi-file noise workspace: init, write all sources, add + settle every pair. */
+export async function seedNoisyProject(workspace) {
+  const services = createNodeCoggitServices({ workspacePath: workspace })
+  await initProject(services.fs, pathToUriComponents(workspace), {
+    sourceRoot: 'src',
+    cognitionRoot: 'src_cognition',
+  })
+  for (const [path, content] of Object.entries(NOISY_SOURCES)) {
+    await mkdir(join(workspace, dirname(path)), { recursive: true })
+    await writeFile(join(workspace, path), content)
+  }
+  const projects = await discoverCoggitProjects(services)
+  for (const path of Object.keys(NOISY_SOURCES)) {
+    await addOperation(projects, path)
+    await statusOperation(projects, path)
+  }
 }
 
 /** Recursively collect file names under `dir` (empty when absent). */
