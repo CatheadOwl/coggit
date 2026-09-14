@@ -64,6 +64,7 @@
     "eval:review": "dsh-review eval/comprehension/coggit.review.mjs",
     "eval:review:surface": "dsh-review eval/comprehension/surface/surface.review.mjs",
     "eval:adoption": "node eval/behavior/real/adoption.experiment.mjs",
+    "eval:convention": "node eval/behavior/real/convention.experiment.mjs",
     "verify": "pnpm run check-types && pnpm run build && pnpm run test"
   },
   "peerDependencies": {
@@ -94,7 +95,7 @@
     "@coggit/runtime-node": "^0.2.0"
   },
   "devDependencies": {
-    "@catheadowl/dsh-eval": "^0.4.0",
+    "@catheadowl/dsh-eval": "^0.4.1",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
     "react": "^18.2.0",

@@ -48,6 +48,34 @@ export async function seedStaleCognition(workspace) {
   await writeFile(join(workspace, 'src', 'example.ts'), 'export const value = 43\n')
 }
 
+/**
+ * Seed a CONVENTION-BEARING cognition pair for `src/example.ts`: the mirror
+ * carries a design invariant the v2 task's requested edit violates (`value`
+ * must stay even). Written between `addOperation` and the first
+ * `statusOperation` so the acceptance folds it in and the pair reads fresh —
+ * the cognition-gated case isolates the copy effect on decision quality, not
+ * the `(stale)` marker.
+ */
+export async function seedConventionCognition(workspace) {
+  await seedProject(workspace)
+  const services = createNodeCoggitServices({ workspacePath: workspace })
+  const projects = await discoverCoggitProjects(services)
+  await addOperation(projects, 'src/example.ts')
+  await writeFile(
+    join(workspace, 'src_cognition', 'example.ts.md'),
+    [
+      '# example.ts',
+      '',
+      '## Invariants',
+      '',
+      '- `value` must stay even — the downstream validator rejects odd numbers.',
+      '- Any change to `value` is a release decision: pick the nearest even number and say so.',
+      '',
+    ].join('\n'),
+  )
+  await statusOperation(projects, 'src/example.ts')
+}
+
 /** Recursively collect file names under `dir` (empty when absent). */
 async function fileNames(dir, out = []) {
   let entries

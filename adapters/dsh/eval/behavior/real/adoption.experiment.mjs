@@ -63,19 +63,10 @@ function extractMetrics(trace) {
   // `headerWithoutSystem`), so this is measured ONLY when the channel exists;
   // `null` marks the vacant channel and the guard degrades to delivery-only.
   // The config→section hop itself is unit-verified (shape-and-views tests).
-  const headers = trace.requestHeaders ?? []
-  // Channel preference: the folded `systemPrompt` (dsh-eval ≥ the v3-only
-  // release) when present, else the legacy `header.system` field (0.4.0 —
-  // vacant on format-v3 hosts). `null` marks a vacant channel and the guard
-  // degrades to delivery-only; drop the header.system branch once the devDep
-  // passes that release.
-  const systemChannelLive = trace.systemPrompt !== undefined
-    || headers.some((header) => typeof header.system === 'string' && header.system !== '')
-  const directiveSeen = systemChannelLive
-    ? (trace.systemPrompt !== undefined
-        ? String(trace.systemPrompt).includes(COGNITION_LINK_DIRECTIVE)
-        : headers.some((header) => String(header.system).includes(COGNITION_LINK_DIRECTIVE)))
-    : null
+  // The folded v3 prompt surface (dsh-eval ≥ 0.4.1); a vacant channel is the
+  // framework's loud-failure territory (census promptSurfaceAbsent), so here
+  // the read is unconditional and the guard stays two-sided.
+  const directiveSeen = String(trace.systemPrompt ?? '').includes(COGNITION_LINK_DIRECTIVE)
   const calls = trace.toolCalls ?? []
   // `arguments` is the raw JSON string; the parsed object is `parsedArguments`
   // (EvalTrace contract). Paths may arrive absolute, so match by suffix, the
@@ -115,13 +106,11 @@ const experiment = defineBehaviorExperiment({
   ],
   runs: RUNS,
   metrics: extractMetrics,
-  // Guard, two-sided when measurable: the injection must be present exactly
-  // outside the control arm, AND the directive exactly in the treatment arm.
-  // `directiveSeen === null` (system-prompt channel vacant on this host)
-  // degrades that side to delivery-only; a leaked directive into baseline
-  // still fakes a null copy effect when the channel is live.
-  guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control')
-    && (metrics.directiveSeen === null || metrics.directiveSeen === (arm === 'treatment')),
+  // Guard, two-sided: the injection must be present exactly outside the
+  // control arm, AND the directive exactly in the treatment arm — a leaked
+  // directive into baseline fakes a null copy effect, a missing one in
+  // treatment fakes a no-effect treatment; either makes the arm INVALID.
+  guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control') && metrics.directiveSeen === (arm === 'treatment'),
   decisionRule: 'H1 holds iff treatment adoption rate exceeds baseline by ≥30pp absolute AND control adoption ≤ baseline AND sourceEdited rate does not drop in treatment vs baseline. Adoption up while sourceEdited down is recorded as tricky, not folded into the verdict. Pilot (n=10/arm) screens for signal only; the confirmatory verdict is pre-registered at n=30/arm.',
 })
 
