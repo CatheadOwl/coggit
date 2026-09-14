@@ -64,9 +64,17 @@ function extractMetrics(trace) {
   // `null` marks the vacant channel and the guard degrades to delivery-only.
   // The config→section hop itself is unit-verified (shape-and-views tests).
   const headers = trace.requestHeaders ?? []
-  const systemChannelLive = headers.some((header) => typeof header.system === 'string' && header.system !== '')
+  // Channel preference: the folded `systemPrompt` (dsh-eval ≥ the v3-only
+  // release) when present, else the legacy `header.system` field (0.4.0 —
+  // vacant on format-v3 hosts). `null` marks a vacant channel and the guard
+  // degrades to delivery-only; drop the header.system branch once the devDep
+  // passes that release.
+  const systemChannelLive = trace.systemPrompt !== undefined
+    || headers.some((header) => typeof header.system === 'string' && header.system !== '')
   const directiveSeen = systemChannelLive
-    ? headers.some((header) => String(header.system).includes(COGNITION_LINK_DIRECTIVE))
+    ? (trace.systemPrompt !== undefined
+        ? String(trace.systemPrompt).includes(COGNITION_LINK_DIRECTIVE)
+        : headers.some((header) => String(header.system).includes(COGNITION_LINK_DIRECTIVE)))
     : null
   const calls = trace.toolCalls ?? []
   // `arguments` is the raw JSON string; the parsed object is `parsedArguments`
