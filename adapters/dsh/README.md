@@ -61,7 +61,7 @@ A status/read operation never mutates; only `coggit_add` (writes a file) and `co
 Two prompt-surface keys (loader-row config; everything else deliberately stays un-configured, and the workspace still follows runtime facts instead of config):
 
 - `systemPromptKind` (`'minimal'` | `'standard'`, default `'minimal'`) — the core form rendered by the `coggit:overview` section. `'standard'` forward-declares the form owned by the surface-neutral standard-prompt FR: until the installed `@coggit/core` provides it, rendering fails loud instead of silently falling back to `minimal`.
-- `cognitionLinkDirective` (boolean, default `false`) — render the `coggit:cognition-link` section: the standing directive that binds the injected `[cognition-link]` lines (and their `(stale)` / `(updated)` markers) to a default action with an allowed, accounted deviation. Its token-stitching contract is mechanically enforced by `test/surface-contract.test.mjs`.
+- `cognitionLinkDirective` (boolean, default `true` since 2026-09-15) — render the `coggit:cognition-link` section: the standing directive that binds the injected `[cognition-link]` lines (and their `(stale)` / `(updated)` markers) to a default action with an allowed, accounted deviation. Its token-stitching contract is mechanically enforced by `test/surface-contract.test.mjs`; the default flip rides three pilot rounds (harmless, zero-overlap time-to-glance gain) recorded in the coggit-dsh cognition.
 
 How the workspace is still picked at runtime, not by config:
 

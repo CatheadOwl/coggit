@@ -92,7 +92,10 @@ const experiment = defineBehaviorExperiment({
   id: 'cognition-link-glance',
   hypothesis: 'Under multi-file, multi-path-injection noise, the standing cognition-link directive raises the rate at which the model glances at the target pair (target-mirror read before the target-source edit), and makes the glance earlier, without lowering task completion.',
   arms: [
-    { id: 'baseline' },
+    // The baseline pins the directive OFF explicitly: the config default is
+    // ON since 2026-09-15, and an unpinned baseline would ride it, collapse
+    // into the treatment arm, and be invalidated by the two-sided guard.
+    { id: 'baseline', overrides: { rowConfig: { coggit: { cognitionLinkDirective: false } } } },
     { id: 'treatment', overrides: { rowConfig: { coggit: { cognitionLinkDirective: true } } } },
     { id: 'control', overrides: { rowConfig: { prompt: { ...PROMPT_ROW_CONFIG, disabledProviders: ['cognition-link-enricher'] } } } },
   ],

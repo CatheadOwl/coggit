@@ -67,7 +67,10 @@ const experiment = defineBehaviorExperiment({
   id: 'cognition-link-convention',
   hypothesis: 'The standing cognition-link directive reduces blind convention-violating edits (43 written with the mirror never read) and increases informed outcomes (44 or declined-with-explanation), without lowering the share of runs that address the request.',
   arms: [
-    { id: 'baseline' },
+    // The baseline pins the directive OFF explicitly: the config default is
+    // ON since 2026-09-15, and an unpinned baseline would ride it, collapse
+    // into the treatment arm, and be invalidated by the two-sided guard.
+    { id: 'baseline', overrides: { rowConfig: { coggit: { cognitionLinkDirective: false } } } },
     { id: 'treatment', overrides: { rowConfig: { coggit: { cognitionLinkDirective: true } } } },
     { id: 'control', overrides: { rowConfig: { prompt: { ...PROMPT_ROW_CONFIG, disabledProviders: ['cognition-link-enricher'] } } } },
   ],

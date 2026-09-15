@@ -65,7 +65,7 @@ test('apply registers the guidance sections (overview + cognition-link directive
   }
 })
 
-test('cognition-link section stays empty unless cognitionLinkDirective is on', async () => {
+test('cognition-link section renders by default and stays empty only when cognitionLinkDirective is explicitly off', async () => {
   const mod = await import(fromLib('index'))
   const collect = []
   const makeCtx = () => ({
@@ -83,14 +83,20 @@ test('cognition-link section stays empty unless cognitionLinkDirective is on', a
     await createInitializedProject(configured)
     const context = { agent: { session: { header: { cwd: configured } } } }
 
-    await mod.apply(makeCtx(), {})
+    // Schema default (host-normalized config): the directive renders.
+    await mod.apply(makeCtx(), mod.Config({}))
+    const defaultText = collect.find(s => s.name === 'coggit:cognition-link').text
+    assert.equal(defaultText(context), mod.COGNITION_LINK_DIRECTIVE, 'schema default (on) → the directive renders')
+
+    collect.length = 0
+    await mod.apply(makeCtx(), { cognitionLinkDirective: false })
     const offText = collect.find(s => s.name === 'coggit:cognition-link').text
-    assert.equal(offText(context), '', 'directive off (default) → empty section')
+    assert.equal(offText(context), '', 'explicitly off → empty section')
 
     collect.length = 0
     await mod.apply(makeCtx(), { cognitionLinkDirective: true })
     const onText = collect.find(s => s.name === 'coggit:cognition-link').text
-    assert.equal(onText(context), mod.COGNITION_LINK_DIRECTIVE, 'directive on → the directive text renders')
+    assert.equal(onText(context), mod.COGNITION_LINK_DIRECTIVE, 'explicitly on → the directive text renders')
   } finally {
     await removeTempDir(configured)
   }

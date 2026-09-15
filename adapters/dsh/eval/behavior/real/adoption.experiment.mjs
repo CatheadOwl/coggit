@@ -100,7 +100,10 @@ const experiment = defineBehaviorExperiment({
   id: 'cognition-link-adoption',
   hypothesis: 'The standing cognition-link directive raises the rate at which the model reads the paired cognition document before editing the mentioned source file, without lowering task completion.',
   arms: [
-    { id: 'baseline' },
+    // The baseline pins the directive OFF explicitly: the config default is
+    // ON since 2026-09-15, and an unpinned baseline would ride it, collapse
+    // into the treatment arm, and be invalidated by the two-sided guard.
+    { id: 'baseline', overrides: { rowConfig: { coggit: { cognitionLinkDirective: false } } } },
     { id: 'treatment', overrides: { rowConfig: { coggit: { cognitionLinkDirective: true } } } },
     { id: 'control', overrides: { rowConfig: { prompt: { ...PROMPT_ROW_CONFIG, disabledProviders: ['cognition-link-enricher'] } } } },
   ],

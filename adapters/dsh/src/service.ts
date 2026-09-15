@@ -35,13 +35,13 @@ export interface Config {
    * falling back to `minimal` (a silent fallback would fake the eval arm).
    */
   systemPromptKind?: 'minimal' | 'standard'
-  /** Render the `coggit:cognition-link` section — the dsh-side stitching of the injection-line vocabulary. */
+  /** Render the `coggit:cognition-link` section — the dsh-side stitching of the injection-line vocabulary. Default on: three pilot rounds found it harmless with a zero-overlap time-to-glance gain, and the L1 failure baseline shows the markers are undefined symbols without it (see the coggit-dsh cognition, model-visible-directive). */
   cognitionLinkDirective?: boolean
 }
 
 export const ConfigSchema: z<Config> = z.object({
   systemPromptKind: z.union(['minimal', 'standard']).default('minimal'),
-  cognitionLinkDirective: z.boolean().default(false),
+  cognitionLinkDirective: z.boolean().default(true),
 })
 
 declare module '@deepseek-ai/cordis' {
