@@ -4,8 +4,7 @@ description: Design analysis of stale sourcePath entries after bulk source renam
 
 # Rename relocation consistency
 
-Design analysis for the registry source-rename defect observed on 2026-08-23
-(meta TODO: `TODO/ISSUES/20260823-1744-source-rename-reconcile-non-atomic-stale-sourcepath.md`).
+Design analysis for the registry source-rename defect observed on 2026-08-23.
 
 > [2026-09-07 correction] The incident was resolved in coggit@b2df5bd while
 > this analysis was being formalized: `applySourceRename` early-returned after
@@ -20,7 +19,7 @@ Design analysis for the registry source-rename defect observed on 2026-08-23
 > (closed-set, most-specific-match batch relocation; see the spec referenced
 > by the repo docs index). Read the sections below as that hardening case, not
 > as the incident explanation; the authoritative incident record is the
-> Resolution section of the TODO issue.
+> fix commit `b2df5bd`.
 
 ## Symptom recap
 
@@ -39,9 +38,9 @@ Keys were reconciled correctly in both cases; only `sourcePath` went stale.
 The issue's original Design Direction ("derive the new key from the new
 `sourcePath` in the same locked write") conflicts with the stated key model:
 
-- Registry keys are **cognition-root-derived identities** (see the core
-  registry boundary cognition, `Path Contract` section). `sourcePath` is the
-  mutable source binding, not the identity.
+- Registry keys are **cognition-root-derived identities** (core's registry
+  `Path Contract`). `sourcePath` is the mutable source binding, not the
+  identity.
 - A source rename moves source files only. The paired cognition file may not
   move at all (agent/user moves it later), and for misplaced cognition the key
   is intentionally a cognition-path key that differs from

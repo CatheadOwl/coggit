@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-/** Absolute path to the plugin root (`.../dsh-plugin-dev/coggit`), independent of the test runner cwd. */
+/** Absolute path to the plugin root, independent of the test runner cwd. */
 export const pluginRoot = fileURLToPath(new URL('..', import.meta.url))
 
 /** Absolute path to the compiled lib directory. */

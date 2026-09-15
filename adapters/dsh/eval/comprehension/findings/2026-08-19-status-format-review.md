@@ -78,17 +78,17 @@ Round after the `verify` → `suggestedActions` collapse (adapter `7b5346e`, cor
 
 ## Open items (next design round)
 
-Core-level items are filed as issues in `vscode-plugins/TODO/ISSUES/`:
+Core-level items are escalated upstream as core issues (ids below):
 
-1. ~~**Blind review leaks workspace**~~ — **resolved**: the dsh review adapter now runs tool-less — a generated `--patch` overlay disables every host model-facing tool row and the reviewer's cwd is the empty run dir (`dsh-plugin-dev/eval/src/adapters/dsh/review.mjs`). Re-run confirmed (see below). (dsh-side, not filed to core)
-2. **Core: resolve action leads the stale hints** (#8, Open) → `20260819-2200-stale-resolve-hint-leads-surfacehints.md`.
-3. **Core: resolve failure path should canonicalize like add** (#2, Open) → `20260819-2201-resolve-failure-echoes-raw-sourcepath.md`.
-4. **Core schema clarity** — `cognitionPath` null-encoding, `null` overloading (#4/#5), `content-changed` contract (#12) → `20260819-2202-operation-result-schema-coherence.md` (Resolved on core).
-5. **Core: descendant routing** (#9, Open) — folder hits list stale descendants with no per-descendant next step → `20260819-2203-descendant-routing-needs-per-descendant-next-step.md`.
+1. ~~**Blind review leaks workspace**~~ — **resolved**: the dsh review adapter now runs tool-less — a generated `--patch` overlay disables every host model-facing tool row and the reviewer's cwd is the empty run dir (`eval/comprehension/coggit.review.mjs`). Re-run confirmed (see below). (dsh-side, not filed to core)
+2. **Core: resolve action leads the stale hints** (#8, Open) → core issue 20260819-2200.
+3. **Core: resolve failure path should canonicalize like add** (#2, Open) → core issue 20260819-2201.
+4. **Core schema clarity** — `cognitionPath` null-encoding, `null` overloading (#4/#5), `content-changed` contract (#12) → core issue 20260819-2202 (Resolved on core).
+5. **Core: descendant routing** (#9, Open) — folder hits list stale descendants with no per-descendant next step → core issue 20260819-2203.
 6. **Core: folder `status` aggregation rule is undocumented** (re-run flag #3, new) — whole-node `status` = worst of own + descendant (`fresh` < `stale` < `conflict`); the contract never states it. Draft below.
 7. ~~**Fixture: add a mixed fresh/stale folder sample**~~ — **resolved**: `status-hit-folder-mixed` (own README fresh + stale descendant) added to `fixtures.json`; rubric item 15 + the scenario next-action row document the aggregation rule. (dsh-side, not filed to core)
 
-The core repo (`vscode-plugins/codebase/coggit`) owns items 2–6; this repo's job is to keep the projection, description, fixtures, and rubric honest about them until core resolves them. Item 4 (2202) is resolved on core and the adapter reading can now be reconciled; items 2, 3, 5 are open; item 6 is a new draft to file. The two dsh-side items (1 and 7) are resolved here.
+The core repo owns items 2–6; the dsh adapter's job is to keep the projection, description, fixtures, and rubric honest about them until core resolves them. Item 4 (2202) is resolved on core and the adapter reading can now be reconciled; items 2, 3, 5 are open; item 6 is a new draft to file. The two dsh-side items (1 and 7) are resolved here.
 
 ## New core issue draft — item 6 (folder status aggregation rule)
 
@@ -138,7 +138,7 @@ Re-ran the blind review after resolving the two dsh-side items. The reviewer now
 The mixed-folder fixture works: the reviewer inferred the aggregation rule ("a folder is `stale` when its own pair *or* any descendant pair is stale") and read `status-hit-folder-mixed` correctly as "do NOT resolve the folder — drill into the stale descendant". It also surfaced the descendant-routing gap as its sharpest red flag (core #9, already filed), now observable rather than hypothetical. The remaining flags are rubric-covered (`intentional`) or the already-filed core items.
 
 # zh-cn
-决定已执行。做了三件事：**建了一个 findings 台账子文件夹**、**做了一轮设计收敛**、**重跑真实盲评并记录结论**。
+本轮做了三件事：**建了一个 findings 台账子文件夹**、**做了一轮设计收敛**、**重跑真实盲评并记录结论**。
 
 ## 1. 新增台账：`eval/comprehension/findings/`
 
@@ -164,9 +164,8 @@ The mixed-folder fixture works: the reviewer inferred the aggregation rule ("a f
 
 ## 交付物
 
-改动集中在 `dsh-plugin-dev/coggit/`：`eval/comprehension/findings/`（新增台账）、`fixtures.json`、`rubric.md`、`src/tools.ts`、`README.md`（以及上一轮的 test/、`intent-add.eval.mjs`）。单测 36/36 通过；盲评 `--runs 1` 两次均成功（产物在 `.runs/`，不入库）。
+改动集中在 dsh adapter 内：`eval/comprehension/findings/`（新增台账）、`fixtures.json`、`rubric.md`、`src/tools.ts`、`README.md`（以及上一轮的 test/、`intent-add.eval.mjs`）。单测 36/36 通过；盲评 `--runs 1` 两次均成功（产物在 `.runs/`，不入库）。
 
-一个提醒：现在台账里「open items」2–5 都属于 `vscode-plugins/codebase/coggit`（core 仓，本 workspace 外）。要不要我把这几条整理成一份可直接贴给 core 的 issue 草稿，还是先停在这里等你定优先级？
 ## 2026-08-19 晚 — core 已解决 open items，dsh 适配层对齐新 status 格式
 
 The core repo landed the status-format round the same evening; every escalated core item is now resolved, and this commit realigns the adapter's projection / description / fixtures / rubric in one pass:
