@@ -73,3 +73,34 @@ pnpm --dir adapters/dsh eval:cross-session
 ```
 
 All generated artifacts go into `.runs/` next to the case/experiment and are never committed as SSOT.
+
+## Cost ladder — when to spend real-model runs
+
+Real-model behavior runs are the only costly layer (host sessions ~90s each;
+a 3-arm × n=30 confirmatory is ~1h wall time). Spend at the cheapest layer
+that can answer the question, and never escalate without saying why the layer
+below could not:
+
+| Layer | Cost | Answers |
+|---|---|---|
+| L1 contract tests + unit tests + composition regression | zero, deterministic | token drift, failure isolation, cross-session topology, regression coverage — the default answer layer |
+| L2 blind review | ~3 model calls | copy comprehension: can a fresh model derive the obligation / classification |
+| L3 pilot (n=10/arm) | ~30 sessions | directional signal + fixture headroom — sufficient for REVERSIBLE product decisions (a config default with an escape hatch), recorded as such |
+| L3 confirmatory (n=30/arm, pre-registered rule) | ~90 sessions | citation-grade claims, irreversible changes, or a default meant to be cited later |
+
+Confirmatory prerequisites: decision rule committed BEFORE data exists, a
+fixture-validity clause, every arm pinned (an unpinned arm rides config
+defaults and the two-sided guard invalidates it — the first glance
+confirmatory lost its whole control arm to exactly this).
+
+Standing economies:
+
+- Sequential stop rule where applicable: pre-register "complete separation
+  at n=10 stops the run"; never re-run a saturated fixture as-is.
+- The control arm exists for mechanism attribution (injection presence vs
+  copy strength); once that attribution is on record, plain A/B copy
+  comparisons run two arms.
+- Arms are independent host processes — run arm batches concurrently
+  (`--arm x` in a second terminal) when wall time matters.
+- Screening may use a cheaper model tier; the confirmatory runs the target
+  tier.
