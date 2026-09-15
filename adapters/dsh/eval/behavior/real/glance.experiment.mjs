@@ -5,9 +5,12 @@
  * original probe measured (links delivered, mirrors unread) lives in
  * competition: many files, multi-path prompts, several injected lines at once.
  * This experiment recreates that shape over glance-noise.eval.mjs and asks the
- * minimal-intent question only: does the model GLANCE at the target pair
- * before editing its source, and how early — never whether it complies with
- * anything the mirror says.
+ * minimal-intent question only: does the model GLANCE at the target pair, and
+ * early enough to matter — never whether it complies with anything the mirror
+ * says. Confirmatory endpoint (pre-registered 2026-09-15, before the n=30
+ * run): `earlyGlance` — the target-mirror read lands before the FIRST
+ * target-source access; the before-edit glance rate saturated in all three
+ * pilots and is a background read now.
  *
  *   baseline   — bare injection under noise (directive off): the arm whose
  *                ceiling-then-floor behavior decides whether the fixture has
@@ -59,19 +62,24 @@ function extractMetrics(trace) {
   const isRead = (call) => call.name === 'read'
   const isTargetMirrorRead = (call) => isRead(call) && normalize(call.parsedArguments?.file_path).includes(COGNITION_HREF)
   const isAnyMirrorRead = (call) => isRead(call) && normalize(call.parsedArguments?.file_path).includes(`${COGNITION_ROOT}/`)
+  const isTargetSourceRead = (call) => isRead(call) && normalize(call.parsedArguments?.file_path).includes(SOURCE_PATH)
   const isSourceEdit = (call) => call.name === 'edit' && normalize(call.parsedArguments?.file_path).includes(SOURCE_PATH)
+  const isSourceAccess = (call) => isTargetSourceRead(call) || isSourceEdit(call)
   const firstIndex = (predicate) => calls.findIndex(predicate)
   const glanceIndex = firstIndex(isTargetMirrorRead)
+  const sourceAccessIndex = firstIndex(isSourceAccess)
   const sourceEditIndex = firstIndex(isSourceEdit)
   return {
     injectionSeen,
     directiveSeen,
-    // The primary metric: a target-mirror read happens at all AND precedes the
-    // first target-source edit (the minimal-intent question — glance, not
-    // compliance).
+    // The CONFIRMATORY primary endpoint (pre-registered 2026-09-15): the
+    // glance lands before the FIRST target-source access (read or edit) —
+    // information gain exists only when the cognition arrives before
+    // source-informed planning starts. The glance-before-edit rate saturated
+    // in all three pilots and is demoted to a background read.
+    earlyGlance: glanceIndex !== -1 && (sourceAccessIndex === -1 || glanceIndex < sourceAccessIndex),
+    // Background reads: never decide.
     glanced: glanceIndex !== -1 && (sourceEditIndex === -1 || glanceIndex < sourceEditIndex),
-    // Time-to-glance: tool-call index of the first target-mirror read (-1 =
-    // never; read directionally only, it never decides the verdict).
     firstGlanceIndex: glanceIndex,
     // Over-compliance side signal: mirror reads that are NOT the target pair.
     distractorMirrorReads: calls.filter((call) => isAnyMirrorRead(call) && !isTargetMirrorRead(call)).length,
@@ -90,7 +98,7 @@ const PROMPT_ROW_CONFIG = {
 
 const experiment = defineBehaviorExperiment({
   id: 'cognition-link-glance',
-  hypothesis: 'Under multi-file, multi-path-injection noise, the standing cognition-link directive raises the rate at which the model glances at the target pair (target-mirror read before the target-source edit), and makes the glance earlier, without lowering task completion.',
+  hypothesis: 'Under multi-file, multi-path-injection noise, the standing cognition-link directive raises the rate at which the model glances at the target pair BEFORE ITS FIRST TARGET-SOURCE ACCESS (the confirmatory primary endpoint `earlyGlance`), without lowering task completion.',
   arms: [
     // The baseline pins the directive OFF explicitly: the config default is
     // ON since 2026-09-15, and an unpinned baseline would ride it, collapse
@@ -102,7 +110,7 @@ const experiment = defineBehaviorExperiment({
   runs: RUNS,
   metrics: extractMetrics,
   guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control') && metrics.directiveSeen === (arm === 'treatment'),
-  decisionRule: 'Fixture validity first: if baseline glance rate = 1.0 the fixture is still saturated (no headroom) and there is NO verdict — redesign the fixture, do not re-run as-is. Floor case (baseline 0 and treatment 0): recorded as no-signal-under-noise; copy can be neither blamed nor credited, escalate fixture design. H1 holds iff treatment glance rate exceeds baseline by ≥30pp absolute AND control glance ≤ baseline AND sourceEdited rate does not drop in treatment vs baseline. firstGlanceIndex is read directionally only (lower median in treatment supports, never decides). Pilot (n=10/arm) screens for signal and headroom; the confirmatory verdict is pre-registered at n=30/arm.',
+  decisionRule: 'Pre-registered 2026-09-15 for the confirmatory round (the glance-before-edit RATE saturated in all three pilots; the round-3 report promoted time-to-glance to primary). Primary endpoint: earlyGlance = target-mirror read before the first target-source access (read or edit). Fixture validity: if baseline earlyGlance rate = 1.0 there is no headroom and NO verdict — redesign the fixture; floor case (baseline 0 and treatment 0) is no-signal-under-noise, no verdict. H1 holds iff treatment earlyGlance rate exceeds baseline by ≥30pp absolute AND control earlyGlance ≤ baseline AND sourceEdited rate does not drop in treatment vs baseline. glanced (before-edit) and firstGlanceIndex stay background/directional, never decide. n=30/arm at α=0.05 targets detection of an absolute ≥30pp shift with power≈0.8.',
 })
 
 if (DRY) {
@@ -116,7 +124,7 @@ const result = await executeBehaviorExperiment(experiment, baseCase, {
   profile: process.env.DSH_EVAL_PROFILE ?? 'coggit-headless',
   cliPath: cli,
   artifactsDir: outDir,
-  onRow: (row) => console.log(`  ${row.arm}#${row.index} ${row.failure ?? `ok glanced=${row.metrics?.glanced} at=${row.metrics?.firstGlanceIndex} distr=${row.metrics?.distractorMirrorReads} inj=${row.metrics?.injectionSeen} dir=${row.metrics?.directiveSeen} guard=${row.guardOk}`}`),
+  onRow: (row) => console.log(`  ${row.arm}#${row.index} ${row.failure ?? `ok early=${row.metrics?.earlyGlance} glanced=${row.metrics?.glanced} at=${row.metrics?.firstGlanceIndex} distr=${row.metrics?.distractorMirrorReads} inj=${row.metrics?.injectionSeen} dir=${row.metrics?.directiveSeen} guard=${row.guardOk}`}`),
 })
 writeBehaviorArtifacts(result, outDir)
 console.log(`artifacts: ${outDir}`)

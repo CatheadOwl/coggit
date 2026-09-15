@@ -14,10 +14,11 @@ eval/
                 #   + convention.experiment.mjs — the cognition-gated (v2)
                 #     variant: the mirror carries an invariant the edit
                 #     violates; outcome metrics blindEdit / adjustedTo44
-                #   + glance.experiment.mjs — the noise-salience (round-3)
-                #     variant: multi-file workspace, multi-path prompt, several
-                #     competing injection lines; metrics glance rate +
-                #     firstGlanceIndex (+ distractorMirrorReads noise side)
+                #   + glance.experiment.mjs — the noise-salience experiment:
+                #     multi-file workspace, multi-path prompt, several
+                #     competing injection lines; confirmatory endpoint
+                #     earlyGlance (mirror read before first source access),
+                #     pre-registered 2026-09-15 for n=30/arm
     composition/ # self-composed host topology the per-run-process face
                 #   cannot express: cross-session.regression.mjs drives TWO
                 #   sequential main sessions through ONE headless host
