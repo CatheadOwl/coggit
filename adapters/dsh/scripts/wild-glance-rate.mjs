@@ -1,8 +1,11 @@
 /**
- * Wild glance-rate scan — the one number the information-gain intent keeps
- * watching (see coggit-dsh cognition, spec/wild-glance-rate.md): of the real
- * host's sessions that RECEIVED a cognition-link injection, how many then
- * read a cognition mirror. Zero model cost; reads session logs only.
+ * Wild glance-rate scan — the standing wild metric of the coggit-dsh
+ * cognition (wild-glance-rate spec, plain-named per the one-way discipline):
+ * of the real host's sessions that RECEIVED a cognition-link injection, how
+ * many then read a cognition mirror. Zero model cost; reads session logs
+ * only. Research/diagnostic tooling: published for repo readers, and
+ * deliberately outside the npm artifact closure (the package `files`
+ * allowlist).
  *
  * Eras partition automatically: a session whose system prompt carries the
  * standing directive ('read the linked cognition document…') belongs to the
@@ -11,8 +14,8 @@
  * intervention boundary; no manual timestamp needed.
  *
  * Session logs are multi-frame zstd (one frame per write): frames are sliced
- * on the zstd magic (28 B5 2F FD) and decompressed individually (the method
- * proven by the 20260913 probe, probe.md §2).
+ * on the zstd magic (28 B5 2F FD) and decompressed individually — the decode
+ * method proven by the 20260913 delivery investigation.
  *
  * Usage:
  *   node scripts/wild-glance-rate.mjs [sessionsRoot] [--since ISO] [--until ISO] [--workspace substr]
