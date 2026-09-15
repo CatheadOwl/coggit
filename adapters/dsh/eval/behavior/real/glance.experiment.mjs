@@ -49,6 +49,8 @@ if (typeof defineBehaviorExperiment !== 'function') {
 // 30/arm, same as the adoption experiment.
 const RUNS = Number.parseInt(argValue('--n') ?? '10', 10)
 const DRY = process.argv.includes('--dry')
+// Optional single-arm rectification batch (see the arms comment below).
+const ARM = argValue('--arm')
 
 function isPromptMiddlewareInjection(message) {
   return message.source?.plugin === 'prompt-middleware' && message.text.includes('cognition-link')
@@ -96,17 +98,27 @@ const PROMPT_ROW_CONFIG = {
   renderBudgetChars: 4000,
 }
 
+// Post-default-flip (2026-09-15) EVERY arm pins the coggit row: an unpinned
+// arm rides the ON default, and the two-sided guard (directiveSeen ===
+// (arm === 'treatment')) invalidates it — the first confirmatory run lost
+// its whole control arm to exactly this.
+const ALL_ARMS = [
+  { id: 'baseline', overrides: { rowConfig: { coggit: { cognitionLinkDirective: false } } } },
+  { id: 'treatment', overrides: { rowConfig: { coggit: { cognitionLinkDirective: true } } } },
+  { id: 'control', overrides: { rowConfig: {
+    coggit: { cognitionLinkDirective: false },
+    prompt: { ...PROMPT_ROW_CONFIG, disabledProviders: ['cognition-link-enricher'] },
+  } } },
+]
+
 const experiment = defineBehaviorExperiment({
   id: 'cognition-link-glance',
   hypothesis: 'Under multi-file, multi-path-injection noise, the standing cognition-link directive raises the rate at which the model glances at the target pair BEFORE ITS FIRST TARGET-SOURCE ACCESS (the confirmatory primary endpoint `earlyGlance`), without lowering task completion.',
-  arms: [
-    // The baseline pins the directive OFF explicitly: the config default is
-    // ON since 2026-09-15, and an unpinned baseline would ride it, collapse
-    // into the treatment arm, and be invalidated by the two-sided guard.
-    { id: 'baseline', overrides: { rowConfig: { coggit: { cognitionLinkDirective: false } } } },
-    { id: 'treatment', overrides: { rowConfig: { coggit: { cognitionLinkDirective: true } } } },
-    { id: 'control', overrides: { rowConfig: { prompt: { ...PROMPT_ROW_CONFIG, disabledProviders: ['cognition-link-enricher'] } } } },
-  ],
+  // `--arm <id>` re-runs one arm only (arms are independent host processes,
+  // so a rectification batch is statistically identical in structure); used
+  // to recover an arm invalidated by a definition bug without re-paying the
+  // intact arms.
+  arms: ALL_ARMS.filter((arm) => ARM === undefined || arm.id === ARM),
   runs: RUNS,
   metrics: extractMetrics,
   guard: (metrics, { arm }) => metrics.injectionSeen === (arm !== 'control') && metrics.directiveSeen === (arm === 'treatment'),
