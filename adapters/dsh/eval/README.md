@@ -18,6 +18,12 @@ eval/
                 #     variant: multi-file workspace, multi-path prompt, several
                 #     competing injection lines; metrics glance rate +
                 #     firstGlanceIndex (+ distractorMirrorReads noise side)
+    composition/ # self-composed host topology the per-run-process face
+                #   cannot express: cross-session.regression.mjs drives TWO
+                #   sequential main sessions through ONE headless host
+                #   (eval-mock model — deterministic, no credential) and
+                #   asserts BOTH receive the cognition-link injection; the
+                #   negative control (pre-fix provider) goes RED on session 2
     mock/       # scripted model → real tool pipeline; deterministic
     _fixtures/  # shared workspace fixtures for behavior cases
   comprehension/
@@ -59,6 +65,10 @@ node adapters/dsh/eval/behavior/real/adoption.experiment.mjs [--n 10] [--dry]
 
 # Noise-salience glance experiment (round 3; same host-side conventions)
 node adapters/dsh/eval/behavior/real/glance.experiment.mjs [--n 10] [--dry]
+
+# Cross-session delivery regression (issue 20260913 #3; composition topology,
+# one host + two sequential sessions, deterministic mock model — no credential)
+pnpm --dir adapters/dsh eval:cross-session
 ```
 
 All generated artifacts go into `.runs/` next to the case/experiment and are never committed as SSOT.

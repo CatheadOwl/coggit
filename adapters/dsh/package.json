@@ -67,6 +67,7 @@
     "eval:adoption": "node eval/behavior/real/adoption.experiment.mjs",
     "eval:convention": "node eval/behavior/real/convention.experiment.mjs",
     "eval:glance": "node eval/behavior/real/glance.experiment.mjs",
+    "eval:cross-session": "node eval/behavior/composition/cross-session.regression.mjs",
     "verify": "pnpm run check-types && pnpm run build && pnpm run test"
   },
   "peerDependencies": {
