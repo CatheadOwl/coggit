@@ -1,14 +1,16 @@
 /**
  * Workspace-target resolution for the CogGit init tab.
  *
- * The tab addresses one workspace at a time. Resolution follows the same
- * data-access ladder the ui-workspace navigation policy uses
- * (UiWorkspaceService.startSession): the workspace owning the currently
- * selected session first, then the most recently active workspace, then
- * undefined — the browser wire omits the workspace and the server resolves
- * its own cwd. The harness no longer carries a UI-domain `recentWorkspaceId`
- * field on the Workspace snapshot (removed with the Runtime package), so the
- * recent fallback re-derives it from the two framework snapshots instead.
+ * The tab addresses one workspace at a time: the most recently active
+ * workspace (latest session `updatedAt`, falling back to the workspace's
+ * `createdAt`), else undefined — the browser wire omits the workspace and
+ * the server resolves its own cwd. Hosts ≥ 0.1.6-alpha.2 removed the
+ * client-side global "current session" (explicit Session Provider
+ * ownership; this global tab sits under no provider), so the former
+ * selected-session-first tier no longer exists to mirror. The harness also
+ * carries no UI-domain `recentWorkspaceId` field on the Workspace snapshot
+ * (removed with the Runtime package), so recency re-derives from the two
+ * framework snapshots.
  */
 
 import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -18,21 +20,13 @@ import type { WorkspaceSnapshot, WorkspaceView } from '@deepseek-ai/dsh-api-work
  * Resolve the workspace path the init tab should address.
  * @param workspaces - the global Workspace snapshot (useWorkspaces).
  * @param sessions - the global Session list snapshot (useSessions).
- * @returns the owning workspace path of the selected session, else the most
- * recently active workspace path, else undefined (server-cwd fallback).
+ * @returns the most recently active workspace path, else undefined
+ * (server-cwd fallback).
  */
 export function resolveWorkspacePath(
   workspaces: WorkspaceSnapshot,
   sessions: SessionListState,
 ): string | undefined {
-  const current = sessions.current
-  const owned = current === undefined
-    ? undefined
-    : workspaces.items.find(item => item.sessionIds.includes(current))
-  if (owned !== undefined) return owned.path
-  // The recent fallback mirrors ui-workspace's recentWorkspace(): only once
-  // both lists settle, latest session updatedAt per workspace, host order
-  // tie-break, createdAt when a workspace has no sessions.
   if (workspaces.phase !== 'ready' || sessions.phase !== 'ready') return undefined
   return mostRecentlyActive(workspaces.items, sessions.byId)?.path
 }
