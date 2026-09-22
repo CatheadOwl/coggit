@@ -1,10 +1,10 @@
 /**
  * Deterministic touch-lane case: real seeded project + scripted read/read/edit
  * through the REAL tool pipeline, asserting the cognition-link enricher's
- * rendering discipline end to end (through prompt-middleware's runner, once
+ * rendering discipline end to end (through enrichment's runner, once
  * ledger, and render face — not a direct provider call like the unit tests):
  *
- * - read touch → exactly ONE prompt-middleware injection carrying the paired
+ * - read touch → exactly ONE enrichment injection carrying the paired
  *   cognition href (never→fresh);
  * - the second read and the agent's own edit add nothing (steady-state
  *   silence + silent reconcile — the once ledger and lastRendered agree).
@@ -22,22 +22,22 @@ import {
 import { seedProject, seedFreshCognition } from '../_fixtures/seed-project.mjs'
 
 const COGNITION_HREF = 'src_cognition/example.ts.md'
-const PROMPT_MIDDLEWARE = 'prompt-middleware'
+const ENRICHMENT = 'enrichment'
 
 /**
- * Exactly `count` prompt-middleware user messages mention the cognition href.
+ * Exactly `count` enrichment user messages mention the cognition href.
  * The single injection must also carry NO meta suffix: fresh is the default
  * state (steady-state silence = the provider writes no meta key), so any
  * `(stale` in the rendered text is the old always-write-stale regression.
  */
 function cognitionLinkInjectedOnce(trace) {
   const injections = trace.userMessages
-    .filter(message => message.source?.plugin === PROMPT_MIDDLEWARE)
+    .filter(message => message.source?.plugin === ENRICHMENT)
     .filter(message => message.text.includes(COGNITION_HREF))
   if (injections.length !== 1) {
     return {
       ok: false,
-      message: `expected exactly 1 ${PROMPT_MIDDLEWARE} injection mentioning ${COGNITION_HREF}, saw ${injections.length}`,
+      message: `expected exactly 1 ${ENRICHMENT} injection mentioning ${COGNITION_HREF}, saw ${injections.length}`,
     }
   }
   const noisy = injections.filter(message => message.text.includes('(stale'))
@@ -68,7 +68,7 @@ export default {
   expect: [
     firstTool('read'),
     {
-      describe: `exactly one ${PROMPT_MIDDLEWARE} injection mentions ${COGNITION_HREF}, bare (no stale suffix)`,
+      describe: `exactly one ${ENRICHMENT} injection mentions ${COGNITION_HREF}, bare (no stale suffix)`,
       check: cognitionLinkInjectedOnce,
     },
     finalTextIncludes('Mock touch lane round trip complete.'),

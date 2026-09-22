@@ -84,7 +84,7 @@ export async function apply(ctx: Context, config: CoggitConfig): Promise<void> {
       // The config domain forward-declares FR 20260824's `standard` form, so
       // the value can outrun the installed core's union — resolve at runtime
       // and fail loud. A silent `minimal` fallback would fake the eval arm
-      // (same failure class the prompt-middleware `persona` field died of).
+      // (same failure class the enrichment `persona` field died of).
       const prompt = getCoggitSystemPrompt(config.systemPromptKind as CoggitSystemPromptKind)
       if (prompt === undefined) {
         throw new Error(`coggit: systemPromptKind '${String(config.systemPromptKind)}' is not provided by the installed @coggit/core`)

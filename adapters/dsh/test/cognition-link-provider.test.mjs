@@ -410,8 +410,8 @@ test('registerCognitionLinkProvider registers a declarative provider via ctx.inj
       throw new Error('unexpected ctx.get(' + name + ')')
     },
     inject(deps, callback) {
-      assert.deepEqual(deps, ['promptMiddleware'])
-      callback({ promptMiddleware: { registerRelates: (provider) => { registered = provider } } })
+      assert.deepEqual(deps, ['enrichment'])
+      callback({ enrichment: { registerRelates: (provider) => { registered = provider } } })
     },
   }
   registerCognitionLinkProvider(ctx)

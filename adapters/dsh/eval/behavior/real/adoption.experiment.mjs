@@ -51,7 +51,7 @@ const RUNS = Number.parseInt(argValue('--n') ?? '10', 10)
 const DRY = process.argv.includes('--dry')
 
 function isPromptMiddlewareInjection(message) {
-  return message.source?.plugin === 'prompt-middleware' && message.text.includes('cognition-link')
+  return message.source?.plugin === 'enrichment' && message.text.includes('cognition-link')
 }
 
 function extractMetrics(trace) {

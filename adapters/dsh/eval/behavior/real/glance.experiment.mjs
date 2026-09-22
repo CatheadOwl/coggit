@@ -53,7 +53,7 @@ const DRY = process.argv.includes('--dry')
 const ARM = argValue('--arm')
 
 function isPromptMiddlewareInjection(message) {
-  return message.source?.plugin === 'prompt-middleware' && message.text.includes('cognition-link')
+  return message.source?.plugin === 'enrichment' && message.text.includes('cognition-link')
 }
 
 function extractMetrics(trace) {

@@ -97,7 +97,7 @@ export class CoggitService extends Service {
    * Workspace roots of every discovered project under `workspaceRoot`, cached
    * with the projects. Consumed by the touch projection (see
    * `cognition-link-provider.ts`): pure pairing classification needs the
-   * per-project root names, and the prompt-middleware record-time callback
+   * per-project root names, and the enrichment record-time callback
    * carries no session context to re-discover them.
    */
   async roots(workspaceRoot: string): Promise<CoggitWorkspaceRoot[]> {

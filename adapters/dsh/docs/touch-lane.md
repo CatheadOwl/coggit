@@ -1,9 +1,9 @@
-# Touch Lane Consumer Design (cognition-link × prompt-middleware W11)
+# Touch Lane Consumer Design (cognition-link × enrichment W11)
 
 Status: active · Scope: `@coggit/dsh` consumer side only. Framework authority lives
-with the prompt-middleware project (dsh-extra): its workunit ADR series records
+with the enrichment project (dsh-extra): its workunit ADR series records
 the tool-touch sensor seam and the touchSubjects lane decisions, and the
-`tool-touch sensor lane` section of `modules/prompt/docs/contract.md` in the
+`tool-touch sensor lane` section of `modules/enrichment/docs/contract.md` in the
 extras checkout carries the current contract. This document records
 only how this adapter declares and renders; it does not restate framework
 decisions.

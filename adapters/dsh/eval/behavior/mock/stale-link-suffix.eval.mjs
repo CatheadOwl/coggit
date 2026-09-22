@@ -4,9 +4,9 @@
  * pipeline, asserting the model-visible rendering of the cognition-link meta
  * annotation channel end to end:
  *
- * - the single prompt-middleware injection mentions the paired cognition href
+ * - the single enrichment injection mentions the paired cognition href
  *   AND carries the `(stale)` suffix (provider writes the key only when
- *   stale; prompt-middleware renders item meta as the line suffix);
+ *   stale; enrichment renders item meta as the line suffix);
  * - the suffix uses the boolean-flag short form `(stale)`, not `(stale=true)`.
  *
  * Companion of touch-lane-roundtrip (never→fresh, bare line). The `updated`
@@ -23,16 +23,16 @@ import {
 import { seedProject, seedStaleCognition } from '../_fixtures/seed-project.mjs'
 
 const COGNITION_HREF = 'src_cognition/example.ts.md'
-const PROMPT_MIDDLEWARE = 'prompt-middleware'
+const ENRICHMENT = 'enrichment'
 
 function staleSuffixInjectedOnce(trace) {
   const injections = trace.userMessages
-    .filter(message => message.source?.plugin === PROMPT_MIDDLEWARE)
+    .filter(message => message.source?.plugin === ENRICHMENT)
     .filter(message => message.text.includes(COGNITION_HREF))
   if (injections.length !== 1) {
     return {
       ok: false,
-      message: `expected exactly 1 ${PROMPT_MIDDLEWARE} injection mentioning ${COGNITION_HREF}, saw ${injections.length}`,
+      message: `expected exactly 1 ${ENRICHMENT} injection mentioning ${COGNITION_HREF}, saw ${injections.length}`,
     }
   }
   const short = injections.filter(message =>
@@ -63,7 +63,7 @@ export default {
   expect: [
     firstTool('read'),
     {
-      describe: `exactly one ${PROMPT_MIDDLEWARE} injection carries "(stale)" after the cognition href`,
+      describe: `exactly one ${ENRICHMENT} injection carries "(stale)" after the cognition href`,
       check: staleSuffixInjectedOnce,
     },
     finalTextIncludes('Mock stale link suffix complete.'),

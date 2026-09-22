@@ -134,7 +134,7 @@ for (const file of files) {
     try { event = JSON.parse(lines[i]) } catch { continue }
     if (event.type === 'user/message' && injectionIndex === -1) {
       const d = event.data ?? {}
-      if (d.source?.plugin === 'prompt-middleware' && textOf(d.content).includes('[cognition-link]')) injectionIndex = i
+      if (d.source?.plugin === 'enrichment' && textOf(d.content).includes('[cognition-link]')) injectionIndex = i
     }
     if (event.type === 'tool/call') {
       const d = event.data ?? {}

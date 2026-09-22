@@ -79,11 +79,11 @@ function listSessionLogFiles(root, out = []) {
 /** Plugin-sourced user-message texts. In the raw v3 log the message fields
  * (content/source/role) sit directly on the event's `data` — only the
  * assistant/message fold nests under `data.message`. */
-function promptMiddlewareTexts(events) {
+function enrichmentTexts(events) {
   const texts = []
   for (const event of events) {
     if (event.type !== 'user/message') continue
-    if (event.data?.source?.plugin !== 'prompt-middleware') continue
+    if (event.data?.source?.plugin !== 'enrichment') continue
     const content = Array.isArray(event.data.content) ? event.data.content : []
     texts.push(content.filter(block => block.type === 'text').map(block => block.text).join(''))
   }
@@ -188,7 +188,7 @@ try {
       console.log(`  ${sessionId} FAIL no session log (see ${artifactsDir})`)
       continue
     }
-    const delivered = promptMiddlewareTexts(log.events).some(text => text.includes('cognition-link') && text.includes(COGNITION_HREF))
+    const delivered = enrichmentTexts(log.events).some(text => text.includes('cognition-link') && text.includes(COGNITION_HREF))
     console.log(`  ${sessionId} ${delivered ? 'PASS' : 'FAIL'} cognition-link injection for ${COGNITION_HREF}`)
     if (!delivered) failures += 1
   }

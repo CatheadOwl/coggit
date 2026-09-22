@@ -6,11 +6,11 @@ import { hasCoggitConfig } from './service.js'
 import type { CoggitService } from './service.js'
 
 /**
- * Local structural mirror of prompt-middleware's frozen `RelatesResolveResult`
- * (the spec lives with the prompt-middleware project). The
- * provider is registered through the `ctx.inject(['promptMiddleware'], ...)`
+ * Local structural mirror of enrichment's frozen `RelatesResolveResult`
+ * (the spec lives with the enrichment project). The
+ * provider is registered through the `ctx.inject(['enrichment'], ...)`
  * soft dependency, so the plugin keeps no hard type/runtime import of
- * prompt-middleware (same registration shape as any_routes' breadcrumb).
+ * enrichment (same registration shape as any_routes' breadcrumb).
  */
 export interface RelatesResolveResult {
   value?: string
@@ -110,7 +110,7 @@ function renderThrown(error: unknown): string {
 }
 
 /**
- * Declarative provider with the touch lane (prompt-middleware W11). The
+ * Declarative provider with the touch lane (enrichment W11). The
  * rendering policy lives entirely here — the framework only does pending,
  * invalidation, and re-run:
  *
@@ -248,18 +248,18 @@ export function createCognitionLinkProvider(coggit: CoggitService, logger?: Cont
 }
 
 /**
- * Soft-dependency registration: only when prompt-middleware is present, call
+ * Soft-dependency registration: only when enrichment is present, call
  * `registerRelates` (the declarative face) with a fresh provider bound to the
  * self-provided `coggit` service and the host logger (the provider's
  * failure-observability channel).
  */
 export function registerCognitionLinkProvider(ctx: Context): void {
   const coggit = ctx.get('coggit') as CoggitService
-  void ctx.inject(['promptMiddleware'], (promptCtx) => {
-    return (promptCtx as unknown as {
-      promptMiddleware: {
+  void ctx.inject(['enrichment'], (enrichmentCtx) => {
+    return (enrichmentCtx as unknown as {
+      enrichment: {
         registerRelates(provider: CognitionLinkRelatesProvider): unknown
       }
-    }).promptMiddleware.registerRelates(createCognitionLinkProvider(coggit, ctx.logger))
+    }).enrichment.registerRelates(createCognitionLinkProvider(coggit, ctx.logger))
   })
 }
