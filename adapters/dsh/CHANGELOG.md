@@ -7,14 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
 ### Added
 
 - Prompt-surface config keys: `systemPromptKind` (`'minimal'` | `'standard'`,
   default `'minimal'` — `'standard'` fails loud until the installed
-  `@coggit/core` provides it) and `cognitionLinkDirective` (default `false`).
+  `@coggit/core` provides it) and `cognitionLinkDirective` (default `true` —
+  flipped on after three pilot rounds cleared it).
 - `coggit:cognition-link` system-prompt section: the standing directive that
   binds the injected `[cognition-link]` lines and their `(stale)` / `(updated)`
-  markers to a default action with an allowed, accounted deviation.
+  markers to a default action with an allowed, accounted deviation. The
+  annotation channel writes the stale marker only when the target is actually
+  stale, the prompt-middleware touch lane feeds the lines, and the
+  cognition-link enricher carries a Settings-visible description.
+- `coggit_status` delivers the core canonical text rendering; the
+  optional-add and premature handbook hints stay out of the status surface
+  (the status-surface role contract).
 - Surface-contract tests (token stitching, frozen failure baseline) and the
   eval layer: surface comprehension review + the three-arm cognition-link
   adoption experiment (see `eval/README.md`; the experiment needs the dsh-eval
@@ -41,6 +50,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its 0.3.2 line. The `@catheadowl/dsh-extras` dependency is removed: the
   `gates` / `enrichment` seams are consumed purely as optional co-installed
   plugins, no package dependency.
+- Follows the 2026-09-22 upstream engine-word rename (`promptMiddleware` →
+  `enrichment`): the cognition-link soft dependency registers under the
+  `enrichment` inject key; the frozen touch-lane envelope/key/sensor
+  vocabulary is untouched.
+
+### Fixed
+
+- Client workspace resolution drops the global current-session tier removed
+  by the host 0.1.6-alpha.2 session-ownership refactor: falls back to the
+  most recently active workspace (latest session `updatedAt`, `createdAt`
+  recency for session-less workspaces, host order tie-break); the server-cwd
+  fallback is unchanged. Restores the client half against current hosts.
+- Cognition-link rendering keeps session-scoped render state with per-path
+  failure isolation — one failing path no longer poisons the section.
 
 ## [0.2.1] - 2026-09-06
 
