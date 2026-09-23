@@ -93,7 +93,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@catheadowl/dsh-extras": "^0.1.2",
     "@coggit/core": "^0.2.0",
     "@coggit/runtime-node": "^0.2.0"
   },

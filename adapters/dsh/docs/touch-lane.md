@@ -11,9 +11,12 @@ decisions.
 ## Dependency channel
 
 - Consumes the W11 API face (`sources`, `touchSubjects`, pseudo-path metadata
-  `origin` / `touchTool`) via `@catheadowl/dsh-extras`, registry range after the
-  carrying release; until then a local resolution channel (`link:` to the
-  dsh-extra extras checkout, DEP-2) — dev-only, not committed.
+  `origin` / `touchTool`) through the enrichment service seam — a soft
+  dependency (structural mirrors + `ctx.inject`), no package dependency on
+  `@catheadowl/dsh-extras`; the extras plugin is an optional co-installed
+  profile member at runtime. Dev-time exercise against unreleased extras
+  builds runs via a profile that installs the local extras checkout
+  (dev-only, not committed).
 - Hard constraint (a consequence of the sensor-seam decision referenced above):
   this plugin never attaches its own `tools/result` hook; everything goes
   through the declarative API.

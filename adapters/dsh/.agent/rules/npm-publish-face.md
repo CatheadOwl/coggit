@@ -10,7 +10,7 @@ Rules seed for the npm publish face of `@coggit/dsh`
 stay citable across both trees. Scope: this directory (tree-positioned,
 cascade semantics).
 
-- **PKG-1〈deps-external〉**: n/a — the adapter ships tsc output, not bundles; `@coggit/*` and `@catheadowl/dsh-extras` are regular dependencies and stay external imports.
+- **PKG-1 (deps-external)**: n/a — the adapter ships tsc output, not bundles; `@coggit/*` are regular dependencies and stay external imports (the dsh plugin seams are soft dependencies — no package dependency).
 - **PKG-2〈reachable-types-declared〉**: every bare import in a `.d.ts` reachable from `exports` type entries is declared in dependencies/peerDependencies. Baseline: blocker.
 - **PKG-4〈publish-via-pnpm〉**: publishing uses `pnpm publish --access public --no-git-checks`, never `npm publish`. Baseline: should-fix.
 - **PKG-5〈per-package-readme〉**: the package ships a root `README.md` (npm auto-includes). Baseline: should-fix.

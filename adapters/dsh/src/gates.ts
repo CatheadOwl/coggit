@@ -1,16 +1,33 @@
 /**
- * Register the coggit-misplaced gate through gates' hard-import `registerGate`
- * face (the upstream gates-face design). Replaces the former structural-`*Like` + `ctx.inject` +
- * `declare module` ceremony: the gate definition type and the registration
- * wiring now come from `@catheadowl/dsh-extras/gates/register`.
+ * Register the coggit-misplaced gate through the gates service seam: local
+ * structural mirrors of the frozen gate contract types + the
+ * `ctx.inject(['gates'], ...)` soft dependency, so the plugin keeps no hard
+ * type/runtime import of the gates package (same registration shape as the
+ * cognition-link provider).
  */
 import type { Context } from '@deepseek-ai/cordis'
-import { registerGate } from '@catheadowl/dsh-extras/gates/register'
-import type { GateDefinition, GateViolation } from '@catheadowl/dsh-extras/gates/register'
 
 import { discoverProjects } from './service.js'
 
-const MISPLACED_GATE: Omit<GateDefinition, 'check'> = {
+/** Structural subset of the frozen `GateDefinition` this gate fills (the spec lives with the gates project). */
+export interface GateDefinitionLike {
+  /** kebab-case, globally unique; duplicates fail loud at registration. */
+  id: string
+  description: string
+  rationale: string
+  on: Array<'stop' | 'manual'>
+  level: 'blocking' | 'advisory' | 'defer'
+  check(root: string): Promise<GateViolationLike[]>
+}
+
+/** Structural subset of the frozen `GateViolation` this gate produces. */
+export interface GateViolationLike {
+  file?: string
+  reason: string
+  remedy?: { kind: 'manual'; guidance: string }
+}
+
+const MISPLACED_GATE: Omit<GateDefinitionLike, 'check'> = {
   id: 'coggit-misplaced',
   description:
     'CogGit mirror alignment: every tracked source path must have its cognition document at the mirrored location.',
@@ -24,9 +41,9 @@ const MISPLACED_GATE: Omit<GateDefinition, 'check'> = {
 }
 
 /** Misplaced detection is a pure read: registry x 2 stat per entry, reconciled before listing. */
-async function checkMisplaced(root: string): Promise<GateViolation[]> {
+async function checkMisplaced(root: string): Promise<GateViolationLike[]> {
   const projects = await discoverProjects(root)
-  const violations: GateViolation[] = []
+  const violations: GateViolationLike[] = []
   for (const project of projects) {
     for (const entry of await project.listMisplacedCognition()) {
       violations.push({
@@ -47,6 +64,15 @@ async function checkMisplaced(root: string): Promise<GateViolation[]> {
   return violations
 }
 
+/**
+ * Soft-dependency registration: only when the gates service is present, the
+ * gate enters the `ctx.gates` registry; the inject callback returns the
+ * registry's disposer so the Cordis fiber unloads it cleanly.
+ */
 export function registerCoggitGates(ctx: Context): void {
-  registerGate(ctx, { ...MISPLACED_GATE, check: checkMisplaced })
+  void ctx.inject(['gates'], (gatesCtx) => {
+    return (gatesCtx as unknown as {
+      gates: { register(definition: GateDefinitionLike): unknown }
+    }).gates.register({ ...MISPLACED_GATE, check: checkMisplaced })
+  })
 }

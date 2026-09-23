@@ -20,6 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   adoption experiment (see `eval/README.md`; the experiment needs the dsh-eval
   behavior-experiment release and never runs in CI).
 
+### Changed
+
+- The `coggit-misplaced` gate registration is back on the gates service seam:
+  local structural mirrors of the frozen gate contract + the
+  `ctx.inject(['gates'], ...)` soft dependency (same shape as the
+  cognition-link provider), replacing the hard-import
+  `@catheadowl/dsh-extras/gates/register` face — extras retired that face in
+  its 0.3.2 line. The `@catheadowl/dsh-extras` dependency is removed: the
+  `gates` / `enrichment` seams are consumed purely as optional co-installed
+  plugins, no package dependency.
+
 ## [0.2.1] - 2026-09-06
 
 ### Added

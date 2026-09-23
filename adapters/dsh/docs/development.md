@@ -42,9 +42,11 @@ Dependency faces (asymmetric by rule):
   (the host-maintained install closure — this package is an installed-closure
   consumer, not a source consumer). Rebuild: `pnpm --dir . relink`. A bare
   `pnpm install` purges the junction — always re-run `relink` after install.
-- **Library face** — `@coggit/runtime-node`, `@catheadowl/dsh-extras`, and
-  dev-only `@catheadowl/dsh-eval` as registry versions (`^0.2.0` / `^0.3.0`,
-  installed from npm). `@coggit/core` is the one standing local channel: a
+- **Library face** — `@coggit/runtime-node` and dev-only `@catheadowl/dsh-eval`
+  as registry versions (`^0.2.0` / `^0.3.0`, installed from npm). The dsh
+  plugin seams (`gates`, `enrichment`) carry no package dependency: they are
+  consumed as soft dependencies (`ctx.inject` + structural mirrors) against
+  optionally co-installed extras plugins. `@coggit/core` is the one standing local channel: a
   committed `overrides` entry in `pnpm-workspace.yaml`
   (`link:../../packages/core`) points dev-time resolution at the monorepo
   checkout, because core changes land in this repository before any registry
