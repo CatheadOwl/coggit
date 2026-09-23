@@ -37,11 +37,19 @@ Dependency faces (asymmetric by rule):
 - **Host face (runtime + types)** — every `@deepseek-ai/*` import is a
   **peerDependency** provided by the dsh host; `autoInstallPeers` stays off
   (the host's prerelease closure deadlocks registry resolution). Dev-time
-  resolution is one machine-local, uncommitted **scope junction**
-  `node_modules/@deepseek-ai` → `~/.dsh/profiles/node_modules/@deepseek-ai`
-  (the host-maintained install closure — this package is an installed-closure
-  consumer, not a source consumer). Rebuild: `pnpm --dir . relink`. A bare
-  `pnpm install` purges the junction — always re-run `relink` after install.
+  resolution is a machine-local, uncommitted set of **per-peer junctions**
+  `node_modules/@deepseek-ai/<name>` → the matching package **source dir in a
+  host checkout** — the same pattern as dsh-extras' relink script (unified
+  wiring form across the out-of-tree plugins). The checkout is the single
+  anchor on purpose: the installed-profile closure ages independently of the
+  checkout and lags newly added client packages, so it is not used for type
+  resolution. Precondition: the checkout is built (per-package `lib/`
+  products exist — types resolve via package.json `types` → `lib/types`).
+  Rebuild: `node scripts/relink-host-peers.mjs --repo <host-checkout>` (or
+  set `DSH_REPO`); a bare `pnpm install` purges the junctions — always re-run
+  `relink` after install; `--check-only` is the wiring health probe. The
+  script is meta-layer tooling (it encodes host-layout knowledge) and never
+  enters the npm tarball; the published dependency face stays registry-normal.
 - **Library face** — `@coggit/runtime-node` and dev-only `@catheadowl/dsh-eval`
   as registry versions (`^0.2.0` / `^0.3.0`, installed from npm). The dsh
   plugin seams (`gates`, `enrichment`) carry no package dependency: they are
@@ -55,11 +63,13 @@ Dependency faces (asymmetric by rule):
   — so there is no add/remove switch around releases. Disabling the override
   is a one-off clean-registry verification pass (comment it out, reinstall,
   `pnpm --dir . verify`), not a release ritual.
-- **Host source (the only residual)** — `build:client` uses the host's tsdown
-  and the unpublished `clientBundle` preset via the machine-level `DSH_REPO`
-  anchor (no committed path carries it; the script fails loud with remedy when
-  the anchor is absent). Everything else — typecheck, build, tests, eval —
-  runs without any host source checkout.
+- **Host source** — the host checkout is the anchor for everything host-facing:
+  `build:client` uses the host's tsdown and the unpublished `clientBundle`
+  preset via the machine-level `DSH_REPO` anchor, and the peer junctions of
+  the host face resolve into the same checkout (`--repo` / `DSH_REPO` honor
+  one variable, so a single env wires the whole host face). No committed path
+  carries the checkout location (both entry points fail loud with remedy when
+  the anchor is absent). The library face needs no host bits.
 
 Then install into a profile and smoke-load:
 

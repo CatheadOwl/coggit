@@ -52,10 +52,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:client": "node scripts/build-client.mjs",
-    "relink": "node scripts/relink-dsh-peers.mjs",
-    "link:extras": "node scripts/link-local-extras.mjs",
-    "dev:local": "node scripts/dev-local.mjs",
-    "dev:registry": "pnpm install && pnpm run relink",
+    "relink": "node scripts/relink-host-peers.mjs",
     "check-types": "tsc --noEmit -p tsconfig.json",
     "test": "node --test --test-isolation=none test/shape-and-views.test.mjs test/tools.test.mjs test/service.test.mjs test/cognition-link-provider.test.mjs test/workspace-resolve.test.mjs test/surface-contract.test.mjs",
     "eval": "dsh-eval run eval/behavior/real",
