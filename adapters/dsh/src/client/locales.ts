@@ -1,5 +1,5 @@
 export type CoggitInitLocaleKey =
-  | 'tab'
+  | 'summary'
   | 'title'
   | 'loading'
   | 'readyTitle'
@@ -19,7 +19,7 @@ export type CoggitInitLocaleKey =
   | 'error'
 
 export const en: Record<CoggitInitLocaleKey, string> = {
-  tab: 'CogGit',
+  summary: 'Initialize CogGit for the current workspace (source + cognition roots).',
   title: 'Initialize CogGit',
   loading: 'Checking CogGit status...',
   readyTitle: 'CogGit is already initialized',
@@ -40,7 +40,7 @@ export const en: Record<CoggitInitLocaleKey, string> = {
 }
 
 export const zh: Record<CoggitInitLocaleKey, string> = {
-  tab: 'CogGit',
+  summary: '为当前工作区初始化 CogGit（源码/认知层根目录）。',
   title: '初始化 CogGit',
   loading: '正在检查 CogGit 状态...',
   readyTitle: 'CogGit 已初始化',

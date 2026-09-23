@@ -42,8 +42,8 @@ export interface CoggitInitTabInjected {
 }
 
 export type CoggitInitTabProps =
-  PropsRuntime<'settings.plugins.tab'>
-  & PropsLocale<'settings.coggit'>
+  PropsRuntime<'plugins.row.config'>
+  & PropsLocale<'plugins.coggit'>
   & InjectFace<CoggitInitTabInjected>
 
 type ViewState =
@@ -52,7 +52,22 @@ type ViewState =
   | { status: 'ready'; init: CoggitInitStatus; candidates: readonly CoggitSourceCandidate[] }
   | { status: 'done'; result: CoggitInitResult }
 
-export function CoggitInitTab({ t, useSessions, useWorkspaces, status, sourceCandidates, init }: CoggitInitTabProps) {
+/**
+ * The CogGit row's configuration page on the Plugins page (opened by the
+ * row's Configure control): a one-time initializer for `source_root` and
+ * `cognition_root`, addressing the workspace the user is looking at. The
+ * summary view renders the row's one-liner; the page view is the form with
+ * its own write path (RPC init), so nothing is written until the user
+ * submits.
+ */
+export function CoggitInitTab(props: CoggitInitTabProps) {
+  if (props.view === 'summary') {
+    return <>{props.t('summary')}</>
+  }
+  return <CoggitInitTabForm {...props} />
+}
+
+function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandidates, init }: CoggitInitTabProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' })
   const [sourceRoot, setSourceRoot] = useState('src')
   const [cognitionRoot, setCognitionRoot] = useState('src_cognition')

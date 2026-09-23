@@ -22,6 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The web init UI moves from a `CogGit` tab under Settings → Built-in plugins
+  to the plugin's row on the Plugins page (follows the upstream 2026-09-16
+  move of the plugins-configuration home): the `@coggit/dsh` row now carries
+  a Configure control opening the same initializer — a one-line summary on
+  the row, the form and its RPC write path unchanged. Registration slot
+  `settings.plugins.tab` → `plugins.row.config` (key `@coggit/dsh#coggit`),
+  locale namespace `settings.coggit` → `plugins.coggit`, and the settings
+  client-half peers swap for `@deepseek-ai/dsh-client-ui-plugin-manager`.
+  Requires a host whose web frontend ships the Plugins-page config slots
+  (upstream ≥ 2026-09-16); on older hosts the config UI is simply absent —
+  the server half (service facade + `coggit_*` tools) is unaffected.
 - The `coggit-misplaced` gate registration is back on the gates service seam:
   local structural mirrors of the frozen gate contract + the
   `ctx.inject(['gates'], ...)` soft dependency (same shape as the

@@ -1,14 +1,14 @@
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-// Type-only: pulls the settings contract SlotMap merge without re-declaring it (see leaf).
-import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
-import type {} from '@deepseek-ai/dsh-client-ui-settings-plugins/client'
+// Type-only: pulls the plugins-page config slot contract (SlotMap merge)
+// without re-declaring it.
+import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 // Type-only: pulls the `ctx.slots` Context augmentation (the registry service
 // is provided by the renderer plugin; the host face never imports it at runtime).
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: pulls the GlobalStandardProps merges that type the root-scope
-// `useSessions`/`useWorkspaces` standard hooks this tab consumes.
+// `useSessions`/`useWorkspaces` standard hooks this config form consumes.
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 
@@ -18,11 +18,11 @@ import { en, type CoggitInitLocaleKey, zh } from './locales.js'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    'settings.coggit': CoggitInitLocaleKey
+    'plugins.coggit': CoggitInitLocaleKey
   }
 }
 
-const NS = 'settings.coggit'
+const NS = 'plugins.coggit'
 
 export const inject = ['slots', 'locale', 'connection']
 
@@ -50,12 +50,10 @@ export function apply(ctx: ClientContext): void {
     init: request => call('init', { request }),
   })
 
-  ctx.effect(() => ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
-    name: 'settings.plugins.tab',
-    id: 'coggit',
-    order: 5,
-    label: () => ctx.locale.bind(NS)('tab'),
+  ctx.effect(() => ctx.slots.inject('plugins.row.config', () => ctx.slots.register({
+    name: 'plugins.row.config',
+    key: '@coggit/dsh#coggit',
     locale: NS,
     inject: injected,
-  }, CoggitInitTab)), 'coggit: init tab')
+  }, CoggitInitTab)), 'coggit: row config page')
 }
