@@ -91,6 +91,14 @@ When a cited source is relevant to the current change, use it to check whether
 the local projection still holds. Use the cited Source to clarify local
 tension, not to start routine source auditing.
 
+## Citation Discipline
+
+Leaves go stale more often than any other cognition asset, and position
+references rot first. Cite code as `path#symbol` - never line numbers. Cite
+an external SSOT by its stable identifier within that source system (issue
+id, decision record id, or equivalent) - never by page, heading, or
+path-in-doc.
+
 ## Forward-Looking Guidance
 
 Cognition records the present. Unlanded design intent may be recorded only in

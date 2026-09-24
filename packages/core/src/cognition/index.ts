@@ -11,7 +11,7 @@ export type CognitionKind = 'leaf' | 'skeleton';
 export type AddCognitionKind = CognitionKind | 'auto';
 
 /** Version of the deployed cognition prompt assets (templates + handbooks). */
-export const COGNITION_ASSET_VERSION = 'skeleton-leaf-v4';
+export const COGNITION_ASSET_VERSION = 'skeleton-leaf-v5';
 export type CognitionAssetVersion = typeof COGNITION_ASSET_VERSION;
 
 export interface AddCognitionOptions {

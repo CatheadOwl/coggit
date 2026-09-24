@@ -3,12 +3,12 @@ import * as assert from 'node:assert';
 import { getCognitionHandbook, getCognitionTemplate } from './cognition/index';
 
 suite('cognition prompt assets', () => {
-  test('exposes skeleton-leaf-v4 versions for templates and handbooks', () => {
-    assert.strictEqual(getCognitionTemplate('leaf').version, 'skeleton-leaf-v4');
-    assert.strictEqual(getCognitionTemplate('skeleton').version, 'skeleton-leaf-v4');
-    assert.strictEqual(getCognitionHandbook('leaf').version, 'skeleton-leaf-v4');
-    assert.strictEqual(getCognitionHandbook('skeleton').version, 'skeleton-leaf-v4');
-    assert.strictEqual(getCognitionHandbook().version, 'skeleton-leaf-v4');
+  test('exposes skeleton-leaf-v5 versions for templates and handbooks', () => {
+    assert.strictEqual(getCognitionTemplate('leaf').version, 'skeleton-leaf-v5');
+    assert.strictEqual(getCognitionTemplate('skeleton').version, 'skeleton-leaf-v5');
+    assert.strictEqual(getCognitionHandbook('leaf').version, 'skeleton-leaf-v5');
+    assert.strictEqual(getCognitionHandbook('skeleton').version, 'skeleton-leaf-v5');
+    assert.strictEqual(getCognitionHandbook().version, 'skeleton-leaf-v5');
   });
 
   test('keeps V3 source tracing fields in the leaf template', () => {

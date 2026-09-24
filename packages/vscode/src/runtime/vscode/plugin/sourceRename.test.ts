@@ -83,12 +83,12 @@ function makeProject(
 		}),
 		getCognitionHandbook: () => ({
 			kind: 'all',
-			version: 'skeleton-leaf-v4',
+			version: 'skeleton-leaf-v5',
 			content: '',
 		}),
 		getCognitionTemplate: () => ({
 			kind: 'leaf',
-			version: 'skeleton-leaf-v4',
+			version: 'skeleton-leaf-v5',
 			content: '',
 		}),
 		getNode: async (): Promise<CoggitTreeNode | undefined> => undefined,
