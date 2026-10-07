@@ -17,12 +17,14 @@ server exposes — only what the dsh agent actually needs survives:
   snapshot mechanism is nonetheless reused today, but only as a **service
   batch surface** (`buildSnapshot` / `statusWithSnapshot`) behind the
   cognition-link enricher — never as a model-facing tool.
-- No `coggit_routes` (flat route index of tracked pairs) — redundant with the
-  host `any_routes` tool for navigation.
+- No `coggit_routes` (flat route index of tracked pairs) — historically
+  redundant with the host `any_routes` tool for navigation; the `routes`
+  operation has since been retired from core entirely, so this is
+  no longer a per-surface choice.
 
-If either is needed again, restore from git history (they were deleted, not
-commented — the pre-removal commit `0c2c0aa` still carries their
-implementations).
+If the model-facing snapshot tool is needed again, restore from git history
+(it was deleted, not commented — the pre-removal commit `0c2c0aa` still
+carries the implementation).
 
 ## Layout
 

@@ -45,7 +45,6 @@ export {
   CORE_OPERATION_IDS,
   addOperation,
   resolveOperation,
-  routesOperation,
   findProjectNode,
   handbookCatalog,
   handbookIdForCognitionKind,
@@ -67,7 +66,6 @@ export type {
   CoggitOperationIssue,
   CoggitProjectContext,
   CoreOperationId,
-  RoutesOperationResult,
   SnapshotOperationResult,
   SnapshotOperationOptions,
   SnapshotOperationScope,
@@ -98,22 +96,6 @@ export {
   projectSnapshotTree,
   projectTreeFromSnapshot,
 } from './projection';
-export {
-  DEFAULT_ROUTES_DEPTH,
-  assembleRoutesContent,
-  countRouteNodes,
-  flattenRoutesProjection,
-  projectRoutesEntries,
-  routeProjectionLineText,
-  selectRoutesBySourcePath,
-  toRoutesStructuredOutput,
-} from './routesProjection';
-export type {
-  AssembleRoutesContentOptions,
-  RoutesPresentationContent,
-  RoutesPresentationFormat,
-  RoutesStructuredOutput,
-} from './routesProjection';
 export {
   buildMappingIndex,
 } from './snapshot';
@@ -275,10 +257,6 @@ export {
 } from './gitignore';
 export { __testing__ as statusTesting } from './status';
 export { RESOLVE_ERROR_CODES } from './operations';
-export {
-  applyRoutesFilters,
-  suggestRoutePathHints,
-} from './routesProjection';
 export { joinUriPath } from './uri-utils';
 export {
   WatchLeaseError,
@@ -288,7 +266,6 @@ export {
 } from './locks';
 export type {
   MappingIndex,
-  RoutesProjectionNode,
   TreeProjectionNode,
 } from './types';
 export {

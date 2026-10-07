@@ -37,25 +37,6 @@ export type {
 } from './operationTypes';
 
 export type {
-	CognitionDocumentKind,
-	CognitionFrontmatterMetadata,
-	CognitionFrontmatter,
-	CognitionHeading,
-	CognitionDocumentMetrics,
-	CognitionDocumentDiagnostic,
-	CognitionDocumentFacts,
-	CognitionMetadataQuality,
-	CognitionContextStaleRisk,
-	CognitionRoutes,
-	CognitionRoutesEntry,
-	CognitionContextIdentity,
-	CognitionContextDocumentSummary,
-	CognitionContextQuality,
-	CognitionContextStatus,
-	RoutesProjectionNode,
-} from './cognition/cognitionTypes';
-
-export type {
 	AcceptedPair,
 	PathKeyRecord,
 	RegistryFile,

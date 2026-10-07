@@ -50,7 +50,7 @@ export const STANDARD_PROMPT_SEGMENT_KEYS = [
   'roots',
   'records',
   'mirror',
-  'routes',
+  'snapshot',
   'indexing',
   'delegation',
   'contradictions',
@@ -83,8 +83,8 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
     text: 'CogGit cognition is a mirrored design layer over the source tree: a file\'s cognition document is the design counterpart of the same source-relative path with a trailing .md, and a folder\'s cognition document is its README.md counterpart.',
   },
   {
-    key: 'routes',
-    text: 'Before reading source code in a tracked project, run coggit routes to find the relevant cognition document and inspect that cognition layer when it can inform the task.',
+    key: 'snapshot',
+    text: 'Before reading source code in a tracked project, run coggit snapshot to locate the relevant cognition document — or derive its path by the mirror convention — and inspect that cognition layer when it can inform the task.',
   },
   {
     key: 'indexing',

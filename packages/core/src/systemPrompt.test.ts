@@ -41,7 +41,7 @@ suite('system prompt', () => {
   });
 
   test('standard form carries the operational guidance with CLI-baseline names', () => {
-    assert.match(STANDARD_SYSTEM_PROMPT.content, /run coggit routes/);
+    assert.match(STANDARD_SYSTEM_PROMPT.content, /run coggit snapshot/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /coggit handbook <kind>/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /verify edited nodes with coggit status/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /with a trailing \.md/);

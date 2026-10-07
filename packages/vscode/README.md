@@ -11,7 +11,7 @@ When source changes without a matching cognition update, CogGit marks the pair a
 - Freshness tracking for source and cognition pairs, focused on what is fresh and what needs review.
 - Evidence that helps agents decide whether to update cognition or mark a reviewed pair as current.
 - A source-shaped Ghost Tree for navigating code and cognition side by side.
-- Workspace `.mcp.json` setup for giving agents direct access to CogGit status and route tools.
+- Workspace `.mcp.json` setup for giving agents direct access to CogGit status and snapshot tools.
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ The **Ghost Tree** shows this map with live freshness status, like `git status` 
 ## Learn More
 
 - [Design Intent and Existing Docs](https://github.com/CatheadOwl/coggit/blob/main/docs/design-intent.md) explains how CogGit fits with ADRs, PRDs, comments, and source code.
-- [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) shows how agents use routes, freshness status, and paired cognition while changing code.
+- [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) shows how agents use snapshot orientation, freshness status, and paired cognition while changing code.
 
 ## VS Code Features
 
@@ -58,7 +58,7 @@ CogGit includes an MCP server for agent workflows.
 
 Use **Configure CogGit MCP** to add a `coggit` server entry to your workspace `.mcp.json`. CogGit only writes `mcpServers.coggit` and preserves other server entries.
 
-Agents can use CogGit to inspect freshness status and evidence, browse cognition routes, create missing cognition files, and mark reviewed pairs as up to date. See the [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) guide.
+Agents can use CogGit to inspect freshness status and evidence, browse the tracked cognition tree, create missing cognition files, and mark reviewed pairs as up to date. See the [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) guide.
 
 Suggested agent instruction: run `coggit instructions` and give the printed form
 to your host (a per-invocation flag or an `AGENTS.md` block) — the maintained

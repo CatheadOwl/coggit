@@ -16,7 +16,7 @@ import { COGNITION_ROOTS_RESOURCE_URI } from './resources.js';
  */
 const MCP_SEGMENT_OVERRIDES: Readonly<Partial<Record<StandardPromptSegmentKey, string>>> = {
   roots: `Read ${COGNITION_ROOTS_RESOURCE_URI} before locating cognition documents.`,
-  routes: `Before reading source code in a tracked project, use ${MCP_TOOL_NAMES.routes} to find the relevant cognition document and inspect that cognition layer when it can inform the task.`,
+  snapshot: `Before reading source code in a tracked project, use ${MCP_TOOL_NAMES.snapshot} to locate the relevant cognition document — or derive its path by the mirror convention — and inspect that cognition layer when it can inform the task.`,
   indexing:
     'CogGit MCP indexes the same cognition layer agents can grep/read directly: use its tools to narrow candidates, check freshness, and choose better sourcePath/file-search targets, while grep/read remains the primary way to inspect full cognition text.',
   delegation:

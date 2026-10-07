@@ -2,7 +2,6 @@ import * as assert from 'node:assert';
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { z } from 'zod';
 
 import type {
   CoggitProject,
@@ -14,7 +13,6 @@ import type {
 } from '@coggit/core';
 import type { CoggitWorkspaceRoot } from '@coggit/core';
 import { PROJECTS_RESOURCE_URI } from '../resources.js';
-import { routesOperationOutputSchema } from '../operationDto/index.js';
 import { createCoggitMcpServer } from '../server.js';
 
 function uri(path: string): UriComponents {
@@ -82,21 +80,6 @@ function createFakeProject(onEnsureFresh: () => void): CoggitProject {
         structuralEdges: [],
         semanticEdges: [],
       },
-    }),
-    buildCognitionRoutes: async () => ({
-      project: {
-        label: 'root',
-        configUri: 'test:/workspace/.coggit/config.yaml',
-        projectRootUri: 'test:/workspace',
-        sourceRootUri: 'test:/workspace/src',
-        cognitionRootUri: 'test:/workspace/cognition',
-        sourceRoot: 'src',
-        cognitionRoot: 'cognition',
-        sourcePathRule: 'Use source-root-relative paths.',
-      },
-      generatedAt: 1,
-      entries: [],
-      diagnostics: [],
     }),
     addCognition: async () => {
       throw new Error('not used');
@@ -225,47 +208,6 @@ suite('MCP project cache', () => {
       assert.ok(uris.includes('coggit://handbook/leaf'));
       assert.ok(uris.includes('coggit://handbook/skeleton'));
       assert.ok(!uris.includes('coggit://handbook/all'));
-    } finally {
-      await client.close();
-    }
-  });
-
-  test('routes tool returns schema-conformant structured content', async () => {
-    const services: CoggitServices = {
-      fs: new EmptyFileSystem(),
-      config: new EmptyConfigProvider(),
-    };
-    const server = createCoggitMcpServer(services, {
-      toolsEnabled: true,
-      initialProjects: [createFakeProject(() => {})],
-    });
-    const client = new Client({ name: 'coggit-mcp-cache-test', version: '0.1.0' });
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-
-    await server.connect(serverTransport);
-    await client.connect(clientTransport);
-    try {
-      const result = await client.callTool({
-        name: 'coggit_routes',
-        arguments: {},
-      });
-      const structuredContent = result.structuredContent as {
-        project: {
-          sourceRoot: string;
-          cognitionRoot: string;
-        };
-      };
-
-      assert.ok(structuredContent);
-      assert.deepStrictEqual(
-        z.object(routesOperationOutputSchema).parse(structuredContent),
-        structuredContent,
-      );
-      assert.deepStrictEqual(structuredContent.project, {
-        sourceRoot: 'src',
-        cognitionRoot: 'cognition',
-      });
-      assert.strictEqual('configUri' in structuredContent.project, false);
     } finally {
       await client.close();
     }

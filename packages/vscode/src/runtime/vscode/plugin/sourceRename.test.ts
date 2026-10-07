@@ -59,21 +59,6 @@ function makeProject(
 			nodeById: new Map<string, CoggitTreeNode>(),
 			nodeBySourceUri: new Map<string, CoggitTreeNode>(),
 		}),
-		buildCognitionRoutes: async () => ({
-			project: {
-				label: root.label,
-				configUri: 'test:///workspace/.coggit/config.yaml',
-				projectRootUri: 'test:///workspace',
-				sourceRootUri: 'test:///workspace/src',
-				cognitionRootUri: 'test:///workspace/cognition',
-				sourceRoot: 'src',
-				cognitionRoot: 'cognition',
-				sourcePathRule: 'Use source-root-relative paths with CogGit tools.',
-			},
-			generatedAt: 0,
-			entries: [],
-			diagnostics: [],
-		}),
 		addCognition: async () => ({
 			kind: 'leaf',
 			sourcePath: 'src/example.ts',

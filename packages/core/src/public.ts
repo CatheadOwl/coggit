@@ -28,7 +28,6 @@ export {
   CORE_OPERATION_IDS,
   addOperation,
   resolveOperation,
-  routesOperation,
   findProjectNode,
   handbookCatalog,
   handbookIdForCognitionKind,
@@ -51,7 +50,6 @@ export type {
   CoggitOperationIssue,
   CoggitProjectContext,
   CoreOperationId,
-  RoutesOperationResult,
   SnapshotOperationResult,
   SnapshotOperationOptions,
   SnapshotOperationScope,
@@ -82,22 +80,6 @@ export {
   projectSnapshotTree,
   projectTreeFromSnapshot,
 } from './projection';
-export {
-  DEFAULT_ROUTES_DEPTH,
-  assembleRoutesContent,
-  countRouteNodes,
-  flattenRoutesProjection,
-  projectRoutesEntries,
-  routeProjectionLineText,
-  selectRoutesBySourcePath,
-  toRoutesStructuredOutput,
-} from './routesProjection';
-export type {
-  AssembleRoutesContentOptions,
-  RoutesPresentationContent,
-  RoutesPresentationFormat,
-  RoutesStructuredOutput,
-} from './routesProjection';
 export {
   projectStatusAgentPresentation,
   renderStatusAgentInspectionText,
@@ -242,11 +224,9 @@ export type {
   SourcePathResolution,
 } from './interfaces';
 
-// Registry + routes DTOs referenced by the ports and facade above.
+// Registry DTOs referenced by the ports and facade above.
 export type {
   RegistryProvider,
   RegistryFile,
   AcceptedPair,
-  CognitionRoutes,
 } from './types';
-export type { BuildCognitionRoutesOptions } from './cognition/cognitionRoutes';

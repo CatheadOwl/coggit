@@ -13,7 +13,7 @@ function coreSegmentText(key: string): string {
 
 const RE_ADDRESSED_SEGMENT_KEYS = [
   'roots',
-  'routes',
+  'snapshot',
   'indexing',
   'delegation',
   'contradictions',
@@ -22,7 +22,7 @@ const RE_ADDRESSED_SEGMENT_KEYS = [
 suite('MCP server instructions derivation', () => {
   test('re-addresses operations onto MCP surface through the seams', () => {
     assert.ok(MCP_SERVER_INSTRUCTIONS.includes(COGNITION_ROOTS_RESOURCE_URI));
-    assert.ok(MCP_SERVER_INSTRUCTIONS.includes(MCP_TOOL_NAMES.routes));
+    assert.ok(MCP_SERVER_INSTRUCTIONS.includes(MCP_TOOL_NAMES.snapshot));
     assert.ok(MCP_SERVER_INSTRUCTIONS.includes(MCP_TOOL_NAMES.status));
     assert.ok(MCP_SERVER_INSTRUCTIONS.includes(handbookUri('leaf').replace('leaf', '<kind>')));
     assert.match(MCP_SERVER_INSTRUCTIONS, /CogGit MCP indexes/);
@@ -57,6 +57,6 @@ suite('MCP server instructions derivation', () => {
   });
 
   test('no CLI-baseline command spelling leaks into the MCP surface', () => {
-    assert.doesNotMatch(MCP_SERVER_INSTRUCTIONS, /coggit (routes|status|handbook)/);
+    assert.doesNotMatch(MCP_SERVER_INSTRUCTIONS, /coggit (snapshot|status|handbook)/);
   });
 });

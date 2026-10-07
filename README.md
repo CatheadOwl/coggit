@@ -65,7 +65,7 @@ One local design-context runtime, four ways in:
 | Surface | Entry | Role |
 |---|---|---|
 | VS Code extension | `coggit-vscode` (Marketplace) | Authoring surface — Ghost Tree / Orphans / Misplaced views, watcher, MCP config UX. |
-| CLI | `@coggit/cli` (npm, `coggit`) | Terminal — status / snapshot / routes / add / resolve. |
+| CLI | `@coggit/cli` (npm, `coggit`) | Terminal — status / snapshot / add / resolve. |
 | MCP runtime | `@coggit/mcp` (npm, `coggit-mcp`) | Agent-facing tools + handbooks over stdio. |
 | dsh adapter | `@coggit/dsh` (npm, `dsh plugin add @coggit/dsh`) | `coggit_*` tools, handbook skills, and cognition links inside a dsh session. |
 
@@ -74,9 +74,9 @@ This repository is a pnpm-workspace monorepo with one package per delivery surfa
 | Package | Directory | Identity | Role |
 |---|---|---|---|
 | VS Code extension | [`packages/vscode`](packages/vscode) | `coggit-vscode` (Marketplace VSIX) | Extension activation, Ghost Tree / Orphans / Misplaced views, `.mcp.json` UX, VSIX packaging. |
-| CLI | [`packages/cli`](packages/cli) | `@coggit/cli` (npm, `bin: coggit`) | Command-line status / snapshot / routes / `mcp install`. |
+| CLI | [`packages/cli`](packages/cli) | `@coggit/cli` (npm, `bin: coggit`) | Command-line status / snapshot / `mcp install`. |
 | MCP runtime | [`packages/mcp`](packages/mcp) | `@coggit/mcp` (npm, `bin: coggit-mcp`) | MCP stdio runtime, tool/prompt registration, prompt assets. |
-| SDK — core | [`packages/core`](packages/core) | `@coggit/core` | Runtime-agnostic kernel: registry, snapshot, status, routes. |
+| SDK — core | [`packages/core`](packages/core) | `@coggit/core` | Runtime-agnostic kernel: registry, snapshot, status. |
 | SDK — runtime-node | [`packages/runtime-node`](packages/runtime-node) | `@coggit/runtime-node` | Node host primitives: fs, locks, watcher, registry adapter. |
 | Shared format | [`packages/format`](packages/format) | `@coggit/format` (private, bundled) | Pure status/tree text rendering. |
 | MCP runtime support | [`packages/mcp-runtime-support`](packages/mcp-runtime-support) | `@coggit/mcp-runtime-support` (private, bundled) | User-level MCP runtime install / launcher management. |
@@ -124,4 +124,4 @@ Package-level commands use pnpm filters, e.g. `pnpm --filter @coggit/cli build` 
 ## Documentation
 
 - [Design intent](docs/design-intent.md) — how CogGit relates to ADRs, PRDs, and source.
-- [Agent workflow](docs/agent-workflow.md) — the routes → read → freshness loop.
+- [Agent workflow](docs/agent-workflow.md) — the snapshot → read → freshness loop.

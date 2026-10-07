@@ -13,9 +13,6 @@ import type {
   StaleAction,
   StatusIssue,
   StatusIssueVisibility,
-  CognitionRoutes,
-  CognitionRoutesEntry,
-  CognitionDocumentDiagnostic,
 } from './types';
 import { buildSnapshotFromProjects, ResolveAcceptanceError, resolveNodeInSnapshot } from './project';
 import { inspectNodeStatus, querySubtreeIssues } from './status';
@@ -242,15 +239,6 @@ export interface ResolveOperationResult {
   pathMissMessage?: string;
   /** Present only when a miss produced fuzzy hints. */
   pathHintMessage?: string;
-}
-
-export interface RoutesOperationResult {
-  project: CoggitProjectContext;
-  generatedAt: number;
-  entryCount: number;
-  entries: CognitionRoutesEntry[];
-  diagnostics: CognitionDocumentDiagnostic[];
-  routes: CognitionRoutes;
 }
 
 export function projectContext(project: CoggitProject): CoggitProjectContext {
@@ -635,21 +623,6 @@ export async function resolveOperation(
       pathHintMessage: pathHints.length > 0 ? PATH_HINT_MESSAGE : undefined,
     },
   );
-}
-
-export async function routesOperation(
-  project: CoggitProject,
-  options: Parameters<CoggitProject['buildCognitionRoutes']>[0] = {},
-): Promise<RoutesOperationResult> {
-  const routes = await project.buildCognitionRoutes(options);
-  return {
-    project: routes.project,
-    generatedAt: routes.generatedAt,
-    entryCount: routes.entries.length,
-    entries: routes.entries,
-    diagnostics: routes.diagnostics,
-    routes,
-  };
 }
 
 function flattenNode(node: CoggitTreeNode): CoggitTreeNode[] {

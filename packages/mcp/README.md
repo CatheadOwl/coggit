@@ -1,7 +1,7 @@
 # @coggit/mcp
 
 CogGit MCP runtime: a stdio MCP server exposing CogGit status, snapshot,
-routes, add, and resolve as tools, plus cognition handbooks as prompts.
+add, and resolve as tools, plus cognition handbooks as prompts.
 
 Peer dependency: `@modelcontextprotocol/sdk` (install it alongside this
 package — embedders run an MCP SDK by definition).

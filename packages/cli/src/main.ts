@@ -10,7 +10,6 @@ import { runInstructions, type InstructionsFormat } from './instructions';
 import { resolveBundledMcpEntryPath, runMcpInstall } from './mcpInstall';
 import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
-import { runRoutes, type RoutesFormat } from './routes';
 import { runSnapshot } from './snapshot';
 import { runStatus, UserFacingError } from './status';
 import { openStrictWatchProject, startWatchSession } from './watch';
@@ -114,20 +113,6 @@ function createProgram(
     });
 
   program
-    .command('routes')
-    .argument('[path]')
-    .option('--depth <n>', 'maximum route tree depth below the selected source path', parseMaxDepth)
-    .option('--format <format>', 'output shape: flat or tree', parseRoutesFormat, 'flat')
-    .option('-j, --json', 'output route projection JSON instead of text')
-    .action(async (sourcePath: string | undefined, options: RoutesOptions) => {
-      await runWithProjects((projects) => runRoutes(projects, sourcePath, {
-        depth: options.depth,
-        format: options.format,
-        json: options.json,
-      }));
-    });
-
-  program
     .command('orphans')
     .description('List registry-tracked cognition files whose paired source path no longer exists.')
     .option('-j, --json', 'output structured orphaned cognition JSON instead of text')
@@ -210,12 +195,6 @@ interface SnapshotOptions {
   json?: boolean;
 }
 
-interface RoutesOptions {
-  depth?: number;
-  format?: RoutesFormat;
-  json?: boolean;
-}
-
 interface OrphansOptions {
   json?: boolean;
 }
@@ -251,13 +230,6 @@ function parseMaxDepth(value: string): number {
     return parsed;
   }
   throw new InvalidArgumentError('--max-depth must be a non-negative integer.');
-}
-
-function parseRoutesFormat(value: string): RoutesFormat {
-  if (value === 'flat' || value === 'tree') {
-    return value;
-  }
-  throw new InvalidArgumentError('--format must be one of: flat, tree.');
 }
 
 function parseAddCognitionKind(value: string): AddCognitionKind {

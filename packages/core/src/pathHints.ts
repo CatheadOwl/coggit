@@ -1,5 +1,5 @@
 /**
- * Fuzzy source-path hint suggestions, shared by routes, status, and snapshot.
+ * Fuzzy source-path hint suggestions, shared by status and snapshot.
  *
  * When a source path matches nothing, segment-suffix matching suggests the
  * closest existing source paths. A miss like `src/core/watchPipeline.ts` can

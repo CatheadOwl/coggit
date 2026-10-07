@@ -3,6 +3,19 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Removed
+
+- The `routes` operation and its supporting vocabulary: `routesOperation`,
+  `RoutesOperationResult`, `CognitionRoutes`/`CognitionRoutesEntry`/
+  `RoutesProjectionNode` types, the `buildCognitionRoutes` project port,
+  the `routesProjection` presentation pipeline, and the
+  `cognitionRoutes`/`cognitionDocumentFacts`/`cognitionTypes` cognition
+  modules (their only consumers). `CORE_OPERATION_IDS` is now
+  `['snapshot', 'status', 'add', 'resolve']`. The `standard`
+  system prompt's `routes` segment is replaced by a `snapshot` segment.
+
 ## [0.2.1] - 2026-09-05
 
 Patch release exercising the tag-triggered publish workflow (first CI

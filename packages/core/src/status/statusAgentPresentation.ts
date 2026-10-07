@@ -392,14 +392,8 @@ function projectAction(action: CoggitOperationAction): ProjectedAction | null {
         description: 'Accept the reviewed pair after sync.',
       };
     // Operation-backed diagnostic affordances (inspect/re-check). Reserved: the
-    // status flow never synthesizes `routes`/`snapshot`/`status`, so these do
+    // status flow never synthesizes `snapshot`/`status`, so these do
     // not currently reach a row or the issue legend.
-    case 'routes':
-      return {
-        tag: 'routes',
-        role: 'diagnostic',
-        description: 'Inspect cognition routes for navigation.',
-      };
     case 'snapshot':
       return {
         tag: 'snapshot',
@@ -476,7 +470,6 @@ function actionTagOrder(tag: string): number {
     add: 40,
     status: 50,
     snapshot: 60,
-    routes: 70,
   };
   return order[tag] ?? 100;
 }

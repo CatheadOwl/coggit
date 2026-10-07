@@ -4,23 +4,13 @@ CogGit is useful when an agent needs local design context while changing code.
 
 The practical loop is simple:
 
-1. Use `routes` to find the relevant cognition document.
+1. Orient with `snapshot` (or the mirror convention) to locate the relevant cognition document.
 2. Read the paired cognition before broad source inspection.
 3. Check freshness and evidence before deciding whether the cognition needs an update.
 4. Keep the cognition aligned when the code changes.
 
-## Routes
-
-The `routes` tool gives a compact overview of the cognition layer before diving into source:
-
-```text
-coggit/packages/core/src/README.md | Core layer - host-neutral application kernel...
-coggit/packages/vscode/src/extension.ts.md | Extension activation/deactivation entry point...
-coggit/packages/mcp/src/README.md | MCP server layer - shared MCP registration...
-coggit/packages/cli/src/README.md | Compiled Node CLI entrypoint for project commands...
-```
-
-Routes help the agent choose the right cognition document. They are not the final source of truth; they are the entry point into the paired cognition and source files.
+The mirror convention needs no tool call: a file's cognition document is its
+source-relative path with a trailing `.md`; a folder's is its `README.md`.
 
 ## Suggested Instruction
 

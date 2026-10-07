@@ -9,7 +9,6 @@ import type {
   CoggitSnapshot,
   CoggitTreeNode,
   CoggitWorkspaceRoot,
-  CognitionRoutes,
   AcceptedPair,
   MaintenanceDiagnostic,
   MisplacedCognitionEntry,
@@ -18,7 +17,6 @@ import type {
   UnboundCognitionEntry,
   RegistryProvider,
 } from './types';
-import type { BuildCognitionRoutesOptions } from './cognition/cognitionRoutes';
 import type { CoggitLogger } from './logger';
 import type { ProjectLockManager } from './locks';
 
@@ -115,7 +113,7 @@ export interface CoggitServices {
 
 /**
  * Result of resolving a source path against a project's source tree.
- * A shared resolution contract so status, snapshot, and routes can surface
+ * A shared resolution contract so status and snapshot can surface
  * consistent "you may mean" hints instead of a bare not-found miss.
  */
 export interface SourcePathResolution {
@@ -150,7 +148,6 @@ export interface CoggitProject {
    */
   ensureFresh(): Promise<void>;
   buildSnapshot(): Promise<CoggitSnapshot>;
-  buildCognitionRoutes(options?: BuildCognitionRoutesOptions): Promise<CognitionRoutes>;
   addCognition(sourcePath: string, options?: AddCognitionOptions): Promise<AddCognitionResult>;
   getCognitionHandbook(kind: CognitionKind): CognitionHandbook;
   /**

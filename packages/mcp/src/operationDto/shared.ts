@@ -16,13 +16,12 @@ export const MCP_TOOL_NAMES = {
   status: 'coggit_status',
   add: 'coggit_add',
   resolve: 'coggit_resolve',
-  routes: 'coggit_routes',
 } as const satisfies Record<CoreOperationId, string>;
 
 export const operationActionSchema = z.object({
   code: z.string(),
   label: z.string(),
-  tool: z.enum(['coggit_snapshot', 'coggit_status', 'coggit_add', 'coggit_resolve', 'coggit_routes']).optional(),
+  tool: z.enum(['coggit_snapshot', 'coggit_status', 'coggit_add', 'coggit_resolve']).optional(),
   /** Surfacing role (status-surface role contract), passed through losslessly from core actions. */
   role: z.enum(['recommended', 'optional-on-demand', 'diagnostic']).optional(),
   handbookUri: z.string().optional(),

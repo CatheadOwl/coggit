@@ -190,10 +190,10 @@ test('handbookSkillName maps both handbook kinds', async () => {
 
 test('operationToolName keeps the FULL core vocabulary (boundary contract)', async () => {
   // The mapping must stay explicit over core's complete operation-id set, even
-  // for operations this surface removed: active results never carry snapshot/
-  // routes ops, but the translation table must not depend on naming coincidence.
+  // for operations this surface removed: active results never carry the
+  // snapshot op, but the translation table must not depend on naming coincidence.
   const { operationToolName } = await import(fromLib('views'))
-  for (const op of ['snapshot', 'status', 'add', 'resolve', 'routes']) {
+  for (const op of ['snapshot', 'status', 'add', 'resolve']) {
     assert.equal(operationToolName(op), `coggit_${op}`)
   }
 })

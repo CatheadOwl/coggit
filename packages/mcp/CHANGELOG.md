@@ -3,6 +3,15 @@
 All notable changes to `@coggit/mcp` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Removed
+
+- `coggit_routes` tool — the `routes` operation is retired from CogGit
+  entirely (navigation is not part of the pair-maintenance core).
+  The derived server `instructions` now steer agents to `coggit_snapshot`
+  (or the mirror convention) to locate the relevant cognition document.
+
 ## [0.2.1] - 2026-09-05
 
 Patch release exercising the tag-triggered publish workflow (first CI

@@ -5,6 +5,12 @@ All notable changes to `@coggit/cli` are documented here. Format follows
 
 ## [Unreleased]
 
+### Removed
+
+- `coggit routes` command — the `routes` operation is retired from CogGit
+  entirely (navigation is not part of the pair-maintenance core).
+  Orient with `coggit snapshot` or the mirror convention instead.
+
 ### Added
 
 - `coggit -v` / `coggit --version`: print the CLI version (wires the

@@ -9,8 +9,6 @@ export { buildMisplacedInfoText } from './misplacedInfoText.js';
 export { nodeTooltip, nodeClipboardStatusText } from './nodePresentation.js';
 export { snapshotTreeText, nodeSnapshotTreeText, listText } from './snapshotFormat.js';
 export type { SnapshotScope, SnapshotTreeTextOptions } from './snapshotFormat.js';
-export { routesContentText } from './routesFormat.js';
-export type { RoutesTextSurface } from './routesFormat.js';
 
 // Structured pipeline (block-based agent-facing output)
 export {

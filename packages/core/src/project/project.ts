@@ -13,7 +13,6 @@ import { scanCognitionDirectory, reconcileRegistry } from '../registry/reconcile
 import { discoverCognitionEntries } from '../cognition/cognitionDiscovery';
 import { discoverWorkspaceRoots } from './workspace';
 import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey } from '../snapshot';
-import { buildCognitionRoutes } from '../cognition/cognitionRoutes';
 import { noOpProjectLockManager } from '../locks';
 import {
   detectMisplacedCognitionEntries,
@@ -244,14 +243,6 @@ export async function openCoggitProject(
 			return snapshot;
 		},
 	),
-    buildCognitionRoutes: async (options) =>
-      buildCognitionRoutes(
-        root,
-        services.fs,
-        runtime.registry,
-        projectContextFromRoot(root),
-        options,
-      ),
 	addCognition: async (sourcePath, options) => withProjectWriteLock(
 		services,
 		root,

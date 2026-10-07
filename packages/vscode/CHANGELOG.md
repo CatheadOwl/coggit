@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+### Removed
+
+- The bundled MCP server no longer registers a `coggit_routes` tool — the
+  `routes` operation is retired from CogGit entirely. Agents orient
+  with `coggit_snapshot` or the mirror convention instead.
+
 ### Changed
 
 - Simplified `resolve` to a bare action: `resolve <path>` (CLI) and `coggit_resolve` (MCP) now accept the current source/cognition pair as reviewed, dropping the single-value `reviewed_unchanged` mode, the `--reviewed-unchanged` CLI flag, and the MCP `resolution` input parameter.

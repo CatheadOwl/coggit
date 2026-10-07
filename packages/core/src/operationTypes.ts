@@ -26,7 +26,7 @@ export interface CoggitProjectContext {
  * to its own surface addressing (MCP maps to its `coggit_*` tools, the CLI
  * maps to subcommands, and so on).
  */
-export const CORE_OPERATION_IDS = ['snapshot', 'status', 'add', 'resolve', 'routes'] as const;
+export const CORE_OPERATION_IDS = ['snapshot', 'status', 'add', 'resolve'] as const;
 
 export type CoreOperationId = typeof CORE_OPERATION_IDS[number];
 

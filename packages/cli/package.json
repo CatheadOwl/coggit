@@ -1,7 +1,7 @@
 {
   "name": "@coggit/cli",
   "version": "0.2.1",
-  "description": "CogGit CLI: source/cognition freshness status, snapshot, routes, and MCP install from the command line.",
+  "description": "CogGit CLI: source/cognition freshness status, snapshot, and MCP install from the command line.",
   "license": "MIT",
   "repository": {
     "type": "git",
