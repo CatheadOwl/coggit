@@ -46,13 +46,13 @@ suite('MCP server instructions derivation', () => {
   });
 
   test('non-re-addressed segments pass through byte-equal to the core standard form', () => {
-    for (const key of ['records', 'mirror'] as const) {
+    for (const key of ['records', 'mirror', 'upkeep'] as const) {
       assert.ok(MCP_SERVER_INSTRUCTIONS.includes(coreSegmentText(key)));
     }
   });
 
-  test('mirror rule keeps the corrected wording', () => {
-    assert.match(MCP_SERVER_INSTRUCTIONS, /with a trailing \.md/);
+  test('mirror rule keeps the append semantics explicit', () => {
+    assert.match(MCP_SERVER_INSTRUCTIONS, /`\.md` appended \(`src\/foo\.ts` pairs with `src\/foo\.ts\.md`\)/);
     assert.doesNotMatch(MCP_SERVER_INSTRUCTIONS, /without the trailing \.md/);
   });
 

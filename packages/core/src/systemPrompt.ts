@@ -40,7 +40,7 @@ export const MINIMAL_SYSTEM_PROMPT: CoggitSystemPrompt = {
   kind: 'minimal',
   version: 'system-prompt-v1',
   content:
-    'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired cognition document at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by its `README.md` — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition document up to date.',
+    'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired cognition document at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by the `README.md` at its mirrored path — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition document up to date.',
 };
 
 /**
@@ -56,6 +56,7 @@ export const STANDARD_PROMPT_SEGMENT_KEYS = [
   'snapshot',
   'indexing',
   'delegation',
+  'upkeep',
   'contradictions',
 ] as const;
 
@@ -84,11 +85,11 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
   },
   {
     key: 'mirror',
-    text: 'CogGit cognition is a mirrored design layer over the source tree: a file\'s cognition document is the design counterpart of the same source-relative path with a trailing .md, and a folder\'s cognition document is its README.md counterpart.',
+    text: 'CogGit cognition is a mirrored design layer over the source tree: a file\'s cognition document is the design counterpart of the same source-relative path with `.md` appended (`src/foo.ts` pairs with `src/foo.ts.md`), and a folder\'s cognition document is the README.md at that folder\'s mirrored path.',
   },
   {
     key: 'snapshot',
-    text: 'Before reading source code in a tracked project, locate the relevant cognition document via the snapshot operation — or derive its path by the mirror convention — and inspect that cognition layer when it can inform the task.',
+    text: 'Before reading source code in a project configured for CogGit, locate the relevant cognition document — via the snapshot operation or the mirror convention — and inspect it when it can inform the task.',
   },
   {
     key: 'indexing',
@@ -97,6 +98,10 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
   {
     key: 'delegation',
     text: 'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant handbook guidance for the cognition kind.',
+  },
+  {
+    key: 'upkeep',
+    text: 'When changing code in a project configured for CogGit, keep the paired cognition document up to date.',
   },
   {
     key: 'contradictions',

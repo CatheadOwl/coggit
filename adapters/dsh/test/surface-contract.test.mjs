@@ -39,10 +39,11 @@ export function surfaceContractFindings(text) {
 
 // Byte-frozen at the failure-baseline capture (the probe-era surface); re-captured
 // deliberately on 2026-10-07 for the paired-document terminology canonicalization
-// ("cognition document" everywhere) that landed together with the `standard` form.
+// ("cognition document" everywhere), and again the same day for the wording-candidates
+// round (folder mirror path made explicit: "the README.md at its mirrored path").
 // This is the frozen arm of the A/B: if `minimal` ever changes again, this assertion
 // fires and the baseline fixture here must be re-captured deliberately.
-const FROZEN_MINIMAL = 'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired cognition document at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by its `README.md` — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition document up to date.'
+const FROZEN_MINIMAL = 'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired cognition document at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by the `README.md` at its mirrored path — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition document up to date.'
 
 test('frozen baseline: minimal form is byte-stable', () => {
   assert.equal(getCoggitSystemPrompt('minimal').content, FROZEN_MINIMAL)
