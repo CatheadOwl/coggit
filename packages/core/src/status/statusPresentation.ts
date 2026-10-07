@@ -8,6 +8,18 @@ import { describeObservedStatus } from './index';
 
 export type StatusPresentationFormat = 'text' | 'markdown';
 
+/** Value for the missing-pair Cognition line: names the derivable mirror path
+ *  when the node has one, so status output always discloses where the paired
+ *  cognition document belongs (the cognition root is discoverable from any
+ *  status call); the bare affordance only for nodes with no expected cognition
+ *  URI (error nodes). Shared by the presentation and agent renderers so the
+ *  two channels never diverge on this line. */
+export function describeMissingCognition(cognitionPath: string | null): string {
+  return cognitionPath !== null
+    ? `${cognitionPath} (not created; add on demand)`
+    : 'Not created (add on demand)';
+}
+
 export interface StatusPresentationIssue {
   sourcePath: string;
   cognitionPath: string | null;
@@ -116,7 +128,7 @@ export function renderStatusPresentation(
   lines.push(`${label('Source')}: ${view.sourcePath}`);
 
   if (view.cognitionPresence === 'missing') {
-    lines.push(`${label('Cognition')}: Not created (add on demand)`);
+    lines.push(`${label('Cognition')}: ${describeMissingCognition(view.cognitionPath)}`);
   } else if (view.cognitionPresence === 'present' && view.cognitionPath !== null) {
     lines.push(`${label('Cognition')}: ${view.cognitionPath}`);
   }

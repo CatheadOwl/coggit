@@ -71,7 +71,7 @@ suite('status presentation SDK', () => {
     assert.strictEqual(renderStatusPresentation(view, 'text'), [
       'Status: Stale',
       'Source: src/app',
-      'Cognition: Not created (add on demand)',
+      'Cognition: src/app/README.md (not created; add on demand)',
       '',
       'Own issues: 0',
       '',
@@ -81,7 +81,7 @@ suite('status presentation SDK', () => {
     assert.strictEqual(renderStatusPresentation(view, 'markdown'), [
       '**Status**: Stale',
       '**Source**: src/app',
-      '**Cognition**: Not created (add on demand)',
+      '**Cognition**: src/app/README.md (not created; add on demand)',
       '',
       '**Own issues**: 0',
       '',
@@ -106,6 +106,25 @@ suite('status presentation SDK', () => {
     assert.match(
       renderStatusPresentation(projectStatusPresentation(input)),
       /^Cognition: src\/app\/README\.md$/m,
+    );
+  });
+
+  test('names the derivable cognition path when the pair is missing', () => {
+    const view = projectStatusPresentation(inspection());
+
+    assert.match(
+      renderStatusPresentation(view),
+      /^Cognition: src\/app\/README\.md \(not created; add on demand\)$/m,
+    );
+  });
+
+  test('falls back to the bare affordance when no expected cognition URI exists', () => {
+    const input = inspection();
+    input.cognitionPath = null;
+
+    assert.match(
+      renderStatusPresentation(projectStatusPresentation(input)),
+      /^Cognition: Not created \(add on demand\)$/m,
     );
   });
 

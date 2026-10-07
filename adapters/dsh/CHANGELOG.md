@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `coggit_status` output and its tool description follow core's new
+  missing-pair line: the derivable mirror path is named —
+  `Cognition: <cognitionPath> (not created; add on demand)` — instead of
+  the bare affordance (core `describeMissingCognition()`).
+
 ### Fixed
 
 - `CoggitInitTab.tsx` icon imports follow the host UI primitives' renamed

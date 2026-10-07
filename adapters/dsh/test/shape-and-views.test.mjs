@@ -347,10 +347,10 @@ test('statusText hit filters the optional add action and emits no handbook hint 
     },
   })
   // Status-surface role contract (issue 20260906-1916): the `missing` fact is the on-demand
-  // affordance — the materialization line renders, but no imperative add hint
-  // and no premature handbook hint on the status face (handbook addressing
-  // starts at the add success result).
-  assert.ok(text.includes('Cognition: Not created (add on demand)'))
+  // affordance — the materialization line renders (naming the derivable mirror path per the
+  // roots-discovery disclosure fix), but no imperative add hint and no premature handbook hint
+  // on the status face (handbook addressing starts at the add success result).
+  assert.ok(text.includes('Cognition: uncognized.ts.md (not created; add on demand)'))
   assert.equal(text.includes('coggit_add'), false, 'no imperative add hint')
   assert.equal(text.includes('coggit-handbook'), false, 'no premature handbook hint')
   assert.equal(text.includes('Call coggit_'), false, 'no trailing hints section')

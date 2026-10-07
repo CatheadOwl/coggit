@@ -5,6 +5,14 @@ All notable changes to `@coggit/cli` are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+
+- `coggit status` text output: a missing cognition pair now prints the
+  derivable cognition path — `Cognition: src_cognition/foo.ts.md (not
+  created; add on demand)` — instead of the bare `Not created (add on
+  demand)`, so the cognition root is named on every status call (core
+  `describeMissingCognition()`).
+
 ### Removed
 
 - `coggit routes` command — the `routes` operation is retired from CogGit

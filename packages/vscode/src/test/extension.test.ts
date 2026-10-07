@@ -765,18 +765,17 @@ suite('CogGit Ghost Tree', () => {
 				const tooltip = nodeTooltip(node);
 				const clipboard = nodeClipboardStatusText(node);
 
-				assert.match(cliText, /^Source: coggit_prompt\/evals\/runs\nCognition: Not created \(add on demand\)/);
-				assert.doesNotMatch(cliText, /Cognition: coggit_prompt\/evals\/runs\/README\.md/);
+				assert.match(cliText, /^Source: coggit_prompt\/evals\/runs\nCognition: coggit_prompt\/evals\/runs\/README\.md \(not created; add on demand\)/);
 				assert.doesNotMatch(cliText, /^Actions:/m);
 				assert.strictEqual(tooltip, [
 					'**Source**: src/coggit_prompt/evals/runs',
-					'**Cognition**: Not created (add on demand)',
+					'**Cognition**: cog/coggit_prompt/evals/runs/README.md (not created; add on demand)',
 					'',
 					'**Own issues**: 0',
 					'',
 					'**Descendant issues**: 0',
 				].join('  \n'));
-				assert.match(clipboard, /Cognition: Not created \(add on demand\)/);
+				assert.match(clipboard, /Cognition: cog\/coggit_prompt\/evals\/runs\/README\.md \(not created; add on demand\)/);
 			});
 
 			test('status presentation omits cognition when coverage is not applicable', () => {

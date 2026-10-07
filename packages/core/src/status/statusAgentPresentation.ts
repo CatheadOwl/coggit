@@ -5,6 +5,7 @@ import type {
   NodeStatusInspection,
 } from './statusTypes';
 import { describeObservedStatus } from './index';
+import { describeMissingCognition } from './statusPresentation';
 
 export type StatusAgentActionRole = 'recommended' | 'optional-on-demand' | 'diagnostic';
 export type StatusAgentSeverityLevel = 'INFO' | 'WARN' | 'ERROR';
@@ -182,7 +183,7 @@ export function renderStatusAgentPresentation(view: StatusAgentPresentation): st
   lines.push(`Source: ${view.sourcePath}`);
 
   if (view.cognitionPresence === 'missing') {
-    lines.push('Cognition: Not created (add on demand)');
+    lines.push(`Cognition: ${describeMissingCognition(view.cognitionPath)}`);
   } else if (view.cognitionPresence === 'present' && view.cognitionPath !== null) {
     lines.push(`Cognition: ${view.cognitionPath}`);
   }

@@ -5,6 +5,19 @@ All notable changes to `@coggit/core` are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The status presentations' missing-pair Cognition line now names the
+  derivable mirror path — `Cognition: src_cognition/README.md (not created;
+  add on demand)` — instead of hiding it behind the bare `Not created (add
+  on demand)` (the bare form survives only for nodes with no expected
+  cognition URI, e.g. error nodes). Every status call now discloses where
+  the paired cognition document belongs, so the cognition root is
+  discoverable from status output alone instead of by reading `.coggit`
+  internals (eval evidence: 14/21 cli-host runs rummaged
+  `.coggit/config.yaml`; `describeMissingCognition()` is the shared
+  implementation for both renderers).
+
 ### Removed
 
 - The `routes` operation and its supporting vocabulary: `routesOperation`,
