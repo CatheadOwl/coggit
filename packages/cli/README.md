@@ -18,6 +18,7 @@ coggit snapshot              # project-wide source/cognition snapshot
 coggit routes                # markdown routing view of the cognition layer
 coggit orphans               # cognition files whose source is gone
 coggit add / resolve         # register or accept a source/cognition pair
+coggit instructions          # print agent guidance for CLI hosts (raw or AGENTS.md block)
 coggit mcp install           # install the CogGit MCP stdio runtime
 coggit watch                 # watch mode
 ```

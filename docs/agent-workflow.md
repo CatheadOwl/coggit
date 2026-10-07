@@ -20,13 +20,22 @@ coggit/packages/mcp/src/README.md | MCP server layer - shared MCP registration..
 coggit/packages/cli/src/README.md | Compiled Node CLI entrypoint for project commands...
 ```
 
-Routes help the agent choose the right cognition file. They are not the final source of truth; they are the entry point into the paired cognition and source files.
+Routes help the agent choose the right cognition document. They are not the final source of truth; they are the entry point into the paired cognition and source files.
 
 ## Suggested Instruction
 
-Add a short instruction to your agent guide, such as `AGENTS.md`, `CLAUDE.md`, or your workspace instructions:
+Give your agent host the CogGit guidance with `coggit instructions` — it prints the maintained form, so the wording lives in one place:
 
-> Use CogGit to help explore the codebase. When changing code, keep the paired cognition up to date.
+```console
+# per-invocation (e.g. Claude Code)
+claude --append-system-prompt "$(coggit instructions --kind standard)"
+
+# persistent, for hosts that read AGENTS.md (Codex, Claude Code, Gemini CLI, ...)
+coggit instructions --kind standard --format block >> AGENTS.md
+```
+
+dsh and MCP hosts do not need this — they inject the guidance through their
+own adapter surfaces.
 
 ## Why This Matters
 

@@ -99,11 +99,14 @@ coggit mcp install
 
 # dsh — adapter plugin for dsh agents
 dsh plugin add @coggit/dsh
+
+# CLI agent hosts (Claude Code, Codex, Gemini CLI, ...) — print the agent guidance
+claude --append-system-prompt "$(coggit instructions)"
+coggit instructions --kind standard --format block >> AGENTS.md
 ```
 
-A recommended agent instruction:
-
-> Use CogGit to help explore the codebase. When changing code, keep the paired cognition up to date.
+dsh and MCP hosts inject the guidance through their own adapter surfaces;
+`coggit instructions` is the channel for hosts without an adapter.
 
 ## Development
 

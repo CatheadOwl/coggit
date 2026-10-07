@@ -34,8 +34,8 @@ export const inject = ['tools', 'skills', 'systemPrompt']
  */
 export const COGNITION_LINK_DIRECTIVE = [
   'When a [cognition-link] line names a path you are about to read or edit, read the linked cognition document before acting on that source file; if you skip it, say why in one line.',
-  '(stale) marks a cognition that is out of date with its source — treat the source as current.',
-  '(updated) marks a pair whose state changed since the link was last shown — read the cognition again before relying on an earlier impression.',
+  '(stale) marks a cognition document that is out of date with its source — treat the source as current.',
+  '(updated) marks a pair whose state changed since the link was last shown — read the cognition document again before relying on an earlier impression.',
 ].join(' ')
 
 export const Config = ConfigSchema

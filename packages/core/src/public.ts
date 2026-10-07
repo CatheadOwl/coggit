@@ -64,8 +64,19 @@ export type {
   RegistryInitFailurePolicy,
 } from './project';
 export { getCognitionHandbook, getCognitionTemplate } from './cognition';
-export { getCoggitSystemPrompt, MINIMAL_SYSTEM_PROMPT } from './systemPrompt';
-export type { CoggitSystemPrompt, CoggitSystemPromptKind } from './systemPrompt';
+export {
+  getCoggitSystemPrompt,
+  MINIMAL_SYSTEM_PROMPT,
+  STANDARD_PROMPT_SEGMENT_KEYS,
+  STANDARD_SYSTEM_PROMPT,
+  STANDARD_SYSTEM_PROMPT_SEGMENTS,
+} from './systemPrompt';
+export type {
+  CoggitSystemPrompt,
+  CoggitSystemPromptKind,
+  StandardPromptSegment,
+  StandardPromptSegmentKey,
+} from './systemPrompt';
 export {
   applyTreeDepth,
   projectSnapshotTree,

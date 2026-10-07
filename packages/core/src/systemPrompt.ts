@@ -3,14 +3,24 @@
  *
  * A "system prompt" is the short guidance a host injects so an agent knows
  * CogGit exists and how to approach it. Forms range from a short hint
- * (minimal) to fuller operational instructions. Every form is surface-neutral:
- * it names CogGit as the project, references CLI-baseline commands only, and
- * never hard-codes a specific surface's tool names, resource URIs, or
- * addressing (`coggit_*`, `coggit://`). Hosts that need surface-specific
- * wording re-address these forms themselves (see the TODO below).
+ * (minimal) to fuller operational instructions (standard). Every form is
+ * surface-neutral: it names CogGit as the project, references CLI-baseline
+ * commands only, and never hard-codes a specific surface's tool names,
+ * resource URIs, or addressing (`coggit_*`, `coggit://`).
+ *
+ * Host consumption:
+ * - dsh passes a form through its `ctx.systemPrompt` sections unchanged;
+ * - `@coggit/mcp` re-addresses the `standard` segments onto MCP surface
+ *   (tool names, resource URIs) at its `instructions` seam;
+ * - `@coggit/cli` prints a form as-is (`coggit instructions`) — the neutral
+ *   CLI-baseline addressing is already terminal there.
+ *
+ * One canonical term: the paired document is always a "cognition document";
+ * "cognition layer" names the collective. The dsh enrichment directive and
+ * the MCP re-addressing keep the same vocabulary.
  */
 
-export type CoggitSystemPromptKind = 'minimal';
+export type CoggitSystemPromptKind = 'minimal' | 'standard';
 
 export interface CoggitSystemPrompt {
   kind: CoggitSystemPromptKind;
@@ -27,11 +37,78 @@ export const MINIMAL_SYSTEM_PROMPT: CoggitSystemPrompt = {
   kind: 'minimal',
   version: 'system-prompt-v1',
   content:
-    'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired design note at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by its `README.md` — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition up to date.',
+    'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired cognition document at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by its `README.md` — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition document up to date.',
+};
+
+/**
+ * Stable per-line identities for the `standard` form. Hosts that re-address
+ * the form (MCP: tool names / resource URIs) map over these keys instead of
+ * string-replacing the content; keys are part of the host-facing seam and
+ * must not be renamed or reordered casually.
+ */
+export const STANDARD_PROMPT_SEGMENT_KEYS = [
+  'roots',
+  'records',
+  'mirror',
+  'routes',
+  'indexing',
+  'delegation',
+  'contradictions',
+] as const;
+
+export type StandardPromptSegmentKey = (typeof STANDARD_PROMPT_SEGMENT_KEYS)[number];
+
+export interface StandardPromptSegment {
+  key: StandardPromptSegmentKey;
+  text: string;
+}
+
+/**
+ * The standard form, segment by segment: the operational guidance an agent
+ * needs to actually use CogGit (read roots first, read cognition before
+ * source, delegate source-scoped maintenance, verify with status), stated
+ * with CLI-baseline commands only.
+ */
+export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] = [
+  {
+    key: 'roots',
+    text: 'Establish the project\'s source and cognition roots before locating cognition documents.',
+  },
+  {
+    key: 'records',
+    text: 'CogGit cognition documents record design intent, contracts, boundaries, and invariants, not implementation summaries.',
+  },
+  {
+    key: 'mirror',
+    text: 'CogGit cognition is a mirrored design layer over the source tree: a file\'s cognition document is the design counterpart of the same source-relative path with a trailing .md, and a folder\'s cognition document is its README.md counterpart.',
+  },
+  {
+    key: 'routes',
+    text: 'Before reading source code in a tracked project, run coggit routes to find the relevant cognition document and inspect that cognition layer when it can inform the task.',
+  },
+  {
+    key: 'indexing',
+    text: 'CogGit\'s tools index the same cognition layer agents can grep/read directly: use them to narrow candidates, check freshness, and choose better sourcePath/file-search targets, while grep/read remains the primary way to inspect full cognition text.',
+  },
+  {
+    key: 'delegation',
+    text: 'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant coggit handbook <kind> guidance.',
+  },
+  {
+    key: 'contradictions',
+    text: 'Report contradictions between source, cognition, design intent, or the requested change before editing a cognition document; do not silently resolve uncertainty, and verify edited nodes with coggit status.',
+  },
+];
+
+export const STANDARD_SYSTEM_PROMPT: CoggitSystemPrompt = {
+  kind: 'standard',
+  version: 'system-prompt-v1',
+  content: STANDARD_SYSTEM_PROMPT_SEGMENTS.map((segment) => segment.text).join('\n'),
 };
 
 const SYSTEM_PROMPTS: Record<CoggitSystemPromptKind, CoggitSystemPrompt> = {
   minimal: MINIMAL_SYSTEM_PROMPT,
+  standard: STANDARD_SYSTEM_PROMPT,
 };
 
 export function getCoggitSystemPrompt(
@@ -39,19 +116,3 @@ export function getCoggitSystemPrompt(
 ): CoggitSystemPrompt {
   return SYSTEM_PROMPTS[kind];
 }
-
-// TODO(system-prompt): add the fuller forms and let hosts re-address them.
-// Planned (design discussion):
-//   - `standard`: the operational guidance currently hard-coded as
-//     `MCP_SERVER_INSTRUCTIONS` in `@coggit/mcp` (read cognition root first,
-//     run `coggit routes` before reading source, delegate source-scoped
-//     updates to subagents, report contradictions, verify with `coggit status`),
-//     rewritten surface-neutral with CLI-baseline names (`coggit status`,
-//     `coggit routes`, `coggit add`, `coggit resolve`, `coggit snapshot`,
-//     `coggit handbook <kind>`) and no `coggit://` URIs.
-//   - Host re-addressing: `@coggit/mcp` should derive its server `instructions`
-//     from the `standard` form via the existing `MCP_TOOL_NAMES` /
-//     `handbookUri` mapping instead of owning the text; the CLI may expose the
-//     forms through an `instructions` command or handbook entry.
-//   Full spec, draft text, and neutral→MCP re-addressing mapping:
-//   TODO/FR/20260824-surface-neutral-standard-system-prompt.md.

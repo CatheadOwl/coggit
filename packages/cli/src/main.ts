@@ -1,11 +1,12 @@
 import { Command, InvalidArgumentError, Option } from 'commander';
 
 import { createNodeCoggitServices } from '@coggit/runtime-node';
-import { discoverCoggitProjects, type AddCognitionKind, type CognitionKind } from '@coggit/core';
+import { discoverCoggitProjects, type AddCognitionKind, type CognitionKind, type CoggitSystemPromptKind } from '@coggit/core';
 import type { SnapshotScope } from '@coggit/format';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
 import { runInit, type InitOptions } from './init';
+import { runInstructions, type InstructionsFormat } from './instructions';
 import { resolveBundledMcpEntryPath, runMcpInstall } from './mcpInstall';
 import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
@@ -165,6 +166,15 @@ function createProgram(
     });
 
   program
+    .command('instructions')
+    .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md).')
+    .option('--kind <kind>', 'system prompt kind: minimal, standard', parseSystemPromptKind, 'minimal')
+    .option('--format <format>', 'output shape: raw or block', parseInstructionsFormat, 'raw')
+    .action((options: InstructionsOptions) => {
+      console.log(runInstructions(options.kind, options.format));
+    });
+
+  program
     .command('watch')
     .description('Watch source, cognition, and config changes and emit observations.')
     .argument('[path]', 'initialized project root (defaults to the current directory)')
@@ -218,6 +228,11 @@ interface McpInstallCommandOptions {
   json?: boolean;
 }
 
+interface InstructionsOptions {
+  kind: CoggitSystemPromptKind;
+  format: InstructionsFormat;
+}
+
 interface AddOptions {
   kind: AddCognitionKind;
   overwrite: boolean;
@@ -257,6 +272,20 @@ function parseHandbookKind(value: string): CognitionKind | 'all' {
     return value;
   }
   throw new InvalidArgumentError('handbook kind must be one of: all, leaf, skeleton.');
+}
+
+function parseSystemPromptKind(value: string): CoggitSystemPromptKind {
+  if (value === 'minimal' || value === 'standard') {
+    return value;
+  }
+  throw new InvalidArgumentError('--kind must be one of: minimal, standard.');
+}
+
+function parseInstructionsFormat(value: string): InstructionsFormat {
+  if (value === 'raw' || value === 'block') {
+    return value;
+  }
+  throw new InvalidArgumentError('--format must be one of: raw, block.');
 }
 
 function packageVersion(): string {
