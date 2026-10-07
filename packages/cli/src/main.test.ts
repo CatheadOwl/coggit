@@ -41,6 +41,29 @@ suite('CLI main', () => {
     assert.match(second.stdout, /Changed: no/);
   });
 
+  test('instructions accepts a positional kind synonym and rejects conflicts', async () => {
+    const positional = await runCli(['instructions', 'standard'], cwd, homeDirectory);
+    const option = await runCli(['instructions', '--kind', 'standard'], cwd, homeDirectory);
+    const defaultForm = await runCli(['instructions'], cwd, homeDirectory);
+    assert.strictEqual(positional.stderr, '');
+    assert.strictEqual(positional.stdout, option.stdout);
+    assert.notStrictEqual(positional.stdout, defaultForm.stdout);
+
+    const block = await runCli(['instructions', 'standard', '--format', 'block'], cwd, homeDirectory);
+    assert.match(block.stdout, /<!-- coggit:begin system-prompt kind=standard /);
+
+    const agreeing = await runCli(['instructions', 'minimal', '--kind', 'minimal'], cwd, homeDirectory);
+    assert.strictEqual(agreeing.stdout, defaultForm.stdout);
+
+    const conflict = await runCliCapture(['instructions', 'standard', '--kind', 'minimal'], cwd, homeDirectory);
+    assert.strictEqual(conflict.code, 1);
+    assert.match(conflict.stderr, /conflicting kinds/);
+
+    const invalid = await runCliCapture(['instructions', 'bogus'], cwd, homeDirectory);
+    assert.strictEqual(invalid.code, 1);
+    assert.match(invalid.stderr, /must be one of: minimal, standard/);
+  });
+
   async function runCli(
     args: readonly string[],
     workingDirectory: string,
@@ -64,6 +87,38 @@ suite('CLI main', () => {
             return;
           }
           resolve({ stdout, stderr });
+        },
+      );
+    });
+  }
+
+  async function runCliCapture(
+    args: readonly string[],
+    workingDirectory: string,
+    userProfile: string,
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+      execFile(
+        process.execPath,
+        [outCliPath, ...args],
+        {
+          cwd: workingDirectory,
+          env: {
+            ...process.env,
+            HOME: userProfile,
+            USERPROFILE: userProfile,
+          },
+        },
+        (error, stdout, stderr) => {
+          if (error && typeof error.code === 'number') {
+            resolve({ code: error.code, stdout, stderr });
+            return;
+          }
+          if (error) {
+            reject(new Error(`${error.message}\n${stderr}`));
+            return;
+          }
+          resolve({ code: 0, stdout, stderr });
         },
       );
     });

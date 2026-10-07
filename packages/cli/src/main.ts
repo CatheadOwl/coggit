@@ -153,10 +153,15 @@ function createProgram(
   program
     .command('instructions')
     .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md).')
+    .argument('[kind]', 'system prompt kind: minimal, standard (synonym of --kind)', parsePositionalSystemPromptKind)
     .option('--kind <kind>', 'system prompt kind: minimal, standard', parseSystemPromptKind, 'minimal')
     .option('--format <format>', 'output shape: raw or block', parseInstructionsFormat, 'raw')
-    .action((options: InstructionsOptions) => {
-      console.log(runInstructions(options.kind, options.format));
+    .action((kind: CoggitSystemPromptKind | undefined, options: InstructionsOptions, command: Command) => {
+      // --kind defaults to 'minimal'; the value source tells an explicit --kind apart from that default.
+      if (kind !== undefined && command.getOptionValueSource('kind') === 'cli' && kind !== options.kind) {
+        throw new InvalidArgumentError(`conflicting kinds: positional '${kind}' and --kind '${options.kind}'.`);
+      }
+      console.log(runInstructions(kind ?? options.kind, options.format));
     });
 
   program
@@ -251,6 +256,13 @@ function parseSystemPromptKind(value: string): CoggitSystemPromptKind {
     return value;
   }
   throw new InvalidArgumentError('--kind must be one of: minimal, standard.');
+}
+
+function parsePositionalSystemPromptKind(value: string): CoggitSystemPromptKind {
+  if (value === 'minimal' || value === 'standard') {
+    return value;
+  }
+  throw new InvalidArgumentError('kind argument must be one of: minimal, standard.');
 }
 
 function parseInstructionsFormat(value: string): InstructionsFormat {

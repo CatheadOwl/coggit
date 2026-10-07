@@ -16,6 +16,13 @@ All notable changes to `@coggit/cli` are documented here. Format follows
 - `coggit -v` / `coggit --version`: print the CLI version (wires the
   `__COGGIT_PACKAGE_VERSION__` build macro into commander's `.version()`).
 
+### Fixed
+
+- `coggit instructions` silently ignored a positional kind argument —
+  `coggit instructions standard` printed the default minimal form with no
+  signal. The positional now works as a synonym of `--kind`; a positional
+  that conflicts with an explicit `--kind` is a user error (exit 1).
+
 ## [0.2.1] - 2026-09-05
 
 Patch release exercising the tag-triggered publish workflow (first CI

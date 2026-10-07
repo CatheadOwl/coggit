@@ -17,7 +17,7 @@ coggit status <source-path>  # freshness status for a source file or folder
 coggit snapshot              # project-wide source/cognition snapshot
 coggit orphans               # cognition files whose source is gone
 coggit add / resolve         # register or accept a source/cognition pair
-coggit instructions          # print agent guidance for CLI hosts (raw or AGENTS.md block)
+coggit instructions          # print agent guidance for CLI hosts (raw or AGENTS.md block; kind via --kind or positional)
 coggit mcp install           # install the CogGit MCP stdio runtime
 coggit watch                 # watch mode
 ```
