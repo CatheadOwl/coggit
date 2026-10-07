@@ -59,4 +59,9 @@ suite('MCP server instructions derivation', () => {
   test('no CLI-baseline command spelling leaks into the MCP surface', () => {
     assert.doesNotMatch(MCP_SERVER_INSTRUCTIONS, /coggit (snapshot|status|handbook)/);
   });
+
+  test('the neutral operation phrasing is re-voiced, not passed through', () => {
+    assert.doesNotMatch(MCP_SERVER_INSTRUCTIONS, /the (snapshot|status) operation/);
+    assert.doesNotMatch(MCP_SERVER_INSTRUCTIONS, /handbook guidance for the cognition kind/);
+  });
 });

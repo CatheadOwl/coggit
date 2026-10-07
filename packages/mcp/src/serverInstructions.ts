@@ -7,12 +7,14 @@ import { MCP_TOOL_NAMES } from './operationDto/shared.js';
 import { COGNITION_ROOTS_RESOURCE_URI } from './resources.js';
 
 /**
- * The server `instructions`, derived at runtime from the surface-neutral
- * `standard` system-prompt form owned by `@coggit/core`. Re-addressing lives
- * here and never in core: segments that name operations or roots are
- * overridden onto MCP surface through the existing seams (tool-name map,
- * resource URIs); every other segment passes through byte-equal to core, so
- * the neutral form stays the single wording authority.
+ * The server `instructions`, derived at runtime from the host-agnostic
+ * `standard` system-prompt form owned by `@coggit/core`. This module is the
+ * MCP host's access layer: the body references operations by name with zero
+ * surface spellings, and the overrides below supply the MCP spellings —
+ * tool names and resource URIs through the existing seams. `roots` and
+ * `indexing` remain sentence-level re-voices (the access action genuinely
+ * differs per host); every other segment passes through byte-equal to core,
+ * so the universal body stays the single wording authority.
  */
 const MCP_SEGMENT_OVERRIDES: Readonly<Partial<Record<StandardPromptSegmentKey, string>>> = {
   roots: `Read ${COGNITION_ROOTS_RESOURCE_URI} before locating cognition documents.`,

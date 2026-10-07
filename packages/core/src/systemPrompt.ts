@@ -1,19 +1,22 @@
 /**
- * Surface-neutral system prompt assets for CogGit hosts.
+ * Host-agnostic system prompt assets for CogGit hosts.
  *
  * A "system prompt" is the short guidance a host injects so an agent knows
  * CogGit exists and how to approach it. Forms range from a short hint
- * (minimal) to fuller operational instructions (standard). Every form is
- * surface-neutral: it names CogGit as the project, references CLI-baseline
- * commands only, and never hard-codes a specific surface's tool names,
- * resource URIs, or addressing (`coggit_*`, `coggit://`).
+ * (minimal) to fuller operational instructions (standard). Every form is a
+ * universal body: it names CogGit as the project and references operations
+ * by name ("the snapshot operation", "the status operation", "handbook
+ * guidance") with zero surface spellings — no CLI command spellings, no
+ * `coggit_*` tool names, no `coggit://` URIs. Where the CogGit affordance
+ * lives is a host property, and each host adds its own thin access layer:
  *
- * Host consumption:
- * - dsh passes a form through its `ctx.systemPrompt` sections unchanged;
- * - `@coggit/mcp` re-addresses the `standard` segments onto MCP surface
- *   (tool names, resource URIs) at its `instructions` seam;
- * - `@coggit/cli` prints a form as-is (`coggit instructions`) — the neutral
- *   CLI-baseline addressing is already terminal there.
+ * - dsh passes a form through its `ctx.systemPrompt` sections unchanged —
+ *   the injected `coggit_*` functions self-describe, so no entry is needed;
+ * - `@coggit/mcp` supplies the MCP spellings (tool names, resource URIs) at
+ *   its `instructions` seam;
+ * - `@coggit/cli` prepends its own access sentence (the `coggit` entry
+ *   pointer) when printing (`coggit instructions`) — mechanics stay in the
+ *   CLI's `--help`.
  *
  * One canonical term: the paired document is always a "cognition document";
  * "cognition layer" names the collective. The dsh enrichment directive and
@@ -67,7 +70,8 @@ export interface StandardPromptSegment {
  * The standard form, segment by segment: the operational guidance an agent
  * needs to actually use CogGit (read roots first, read cognition before
  * source, delegate source-scoped maintenance, verify with status), stated
- * with CLI-baseline commands only.
+ * with operations referenced by name only — hosts spell them for their own
+ * surface at their access seam.
  */
 export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] = [
   {
@@ -84,7 +88,7 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
   },
   {
     key: 'snapshot',
-    text: 'Before reading source code in a tracked project, run coggit snapshot to locate the relevant cognition document — or derive its path by the mirror convention — and inspect that cognition layer when it can inform the task.',
+    text: 'Before reading source code in a tracked project, locate the relevant cognition document via the snapshot operation — or derive its path by the mirror convention — and inspect that cognition layer when it can inform the task.',
   },
   {
     key: 'indexing',
@@ -92,11 +96,11 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
   },
   {
     key: 'delegation',
-    text: 'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant coggit handbook <kind> guidance.',
+    text: 'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant handbook guidance for the cognition kind.',
   },
   {
     key: 'contradictions',
-    text: 'Report contradictions between source, cognition, design intent, or the requested change before editing a cognition document; do not silently resolve uncertainty, and verify edited nodes with coggit status.',
+    text: 'Report contradictions between source, cognition, design intent, or the requested change before editing a cognition document; do not silently resolve uncertainty, and verify edited nodes with the status operation.',
   },
 ];
 

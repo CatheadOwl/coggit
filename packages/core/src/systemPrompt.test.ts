@@ -40,13 +40,14 @@ suite('system prompt', () => {
     );
   });
 
-  test('standard form carries the operational guidance with CLI-baseline names', () => {
-    assert.match(STANDARD_SYSTEM_PROMPT.content, /run coggit snapshot/);
-    assert.match(STANDARD_SYSTEM_PROMPT.content, /coggit handbook <kind>/);
-    assert.match(STANDARD_SYSTEM_PROMPT.content, /verify edited nodes with coggit status/);
+  test('standard form carries the operational guidance as operation references', () => {
+    assert.match(STANDARD_SYSTEM_PROMPT.content, /via the snapshot operation/);
+    assert.match(STANDARD_SYSTEM_PROMPT.content, /handbook guidance for the cognition kind/);
+    assert.match(STANDARD_SYSTEM_PROMPT.content, /verify edited nodes with the status operation/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /with a trailing \.md/);
     assert.doesNotMatch(STANDARD_SYSTEM_PROMPT.content, /without the trailing \.md/);
     assert.doesNotMatch(STANDARD_SYSTEM_PROMPT.content, /coggit_|coggit:\/\//);
+    assert.doesNotMatch(STANDARD_SYSTEM_PROMPT.content, /coggit (snapshot|status|handbook)/);
   });
 
   test('paired-document vocabulary is canonical across forms', () => {
