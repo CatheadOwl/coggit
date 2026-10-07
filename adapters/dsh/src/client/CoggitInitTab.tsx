@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   Button,
-  IconCheckOutline16,
-  IconNewChatOutline16,
-  IconRefreshOutline16,
+  IconCheckOutlineRegular,
+  IconNewChatOutlineRegular,
+  IconRefreshOutlineRegular,
   Input,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
@@ -128,7 +128,7 @@ function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandid
       <div className={css.failure}>
         <p role="alert">{t('error')}</p>
         <code>{state.message}</code>
-        <Button variant="outline" size="sm" icon={<IconRefreshOutline16 />} onClick={() => { setReload(value => value + 1) }}>
+        <Button variant="outline" size="sm" icon={<IconRefreshOutlineRegular />} onClick={() => { setReload(value => value + 1) }}>
           {t('retry')}
         </Button>
       </div>
@@ -138,7 +138,7 @@ function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandid
   if (state.status === 'done') {
     return (
       <section className={css.section}>
-        <div className={css.resultIcon} aria-hidden="true"><IconCheckOutline16 /></div>
+        <div className={css.resultIcon} aria-hidden="true"><IconCheckOutlineRegular /></div>
         <div className={css.copy}>
           <h3>{t('successTitle')}</h3>
           <p>{t('successBody')}</p>
@@ -155,7 +155,7 @@ function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandid
   if (state.init.initialized) {
     return (
       <section className={css.section}>
-        <div className={css.resultIcon} aria-hidden="true"><IconCheckOutline16 /></div>
+        <div className={css.resultIcon} aria-hidden="true"><IconCheckOutlineRegular /></div>
         <div className={css.copy}>
           <h3>{t('readyTitle')}</h3>
           <p>{t('readyBody')}</p>
@@ -171,7 +171,7 @@ function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandid
     <form className={css.form} onSubmit={(event) => { void submit(event) }}>
       <div className={css.heading}>
         <h3>{t('title')}</h3>
-        <Button type="button" variant="ghost" size="sm" icon={<IconRefreshOutline16 />} onClick={() => { setReload(value => value + 1) }}>
+        <Button type="button" variant="ghost" size="sm" icon={<IconRefreshOutlineRegular />} onClick={() => { setReload(value => value + 1) }}>
           {t('refresh')}
         </Button>
       </div>
@@ -207,7 +207,7 @@ function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandid
           variant="primary"
           type="submit"
           disabled={!canSubmit || submitting}
-          icon={<IconNewChatOutline16 />}
+          icon={<IconNewChatOutlineRegular />}
         >
           {t(submitting ? 'initializing' : 'initialize')}
         </Button>

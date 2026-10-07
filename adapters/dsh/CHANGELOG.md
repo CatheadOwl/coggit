@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `CoggitInitTab.tsx` icon imports follow the host UI primitives' renamed
+  exports: `Icon{Check,NewChat,Refresh}Outline16` →
+  `Icon{...}OutlineRegular` (the host's visual-language overhaul replaced
+  per-pixel fill glyphs with stroke weights; `Regular` is the one-pixel
+  weight the host itself uses in compact toolbar/status contexts — TS's
+  "did you mean `Medium`" hint is edit distance, not the right weight).
+  Resolves the pre-existing `check-types` red (3× TS2305/TS2724) left by
+  the host rename.
+
 ## [0.3.0] - 2026-09-23
 
 ### Added
