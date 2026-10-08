@@ -105,6 +105,10 @@ claude --append-system-prompt "$(coggit instructions)"
 coggit instructions --kind standard --format block >> AGENTS.md
 ```
 
+`>>` is for first install. To update an existing block, re-run the same
+command and replace the whole marked block (begin marker to end marker)
+instead of appending — the first line inside the block carries the same rule.
+
 dsh and MCP hosts inject the guidance through their own adapter surfaces;
 `coggit instructions` is the channel for hosts without an adapter.
 

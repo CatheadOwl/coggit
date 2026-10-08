@@ -24,6 +24,9 @@ claude --append-system-prompt "$(coggit instructions --kind standard)"
 coggit instructions --kind standard --format block >> AGENTS.md
 ```
 
+`>>` is for first install; on update, replace the whole marked block instead
+of appending (the first line inside the block carries the same notice).
+
 dsh and MCP hosts do not need this — they inject the guidance through their
 own adapter surfaces.
 
