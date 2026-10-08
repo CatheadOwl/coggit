@@ -3,6 +3,19 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Changed
+
+- The `standard` body's roots and locate segments drop the operationalization
+  tails that duplicated the CLI access layer's orientation sentence ("the
+  status operation names both roots in its header"; "which names the file's
+  paired cognition document") — each naming claim now lives exactly once, in
+  the CLI-spelled orientation sentence. Pre-registered A/B
+  (exploratory 3/arm + confirmatory 5/arm): tied on pass count and
+  first-coggit-touch median; the shorter form wins by pre-stated preference.
+  Zero facts lost.
+
 ## [0.3.0] - 2026-10-08
 
 ### Changed
