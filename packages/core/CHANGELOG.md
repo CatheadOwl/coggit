@@ -3,7 +3,7 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
-## [Unreleased]
+## [0.3.0] - 2026-10-08
 
 ### Changed
 

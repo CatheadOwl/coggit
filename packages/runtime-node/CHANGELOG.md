@@ -3,6 +3,11 @@
 All notable changes to `@coggit/runtime-node` are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.3.0] - 2026-10-08
+
+Lockstep with the 0.3.0 wave (core routes retirement); rides the fixed
+tag-publish list. No functional changes since 0.2.1 (docs only).
+
 ## [0.2.1] - 2026-09-05
 
 Patch release exercising the tag-triggered publish workflow (first CI
