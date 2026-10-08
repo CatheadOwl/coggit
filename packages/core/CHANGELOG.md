@@ -7,6 +7,15 @@ All notable changes to `@coggit/core` are documented here. Format follows
 
 ### Changed
 
+- The `standard` system prompt's `roots` and `snapshot` segments are
+  operationalized with the answering move: `roots` now reads "the status
+  operation names both roots in its header", and the locate duty cites
+  per-path status — which names the file's paired cognition document —
+  instead of "the snapshot operation" (snapshot text mode never names
+  cognition documents; per-path status does). The segment key stays
+  `snapshot` as the stable host-override anchor. Zero surface spellings are
+  preserved — the CLI-spelled orientation pointer lands in `@coggit/cli`'s
+  access layer.
 - The status presentations' missing-pair Cognition line now names the
   derivable mirror path — `Cognition: src_cognition/README.md (not created;
   add on demand)` — instead of hiding it behind the bare `Not created (add

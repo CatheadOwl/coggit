@@ -15,15 +15,28 @@ export const CLI_ENTRY_SENTENCE =
   'CogGit is available as the `coggit` CLI — `coggit --help` lists the commands.';
 
 /**
- * Print-side of the prompt-form channel for CLI agent hosts: entry sentence
- * + form, for both kinds (access is a host axis, orthogonal to kind — it
- * also gives minimal's "Use it" its referent). `raw` is for `$(...)`
- * composition with host flags; `block` wraps the composite in managed
- * markers carrying kind and version so an update replaces the block inside
- * an instruction file such as `AGENTS.md` without touching surrounding
- * text — the first line inside the markers is the guardrail notice that
- * teaches this replace move (`blockManagementNotice`). The command is
- * read-only — persistent injection is the caller's redirect or paste.
+ * The standard form's orientation pointer: the entry sentence teaches
+ * entry, this sentence answers the first orientation questions (where are
+ * the roots, where is this file's pair) with the commands that actually
+ * answer on the CLI text surface — status header and per-path status.
+ * Applies to the standard kind only (owner ruling 2026-10-08: orientation
+ * rides the standard form; minimal keeps entry-only so its density is
+ * preserved).
+ */
+export const CLI_STANDARD_ORIENTATION_SENTENCE =
+  'Orient with `coggit status`: the header names the source and cognition roots, and `coggit status <path>` names a file\'s paired cognition document.';
+
+/**
+ * Print-side of the prompt-form channel for CLI agent hosts: access
+ * sentences + form (access is a host axis, orthogonal to kind — the entry
+ * sentence gives minimal's "Use it" its referent; the orientation sentence
+ * rides the standard form only). `raw` is for `$(...)` composition with
+ * host flags; `block` wraps the composite in managed markers carrying kind
+ * and version so an update replaces the block inside an instruction file
+ * such as `AGENTS.md` without touching surrounding text — the first line
+ * inside the markers is the guardrail notice that teaches this replace
+ * move (`blockManagementNotice`). The command is read-only — persistent
+ * injection is the caller's redirect or paste.
  */
 export function runInstructions(
   kind: CoggitSystemPromptKind,
@@ -35,7 +48,11 @@ export function runInstructions(
   if (prompt === undefined) {
     throw new UserFacingError(`system prompt kind '${kind}' is not provided by the installed @coggit/core`);
   }
-  const composite = [CLI_ENTRY_SENTENCE, prompt.content].join('\n');
+  const accessLines =
+    kind === 'standard'
+      ? [CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE]
+      : [CLI_ENTRY_SENTENCE];
+  const composite = [...accessLines, prompt.content].join('\n');
   if (format === 'raw') {
     return composite;
   }

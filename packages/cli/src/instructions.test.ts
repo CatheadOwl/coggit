@@ -1,10 +1,14 @@
 import * as assert from 'node:assert';
 import { getCoggitSystemPrompt } from '@coggit/core';
 
-import { CLI_ENTRY_SENTENCE, runInstructions } from './instructions';
+import { CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE, runInstructions } from './instructions';
 
 function expectedComposite(kind: 'minimal' | 'standard'): string {
-  return [CLI_ENTRY_SENTENCE, getCoggitSystemPrompt(kind).content].join('\n');
+  const accessLines =
+    kind === 'standard'
+      ? [CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE]
+      : [CLI_ENTRY_SENTENCE];
+  return [...accessLines, getCoggitSystemPrompt(kind).content].join('\n');
 }
 
 suite('CLI instructions', () => {
@@ -39,5 +43,13 @@ suite('CLI instructions', () => {
     // The access layer teaches no command mechanics (restraint rule:
     // entry + stance only; --help self-describes).
     assert.doesNotMatch(CLI_ENTRY_SENTENCE, /snapshot|status|handbook|init/);
+  });
+
+  test('the orientation sentence rides the standard form only and names the answering commands', () => {
+    assert.match(CLI_STANDARD_ORIENTATION_SENTENCE, /`coggit status`/);
+    assert.match(CLI_STANDARD_ORIENTATION_SENTENCE, /`coggit status <path>`/);
+    assert.match(runInstructions('standard', 'raw'), /coggit status/);
+    // Minimal keeps entry-only access (owner ruling 2026-10-08).
+    assert.doesNotMatch(runInstructions('minimal', 'raw'), /coggit status/);
   });
 });

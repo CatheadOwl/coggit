@@ -77,7 +77,7 @@ export interface StandardPromptSegment {
 export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] = [
   {
     key: 'roots',
-    text: 'Establish the project\'s source and cognition roots before locating cognition documents.',
+    text: 'Establish the project\'s source and cognition roots before locating cognition documents — the status operation names both roots in its header.',
   },
   {
     key: 'records',
@@ -89,7 +89,7 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
   },
   {
     key: 'snapshot',
-    text: 'Before reading source code in a project configured for CogGit, locate the relevant cognition document — via the snapshot operation or the mirror convention — and inspect it when it can inform the task.',
+    text: 'Before reading source code in a project configured for CogGit, locate the relevant cognition document — via per-path status, which names the file\'s paired cognition document, or the mirror convention — and inspect it when it can inform the task.',
   },
   {
     key: 'indexing',

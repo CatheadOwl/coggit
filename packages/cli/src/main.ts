@@ -60,6 +60,7 @@ function createProgram(
 
   program
     .command('status')
+    .description('Show pair status: the project header names the source and cognition roots; with a path, the output names that file\'s paired cognition document and freshness.')
     .argument('[path]')
     .action(async (sourcePath: string | undefined) => {
       await runWithProjects((projects) => runStatus(projects, sourcePath));
@@ -100,6 +101,7 @@ function createProgram(
 
   program
     .command('snapshot')
+    .description('List the source/cognition pair tree with freshness — a coverage overview; to name one file\'s pair, run status with that path.')
     .argument('[path]')
     .option('--scope <scope>', 'filter nodes: all, tracked, untracked, issues', parseSnapshotScope)
     .option('--max-depth <n>', 'maximum tree depth below the selected source path', parseMaxDepth)
@@ -124,8 +126,9 @@ function createProgram(
 
   program
     .command('add')
+    .description('Create the paired cognition document for a path from the kind\'s template and register it.')
     .argument('<path>')
-    .option('--kind <kind>', 'cognition kind: auto, leaf, skeleton', parseAddCognitionKind, 'auto')
+    .option('--kind <kind>', 'cognition kind: auto (file to leaf, folder to skeleton), leaf, skeleton', parseAddCognitionKind, 'auto')
     .option('--overwrite', 'replace existing cognition content', false)
     .action(async (sourcePath: string, options: AddOptions) => {
       await runWithProjects((projects) => runAdd(
@@ -138,6 +141,7 @@ function createProgram(
 
   program
     .command('resolve')
+    .description('Mark a cognition pair\'s registered issue resolved and re-verify its freshness.')
     .argument('<path>')
     .action(async (sourcePath: string) => {
       await runWithProjects((projects) => runResolve(projects, sourcePath));
@@ -145,6 +149,7 @@ function createProgram(
 
   program
     .command('handbook')
+    .description('Print the authoring handbook for a cognition kind: leaf (a source file\'s paired cognition document) or skeleton (a folder\'s paired README cognition).')
     .argument('[kind]', 'handbook kind: leaf, skeleton, or deprecated all', parseHandbookKind, 'all')
     .action((kind: CognitionKind | 'all') => {
       console.log(runHandbook(kind));
@@ -152,7 +157,7 @@ function createProgram(
 
   program
     .command('instructions')
-    .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md).')
+    .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md). Persistent guidance (an AGENTS.md block) should prefer `--kind standard`; the default `minimal` suits per-invocation composition.')
     .argument('[kind]', 'system prompt kind: minimal, standard (synonym of --kind)', parsePositionalSystemPromptKind)
     .option('--kind <kind>', 'system prompt kind: minimal, standard', parseSystemPromptKind, 'minimal')
     .option('--format <format>', 'output shape: raw or block', parseInstructionsFormat, 'raw')

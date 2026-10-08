@@ -42,7 +42,8 @@ suite('system prompt', () => {
 
   test('standard form carries the operational guidance as operation references', () => {
     assert.match(STANDARD_SYSTEM_PROMPT.content, /project configured for CogGit/);
-    assert.match(STANDARD_SYSTEM_PROMPT.content, /via the snapshot operation or the mirror convention/);
+    assert.match(STANDARD_SYSTEM_PROMPT.content, /the status operation names both roots in its header/);
+    assert.match(STANDARD_SYSTEM_PROMPT.content, /via per-path status, which names the file's paired cognition document, or the mirror convention/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /`src\/foo\.ts` pairs with `src\/foo\.ts\.md`/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /README\.md at that folder's mirrored path/);
     assert.match(STANDARD_SYSTEM_PROMPT.content, /in a project configured for CogGit, keep the paired cognition document up to date/);
