@@ -49,6 +49,14 @@ suite('CLI main', () => {
     assert.strictEqual(positional.stdout, option.stdout);
     assert.notStrictEqual(positional.stdout, defaultForm.stdout);
 
+    const alias = await runCli(['entry'], cwd, homeDirectory);
+    assert.strictEqual(alias.stderr, '');
+    assert.strictEqual(alias.stdout, defaultForm.stdout);
+
+    const aliasStandard = await runCli(['entry', 'standard'], cwd, homeDirectory);
+    assert.strictEqual(aliasStandard.stderr, '');
+    assert.strictEqual(aliasStandard.stdout, positional.stdout);
+
     const block = await runCli(['instructions', 'standard', '--format', 'block'], cwd, homeDirectory);
     assert.match(block.stdout, /<!-- coggit:begin system-prompt kind=standard /);
 

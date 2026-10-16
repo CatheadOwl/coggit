@@ -3,6 +3,15 @@
 All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Added
+
+- `coggit entry`: alias of `coggit instructions` — the ecosystem
+  convention name for entry-type commands (self-describing,
+  context-free, idempotent stdout). Positioned as the future canonical
+  spelling; `instructions` stays for compatibility.
+
 ## [0.3.0] - 2026-10-08
 
 ### Changed
