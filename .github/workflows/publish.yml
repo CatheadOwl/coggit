@@ -18,6 +18,11 @@ on:
         default: 'core'
   pull_request:
 
+env:
+  # The npm publish roster, in dependency order. Tag pushes and PR dry-runs
+  # both consume this single list; workflow_dispatch overrides it per run.
+  PUBLISH_LIST: core runtime-node cli mcp
+
 jobs:
   dry-run:
     name: Pack dry-run (no publish)
@@ -47,7 +52,7 @@ jobs:
 
       - name: Pack dry-run
         run: |
-          for pkg in core runtime-node cli mcp; do
+          for pkg in $PUBLISH_LIST; do
             echo "::group::packages/$pkg"
             (cd "packages/$pkg" && npm pack --dry-run)
             echo "::endgroup::"
@@ -60,9 +65,6 @@ jobs:
     permissions:
       contents: read
       id-token: write  # OIDC trusted publishing (npm trusts CatheadOwl/coggit + publish.yml)
-    env:
-      # Tag pushes publish this fixed list; workflow_dispatch overrides it.
-      PUBLISH_LIST: core runtime-node cli mcp
     steps:
       - name: Checkout
         uses: actions/checkout@v5
