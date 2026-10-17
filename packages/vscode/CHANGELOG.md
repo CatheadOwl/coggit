@@ -4,6 +4,13 @@ All notable changes to the CogGit extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-17
+
+Lockstep with the 0.4.0 wave (cli entry rename, core standard-body
+dedup). No extension changes since 0.3.0 — the extension never names the
+CLI guidance command; the bundled MCP server re-voices the deduped
+segments from its own override.
+
 ## [0.3.0] - 2026-10-08
 
 ### Removed

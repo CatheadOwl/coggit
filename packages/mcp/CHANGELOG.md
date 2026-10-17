@@ -3,6 +3,13 @@
 All notable changes to `@coggit/mcp` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.4.0] - 2026-10-17
+
+Lockstep with the 0.4.0 wave (cli entry rename, core standard-body
+dedup). No functional changes since 0.3.0 — the MCP server never names
+the CLI guidance command and re-voices the deduped segments from its own
+override.
+
 ## [0.3.0] - 2026-10-08
 
 ### Removed
