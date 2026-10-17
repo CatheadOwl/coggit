@@ -88,10 +88,7 @@ Rebuild loop: `pnpm --dir . build` (tsc → `lib/types`), then restart the
 profile (plugins load at boot). The browser bundle additionally needs
 `pnpm --dir . build:client` (tsdown → `lib/client.js`) — the web profile
 serves `lib/client.js`, not sources; a rebuilt bundle reaches a running GUI on
-page refresh. `lib/index.js` is a legacy tsdown artifact the patched manifest
-lookup still needs (kept until upstream fixes the out-of-tree manifest
-lookup); the test suite asserts its presence — copy it from a previous
-build site or run `build:client` once with `DSH_REPO` set.
+page refresh.
 
 ## Tests
 

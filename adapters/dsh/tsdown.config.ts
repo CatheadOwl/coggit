@@ -19,8 +19,8 @@ async function loadClientBundle() {
   const preset = join(host, 'packages', 'client', 'tsdown.client.ts')
   const mod = (await import(pathToFileURL(preset).href)) as {
     clientBundle: (
-      name: string,
-      entries: string[],
+      packageDir: string,
+      libEntry: readonly string[],
       options: { hostPhase: boolean },
     ) => unknown
   }
@@ -29,6 +29,6 @@ async function loadClientBundle() {
 
 const clientBundle = await loadClientBundle()
 
-export default clientBundle('@coggit/dsh', ['lib/types/index.js'], {
+export default clientBundle(import.meta.dirname, ['lib/types/index.js'], {
   hostPhase: true,
 })

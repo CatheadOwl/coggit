@@ -10,10 +10,8 @@ import { createInitializedProject, fromLib, libRoot, makeTempDir, removeTempDir 
 
 test('plugin exports the function-plugin shape with no default export', async () => {
   // The shipped entry is the tsc output at lib/types/index.js (package.json
-  // "main" / exports "."). The tsdown bundle lib/index.js cannot be rebuilt
-  // while upstream's out-of-tree manifest bug is open
-  // (upstream-issues/20260822-1900-tsdown-out-of-tree-manifest), so the
-  // suite pins the entry the host actually loads.
+  // "main" / exports "."), so the suite pins the entry the host actually
+  // loads — not the tsdown node-half bundle.
   const entryUrl = new URL('types/index.js', new URL('file://' + libRoot.replace(/\\/g, '/') + '/')).href
   const mod = await import(entryUrl)
   assert.equal(mod.name, 'coggit')
@@ -175,9 +173,9 @@ test('assemble waterfall hides coggit_* tools on an unconfigured workspace only'
 })
 
 test('lib artifacts exist for every module the suite exercises', async () => {
-  // tsc emits to lib/types/*.js; the tsdown bundle (lib/index.js) is a legacy
-  // artifact kept until upstream fixes the out-of-tree manifest lookup.
-  for (const rel of ['index.js', 'types/index.js', 'types/views.js', 'types/tools.js', 'types/service.js']) {
+  // tsc emits to lib/types/*.js — the only lib artifacts the suite and the
+  // shipped entry consume.
+  for (const rel of ['types/index.js', 'types/views.js', 'types/tools.js', 'types/service.js']) {
     await access(join(libRoot, rel))
   }
 })
