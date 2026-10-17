@@ -15,7 +15,7 @@
  * - `@coggit/mcp` supplies the MCP spellings (tool names, resource URIs) at
  *   its `instructions` seam;
  * - `@coggit/cli` prepends its own access sentence (the `coggit` entry
- *   pointer) when printing (`coggit instructions`) — mechanics stay in the
+ *   pointer) when printing (`coggit entry`) — mechanics stay in the
  *   CLI's `--help`.
  *
  * One canonical term: the paired document is always a "cognition document";

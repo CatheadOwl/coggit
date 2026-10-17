@@ -1,3 +1,7 @@
+---
+description: The CogGit agent working loop — orient via snapshot or the mirror convention, read the paired cognition first, keep pairs fresh
+---
+
 # Agent Workflow
 
 CogGit is useful when an agent needs local design context while changing code.
@@ -14,14 +18,14 @@ source-relative path with a trailing `.md`; a folder's is its `README.md`.
 
 ## Suggested Instruction
 
-Give your agent host the CogGit guidance with `coggit instructions` — it prints the maintained form, so the wording lives in one place:
+Give your agent host the CogGit guidance with `coggit entry` — it prints the maintained form, so the wording lives in one place:
 
 ```console
 # per-invocation (e.g. Claude Code)
-claude --append-system-prompt "$(coggit instructions --kind standard)"
+claude --append-system-prompt "$(coggit entry --kind standard)"
 
 # persistent, for hosts that read AGENTS.md (Codex, Claude Code, Gemini CLI, ...)
-coggit instructions --kind standard --format block >> AGENTS.md
+coggit entry --kind standard --format block >> AGENTS.md
 ```
 
 `>>` is for first install; on update, replace the whole marked block instead

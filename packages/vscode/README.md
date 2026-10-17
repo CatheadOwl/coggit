@@ -60,7 +60,7 @@ Use **Configure CogGit MCP** to add a `coggit` server entry to your workspace `.
 
 Agents can use CogGit to inspect freshness status and evidence, browse the tracked cognition tree, create missing cognition files, and mark reviewed pairs as up to date. See the [Agent Workflow](https://github.com/CatheadOwl/coggit/blob/main/docs/agent-workflow.md) guide.
 
-Suggested agent instruction: run `coggit instructions` and give the printed form
+Suggested agent instruction: run `coggit entry` and give the printed form
 to your host (a per-invocation flag or an `AGENTS.md` block) — the maintained
 wording lives in that command, not here.
 

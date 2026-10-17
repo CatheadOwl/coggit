@@ -6,7 +6,7 @@ import type { SnapshotScope } from '@coggit/format';
 import { runAdd } from './add';
 import { runHandbook } from './handbook';
 import { runInit, type InitOptions } from './init';
-import { runInstructions, type InstructionsFormat } from './instructions';
+import { runEntry, type EntryFormat } from './entry';
 import { resolveBundledMcpEntryPath, runMcpInstall } from './mcpInstall';
 import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
@@ -156,21 +156,20 @@ function createProgram(
     });
 
   program
-    .command('instructions')
-    // `entry` is the ecosystem convention name for entry-type commands —
-    // self-describing, context-free, idempotent stdout; the future canonical
-    // spelling. `instructions` stays for compatibility.
-    .alias('entry')
+    .command('entry')
+    // Ecosystem convention name for entry-type commands — self-describing,
+    // context-free, idempotent stdout (any-nav tool-entry hosting). The
+    // former `instructions` spelling is retired without a compat alias.
     .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md). Persistent guidance (an AGENTS.md block) should prefer `--kind standard`; the default `minimal` suits per-invocation composition.')
     .argument('[kind]', 'system prompt kind: minimal, standard (synonym of --kind)', parsePositionalSystemPromptKind)
     .option('--kind <kind>', 'system prompt kind: minimal, standard', parseSystemPromptKind, 'minimal')
-    .option('--format <format>', 'output shape: raw or block', parseInstructionsFormat, 'raw')
-    .action((kind: CoggitSystemPromptKind | undefined, options: InstructionsOptions, command: Command) => {
+    .option('--format <format>', 'output shape: raw or block', parseEntryFormat, 'raw')
+    .action((kind: CoggitSystemPromptKind | undefined, options: EntryOptions, command: Command) => {
       // --kind defaults to 'minimal'; the value source tells an explicit --kind apart from that default.
       if (kind !== undefined && command.getOptionValueSource('kind') === 'cli' && kind !== options.kind) {
         throw new InvalidArgumentError(`conflicting kinds: positional '${kind}' and --kind '${options.kind}'.`);
       }
-      console.log(runInstructions(kind ?? options.kind, options.format));
+      console.log(runEntry(kind ?? options.kind, options.format));
     });
 
   program
@@ -221,9 +220,9 @@ interface McpInstallCommandOptions {
   json?: boolean;
 }
 
-interface InstructionsOptions {
+interface EntryOptions {
   kind: CoggitSystemPromptKind;
-  format: InstructionsFormat;
+  format: EntryFormat;
 }
 
 interface AddOptions {
@@ -274,7 +273,7 @@ function parsePositionalSystemPromptKind(value: string): CoggitSystemPromptKind 
   throw new InvalidArgumentError('kind argument must be one of: minimal, standard.');
 }
 
-function parseInstructionsFormat(value: string): InstructionsFormat {
+function parseEntryFormat(value: string): EntryFormat {
   if (value === 'raw' || value === 'block') {
     return value;
   }
