@@ -1,0 +1,9 @@
+#!/bin/sh
+# English-only commit messages (house convention, enforced structurally):
+# reject CJK ideographs in the message; git-generated revert messages are
+# exempt. Activation (once per clone): git config core.hooksPath .githooks
+msg_file="$1"
+if grep -qP '[\x{4E00}-\x{9FFF}]' "$msg_file" && ! grep -q '^This reverts commit' "$msg_file"; then
+    echo "FAIL: commit message contains CJK characters - write commit messages in English" >&2
+    exit 1
+fi
