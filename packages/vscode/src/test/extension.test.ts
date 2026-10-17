@@ -8,7 +8,6 @@ import { clipboardText, tooltipText } from '@coggit/format';
 import { snapshotTreeText } from '@coggit/format';
 import { nodeClipboardStatusText, nodeTooltip } from '@coggit/format';
 import { renderStatusAgentInspectionText } from '@coggit/core';
-import { CoggitTreeDataProvider } from '../runtime/vscode/tree/coggitTreeDataProvider';
 import { gitignoreTesting } from '@coggit/core/internal';
 import { normalizeSourcePathInput, toCognitionFileUri, toCognitionFolderReadmeUri } from '@coggit/core';
 import { getParentDir, getProjectRootPath, inferSourceUriCandidatesFromCognitionUri, resolveConfigRoots, toCognitionFilePath, toCognitionFolderReadmePath } from '@coggit/core/internal';

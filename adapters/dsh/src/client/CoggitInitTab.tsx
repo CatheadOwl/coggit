@@ -74,10 +74,9 @@ function CoggitInitTabForm({ t, useSessions, useWorkspaces, status, sourceCandid
   const [submitting, setSubmitting] = useState(false)
   const [reload, setReload] = useState(0)
 
-  // Act on the workspace the user is looking at: the workspace owning the
-  // currently selected session first, then the most recently active one
-  // (mirrors UiWorkspaceService.startSession target resolution), then
-  // undefined — the wire omits the workspace and the server resolves its cwd.
+  // Act on the workspace the user is looking at — the most recently active
+  // workspace, else undefined: the wire omits the workspace and the server
+  // resolves its own cwd (full semantics in workspace-resolve.ts).
   const sessions = useSessions(listState => listState)
   const workspacePath = useWorkspaces(workspaceState => resolveWorkspacePath(workspaceState, sessions))
 
