@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `coggit-misplaced` gate upgraded to `coggit-maintenance`: it consumes core's
+  single `listMaintenanceDiagnostics()` entry and reports the full
+  orphaned/misplaced/stray/unbound set, with per-item wording reused from
+  core's maintenance presentation. The old single misplaced check is folded
+  into the new gate and the "mirror alignment" copy retires with it.
 - `coggit_status` output and its tool description follow core's new
   missing-pair line: the derivable mirror path is named —
   `Cognition: <cognitionPath> (not created; add on demand)` — instead of

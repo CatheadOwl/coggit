@@ -1,11 +1,16 @@
 /**
- * Register the coggit-misplaced gate through the gates service seam: local
+ * Register the coggit-maintenance gate through the gates service seam: local
  * structural mirrors of the frozen gate contract types + the
  * `ctx.inject(['gates'], ...)` soft dependency, so the plugin keeps no hard
  * type/runtime import of the gates package (same registration shape as the
- * cognition-link provider).
+ * cognition-link provider). Diagnostics come from core's single
+ * `listMaintenanceDiagnostics()` entry (the surface CI and adapters must
+ * consume) and per-item wording is reused from core's maintenance
+ * presentation, so the violation copy has one source.
  */
 import type { Context } from '@deepseek-ai/cordis'
+
+import { projectMaintenancePresentation } from '@coggit/core'
 
 import { discoverProjects } from './service.js'
 
@@ -27,36 +32,35 @@ export interface GateViolationLike {
   remedy?: { kind: 'manual'; guidance: string }
 }
 
-const MISPLACED_GATE: Omit<GateDefinitionLike, 'check'> = {
-  id: 'coggit-misplaced',
+export const MAINTENANCE_GATE: Omit<GateDefinitionLike, 'check'> = {
+  id: 'coggit-maintenance',
   description:
-    'CogGit mirror alignment: every tracked source path must have its cognition document at the mirrored location.',
+    'CogGit maintenance diagnostics: orphaned, misplaced, stray, and unbound cognition entries across every discovered project.',
   rationale:
     'CogGit keeps one cognition document per source path in a fixed mirror layout. '
-    + 'When a source file is renamed or moved, its cognition must follow so status reads stay aligned. '
-    + 'The registry is reconciled from the filesystem on read (the filesystem is authoritative), '
-    + 'so moving the cognition file to the expected path is a complete and safe fix — no registry edit is needed.',
+    + 'Four diagnostic classes cover the maintenance surface: the paired source went missing leaving its cognition behind (orphaned), '
+    + 'a cognition file sits off its mirror path (misplaced), cognition-shaped markdown is not yet registered (stray), '
+    + 'or is not bound to a source (unbound). '
+    + 'Diagnostics are consumed from core\'s single `listMaintenanceDiagnostics()` entry, and the registry is reconciled from the '
+    + 'filesystem on read (the filesystem is authoritative), so restoring or moving the files is a complete and safe fix — '
+    + 'no registry edit is needed.',
   on: ['stop', 'manual'],
   level: 'blocking',
 }
 
-/** Misplaced detection is a pure read: registry x 2 stat per entry, reconciled before listing. */
-async function checkMisplaced(root: string): Promise<GateViolationLike[]> {
+/** Maintenance detection is a pure read: one freshness pass + one discovery scan per project, presented per entry. */
+export async function checkMaintenance(root: string): Promise<GateViolationLike[]> {
   const projects = await discoverProjects(root)
   const violations: GateViolationLike[] = []
   for (const project of projects) {
-    for (const entry of await project.listMisplacedCognition()) {
+    const view = projectMaintenancePresentation(await project.listMaintenanceDiagnostics())
+    for (const item of view.items) {
       violations.push({
-        file: entry.actualCognitionPath,
-        reason:
-          `cognition for source ${JSON.stringify(entry.sourcePath)} is misplaced: `
-          + `found at ${JSON.stringify(entry.actualCognitionPath)}, `
-          + `expected at ${JSON.stringify(entry.expectedCognitionPath)} (mirror alignment)`,
+        file: item.path,
+        reason: `${item.kind}/${item.issueCode}: ${item.message}`,
         remedy: {
           kind: 'manual',
-          guidance:
-            'Move the cognition file to the expected path with an fs tool (read it first, then write it at the expected path and remove the old one). '
-            + 'The coggit registry reconciles from the filesystem on read, so the move alone completes the fix.',
+          guidance: item.hint,
         },
       })
     }
@@ -73,6 +77,6 @@ export function registerCoggitGates(ctx: Context): void {
   void ctx.inject(['gates'], (gatesCtx) => {
     return (gatesCtx as unknown as {
       gates: { register(definition: GateDefinitionLike): unknown }
-    }).gates.register({ ...MISPLACED_GATE, check: checkMisplaced })
+    }).gates.register({ ...MAINTENANCE_GATE, check: checkMaintenance })
   })
 }
