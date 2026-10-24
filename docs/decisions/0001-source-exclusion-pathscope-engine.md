@@ -111,3 +111,14 @@ mitigation, mirroring any-nav's drill-down route.
   workspace (an outer repo's rules wrongly hiding project source) with no
   git-native remedy — same escalation path (engine-side hatch), not a
   local re-anchoring.
+
+## Reversal-condition note (2026-10-24, M3.4)
+
+The engine-side exemption hatch landed: pathscope `boundaryStones.exempt`
+(named-subtree core-stone exemption, registered fixture 33). For coggit
+specifically: this consumer drives `createExclusionEngine` with its own
+traversal, so an exemption adjudication requires the third `excludeDirectory`
+argument to report per-stone hit names in the array form
+(`stoneHit: readonly string[]`) — the boolean form opts out of exemption
+adjudication entirely. Whether the coggit submodule and the orphaned
+cognition group get registered is this decision's reversal call.
