@@ -8,7 +8,7 @@ import { clipboardText, tooltipText } from '@coggit/format';
 import { snapshotTreeText } from '@coggit/format';
 import { nodeClipboardStatusText, nodeTooltip } from '@coggit/format';
 import { renderStatusAgentInspectionText } from '@coggit/core';
-import { gitignoreTesting } from '@coggit/core/internal';
+import { createSourceExclusion } from '@coggit/core/internal';
 import { normalizeSourcePathInput, toCognitionFileUri, toCognitionFolderReadmeUri } from '@coggit/core';
 import { getParentDir, getProjectRootPath, inferSourceUriCandidatesFromCognitionUri, resolveConfigRoots, toCognitionFilePath, toCognitionFolderReadmePath } from '@coggit/core/internal';
 import { toCoggitResourceUri, fromCoggitResourceUri } from '../runtime/vscode/adapter/resourceMapper';
@@ -173,41 +173,138 @@ suite('CogGit Ghost Tree', () => {
 	});
 
 
-	// ─── Phase 1: gitignore ────────────────────────────────────────────────
+	// ─── Phase 1: source exclusion (pathscope engine) ─────────────────────
 
-	test('reuses gitignore rules for dependency folders', () => {
-		const rules = gitignoreTesting.parseGitignoreRules('node_modules/\ndist/\n*.log\n');
+	class MemFileSystem {
+		private readonly dirs = new Set<string>();
+		private readonly files = new Map<string, string>();
 
-		assert.strictEqual(gitignoreTesting.matchesRule(rules[0], 'node_modules', true), true);
-		assert.strictEqual(gitignoreTesting.matchesRule(rules[0], 'node_modules/pkg/index.js', false), true);
-		assert.strictEqual(gitignoreTesting.matchesRule(rules[0], 'src/node_modules/pkg/index.js', false), true);
-		assert.strictEqual(gitignoreTesting.matchesRule(rules[2], 'src/debug.log', false), true);
-		assert.strictEqual(gitignoreTesting.matchesRule(rules[0], 'src/app.ts', false), false);
+		constructor(private readonly scheme: string, private readonly authority: string, private readonly basePath: string) {}
+
+		static root(scheme: string, authority: string, basePath: string): { fs: MemFileSystem; root: CoggitWorkspaceRoot } {
+			const fs = new MemFileSystem(scheme, authority, basePath);
+			fs.dirs.add(basePath);
+			const rootUri: UriComponents = { scheme, authority, path: basePath, query: '', fragment: '' };
+			return {
+				fs,
+				root: {
+					id: 'test-root',
+					label: 'test',
+					workspaceFolder: { uri: rootUri, name: 'test', index: 0 },
+					configUri: joinUriPath(rootUri, '.coggit', 'config.yaml'),
+					projectRootUri: rootUri,
+					sourceRootUri: rootUri,
+					cognitionRootUri: joinUriPath(rootUri, 'cognition'),
+				},
+			};
+		}
+
+		addDir(relPath: string): void {
+			this.dirs.add(this.key(relPath));
+		}
+
+		addFile(relPath: string, content = ''): void {
+			const key = this.key(relPath);
+			this.files.set(key, content);
+			const parent = key.slice(0, key.lastIndexOf('/'));
+			if (parent.startsWith(this.basePath)) this.dirs.add(parent);
+		}
+
+		private key(relPath: string): string {
+			return relPath.startsWith(this.basePath) ? relPath : `${this.basePath}/${relPath}`;
+		}
+
+		private uri(key: string): UriComponents {
+			return { scheme: this.scheme, authority: this.authority, path: key, query: '', fragment: '' };
+		}
+
+		async stat(uri: UriComponents) {
+			if (this.dirs.has(uri.path)) return { isDirectory: true, mtimeMs: 1000 };
+			if (this.files.has(uri.path)) return { isDirectory: false, mtimeMs: 1000 };
+			return undefined;
+		}
+		async readDirectory(uri: UriComponents): Promise<Array<[string, number]>> {
+			const prefix = `${uri.path}/`;
+			const out: Array<[string, number]> = [];
+			for (const dir of this.dirs) {
+				if (dir.startsWith(prefix) && !dir.slice(prefix.length).includes('/')) out.push([dir.slice(prefix.length), 2]);
+			}
+			for (const file of this.files.keys()) {
+				if (file.startsWith(prefix) && !file.slice(prefix.length).includes('/')) out.push([file.slice(prefix.length), 1]);
+			}
+			return out;
+		}
+		async readFile(uri: UriComponents): Promise<string> {
+			const content = this.files.get(uri.path);
+			if (content === undefined) throw new Error('ENOENT');
+			return content;
+		}
+		async exists(uri: UriComponents): Promise<boolean> {
+			return this.dirs.has(uri.path) || this.files.has(uri.path);
+		}
+		async writeFile(): Promise<void> {}
+		async createDirectory(): Promise<void> {}
+		async delete(): Promise<void> {}
+		toUri(relPath: string): UriComponents {
+			return this.uri(this.key(relPath));
+		}
+	}
+
+	test('excludes dependency and build trees via the mounted presets, and a named negation rescues colliding names', async () => {
+		const { fs, root } = MemFileSystem.root('file', '', '/workspace/project');
+		fs.addFile('.gitignore', '!lib/\n*.log\n');
+		fs.addDir('node_modules');
+		fs.addFile('node_modules/pkg/index.js');
+		fs.addDir('dist');
+		fs.addFile('dist/app.js');
+		fs.addDir('lib');
+		fs.addFile('lib/engine.ts');
+		fs.addFile('src/debug.log');
+		fs.addFile('src/app.ts');
+
+		const exclusion = await createSourceExclusion(root, fs);
+		assert.strictEqual(await exclusion.excludes(fs.toUri('node_modules'), true), true, 'deps preset');
+		assert.strictEqual(await exclusion.excludes(fs.toUri('node_modules/pkg/index.js'), false), true, 'pruned directory content');
+		assert.strictEqual(await exclusion.excludes(fs.toUri('dist'), true), true, 'build preset');
+		assert.strictEqual(await exclusion.excludes(fs.toUri('lib'), true), false, '!lib/ un-excludes the build preset entry');
+		assert.strictEqual(await exclusion.excludes(fs.toUri('lib/engine.ts'), false), false, 'source under lib/ is indexable again');
+		assert.strictEqual(await exclusion.excludes(fs.toUri('src/debug.log'), false), true, 'gitignore rule');
+		assert.strictEqual(await exclusion.excludes(fs.toUri('src/app.ts'), false), false);
 	});
 
-	test('layers nested gitignore rules from their own folder', () => {
-		const root = vscode.Uri.file('/workspace/project');
-		const rootRules = gitignoreTesting.parseGitignoreRules('dist/\n');
-		const nestedRules = gitignoreTesting.parseGitignoreRules('node_modules/\n', 'packages/app');
-		const ruleSet = { rules: [...rootRules, ...nestedRules] };
+	test('layers nested gitignore rules from their own folder', async () => {
+		const { fs, root } = MemFileSystem.root('file', '', '/workspace/project');
+		fs.addFile('.gitignore', 'dist/\n');
+		fs.addDir('packages');
+		fs.addDir('packages/app');
+		fs.addFile('packages/app/.gitignore', 'node_modules/\n');
+		fs.addDir('packages/app/node_modules');
+		fs.addFile('packages/app/node_modules/pkg/index.js');
 
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(root, ruleSet, vscode.Uri.file('/workspace/project/dist/app.js'), false), true);
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(root, ruleSet, vscode.Uri.file('/workspace/project/packages/app/node_modules/pkg/index.js'), false), true);
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(root, ruleSet, vscode.Uri.file('/workspace/project/node_modules/pkg/index.js'), false), false);
+		const exclusion = await createSourceExclusion(root, fs);
+		assert.strictEqual(await exclusion.excludes(fs.toUri('dist'), true), true, 'root layer rule');
+		await exclusion.foldDirectory(fs.toUri('packages'));
+		await exclusion.foldDirectory(fs.toUri('packages/app'));
+		assert.strictEqual(await exclusion.excludes(fs.toUri('packages/app/node_modules'), true), true, 'nested layer rule');
 	});
 
-	test('matches gitignore rules for remote and custom URI schemes', () => {
-		const remoteRoot = vscode.Uri.parse('vscode-remote://ssh-remote%2Bbox/workspace/project');
-		const remoteRules = gitignoreTesting.parseGitignoreRules('dist/\n*.log\n');
-		const remoteRuleSet = { rules: remoteRules };
-		const customRoot = vscode.Uri.parse('memfs:/workspace/project');
-		const customRules = gitignoreTesting.parseGitignoreRules('cache/\n');
-		const customRuleSet = { rules: customRules };
+	test('adjudicates remote and custom URI schemes through the injected filesystem', async () => {
+		const remote = MemFileSystem.root('vscode-remote', 'ssh-remote+box', '/workspace/project');
+		remote.fs.addFile('.gitignore', 'dist/\n*.log\n');
+		remote.fs.addDir('dist');
+		remote.fs.addFile('src/debug.log');
+		remote.fs.addFile('src/app.ts');
+		const remoteExclusion = await createSourceExclusion(remote.root, remote.fs);
+		assert.strictEqual(await remoteExclusion.excludes(remote.fs.toUri('dist'), true), true);
+		assert.strictEqual(await remoteExclusion.excludes(remote.fs.toUri('src/debug.log'), false), true);
+		assert.strictEqual(await remoteExclusion.excludes(remote.fs.toUri('src/app.ts'), false), false);
 
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(remoteRoot, remoteRuleSet, joinUriPath(remoteRoot, 'dist', 'app.js'), false), true);
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(remoteRoot, remoteRuleSet, joinUriPath(remoteRoot, 'src', 'debug.log'), false), true);
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(remoteRoot, remoteRuleSet, vscode.Uri.parse('vscode-remote://ssh-remote%2Bother/workspace/project/dist/app.js'), false), false);
-		assert.strictEqual(gitignoreTesting.isIgnoredByGitignoreRules(customRoot, customRuleSet, joinUriPath(customRoot, 'cache', 'data.json'), false), true);
+		const custom = MemFileSystem.root('memfs', '', '/workspace/project');
+		custom.fs.addFile('.gitignore', 'cache/\n');
+		custom.fs.addDir('cache');
+		custom.fs.addFile('cache/data.json');
+		const customExclusion = await createSourceExclusion(custom.root, custom.fs);
+		assert.strictEqual(await customExclusion.excludes(custom.fs.toUri('cache'), true), true);
 	});
 
 	// ─── Phase 1: Path (Supplementary) ─────────────────────────────────────────────

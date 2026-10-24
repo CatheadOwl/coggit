@@ -3,6 +3,31 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Changed
+
+- Source-tree exclusion swaps engines: the self-written `gitignore.ts` rule
+  matcher and the hardcoded `sourceStructureIgnore.ts` name list retire, and
+  traversal points adjudicate through `@catheadowl/pathscope`'s composable
+  decision core (`createExclusionEngine` behind `createSourceExclusion`).
+  Semantic adjudication (2026-10-24, decision record in `docs/decisions/`):
+  the 23-entry hardcoded list is unmounted; cache trees ride the engine's
+  `caches` preset, colliding build/deps names (`lib`, `vendor`, `build`,
+  `dist`, `out`, `coverage`, `node_modules`) ride the `build`/`deps` presets
+  and are un-excludable by a named gitignore negation (`!lib/`) — projects
+  whose source legitimately lives in those directories are indexable again
+  (the zero-escape-hatch bug). A nested `.git` presence is the engine's core
+  boundary stone: vendored repository subtrees truncate whole. Dot entries
+  stay indexable (no blanket dot category; the retired engine's behavior).
+  gitignore rules above the source root now inherit down from the enclosing
+  git root, as git reads them. `files.exclude` merging on the VS Code side
+  maps `enabled === true` entries to exclude patterns (the policy channel);
+  the built-in floor is the engine's mounted presets — the old
+  "add-only, never un-exclude" limitation dissolves via the gitignore hatch.
+  Supply form: `link:` dependency on the local pathscope checkout during the
+  transition window (junction; swap to a registry pin at the closing train).
+
 ## [0.4.0] - 2026-10-17
 
 ### Changed

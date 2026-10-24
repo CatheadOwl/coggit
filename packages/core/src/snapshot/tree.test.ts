@@ -4,6 +4,11 @@ import { computeBlobHash } from '../hash';
 import type { CoggitTreeNode, CoggitWorkspaceRoot } from '../types';
 import type { FileStat, FileSystem, UriComponents } from '../interfaces';
 import { buildFileNode, buildFolderNode, buildProjectSnapshot } from './tree';
+import { createSourceExclusion } from '../sourceExclusion';
+
+async function mkExclusion(root: CoggitWorkspaceRoot, fs: FileSystem): Promise<ReturnType<typeof createSourceExclusion>> {
+	return createSourceExclusion(root, fs);
+}
 
 suite('folder node freshness fallback', () => {
 	interface MockEntry {
@@ -179,7 +184,7 @@ suite('folder node freshness fallback', () => {
 
 		const parent = mkPlaceholderParent(root, folderUri);
 		const node = await buildFolderNode(
-			parent, folderUri, sourceRootUri, { rules: [] }, fs,
+			parent, folderUri, sourceRootUri, await mkExclusion(root, fs), fs,
 		);
 
 		assert.strictEqual(node.status?.ownObservedStatus, undefined);
@@ -202,7 +207,7 @@ suite('folder node freshness fallback', () => {
 			'# Bar\n\nThis cognition describes the tracked bar source file in detail with enough substantive prose to avoid skeleton detection.\n\nIt represents actual maintained cognition coverage.');
 		const parent = mkPlaceholderParent(root, folderUri);
 		const node = await buildFolderNode(
-			parent, folderUri, sourceRootUri, { rules: [] }, fs,
+			parent, folderUri, sourceRootUri, await mkExclusion(root, fs), fs,
 		);
 
 		assert.strictEqual(node.status?.observedStatus, 'fresh');
@@ -225,7 +230,7 @@ suite('folder node freshness fallback', () => {
 
 		const parent = mkPlaceholderParent(root, folderUri);
 		const node = await buildFolderNode(
-			parent, folderUri, sourceRootUri, { rules: [] }, fs,
+			parent, folderUri, sourceRootUri, await mkExclusion(root, fs), fs,
 		);
 
 		assert.strictEqual(node.status?.observedStatus, 'stale');
@@ -243,7 +248,7 @@ suite('folder node freshness fallback', () => {
 			'# Bar\n\nThis stale cognition still contains enough substantive documentation body to avoid skeleton detection.\n\nIt remains older than the paired source file.');
 		const parent = mkPlaceholderParent(root, folderUri);
 		const node = await buildFolderNode(
-			parent, folderUri, sourceRootUri, { rules: [] }, fs,
+			parent, folderUri, sourceRootUri, await mkExclusion(root, fs), fs,
 		);
 
 		assert.strictEqual(node.status?.descendantObservedStatus, 'fresh');
@@ -263,7 +268,7 @@ suite('folder node freshness fallback', () => {
 			'# Bar\n\nThis cognition describes the tracked bar source file in detail with enough substantive prose to avoid skeleton detection.\n\nIt represents actual maintained cognition coverage.');
 		const parent = mkPlaceholderParent(root, folderUri);
 		const node = await buildFolderNode(
-			parent, folderUri, sourceRootUri, { rules: [] }, fs,
+			parent, folderUri, sourceRootUri, await mkExclusion(root, fs), fs,
 		);
 
 		assert.strictEqual(node.status?.ownObservedStatus, 'stale');
@@ -288,7 +293,7 @@ suite('folder node freshness fallback', () => {
 			parent,
 			folderUri,
 			sourceRootUri,
-			{ rules: [] },
+			await mkExclusion(root, fs),
 			fs,
 			{
 				freshnessEvidence: {
@@ -326,7 +331,7 @@ suite('folder node freshness fallback', () => {
 			parent,
 			folderUri,
 			sourceRootUri,
-			{ rules: [] },
+			await mkExclusion(root, fs),
 			fs,
 			{
 				freshnessEvidence: {
@@ -367,7 +372,7 @@ suite('folder node freshness fallback', () => {
 			parent,
 			folderUri,
 			sourceRootUri,
-			{ rules: [] },
+			await mkExclusion(root, fs),
 			fs,
 			{
 				freshnessEvidence: {
@@ -415,7 +420,7 @@ suite('folder node freshness fallback', () => {
 				parent,
 				folderUri,
 				sourceRootUri,
-				{ rules: [] },
+				await mkExclusion(root, fs),
 				fs,
 				{
 					freshnessEvidence: {
@@ -489,7 +494,7 @@ suite('folder node freshness fallback', () => {
 			parent,
 			folderUri,
 			sourceRootUri,
-			{ rules: [] },
+			await mkExclusion(root, fs),
 			fs,
 		);
 
@@ -523,7 +528,7 @@ suite('folder node freshness fallback', () => {
 				parent,
 				folderUri,
 				sourceRootUri,
-				{ rules: [] },
+				await mkExclusion(root, fs),
 				fs,
 				{
 					freshnessEvidence: {
@@ -602,7 +607,7 @@ suite('folder node freshness fallback', () => {
 
 		const parent = mkPlaceholderParent(root, folderUri);
 		const node = await buildFolderNode(
-			parent, folderUri, sourceRootUri, { rules: [] }, fs,
+			parent, folderUri, sourceRootUri, await mkExclusion(root, fs), fs,
 		);
 
 		assert.strictEqual(node.status?.observedStatus, undefined);

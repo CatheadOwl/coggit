@@ -13,6 +13,15 @@ async function main() {
 			'.md': 'text',
 		},
 		logLevel: 'silent',
+		// Bundle the pathscope CJS face, not its ESM module graph: esbuild
+		// resolves ESM sources through the `import` condition, and the ESM
+		// face's fdir entry (index.mjs) calls createRequire(import.meta.url),
+		// which does not survive a CJS bundle. require.resolve picks the
+		// `require` condition through this package's own node_modules link,
+		// staying machine-independent.
+		alias: {
+			'@catheadowl/pathscope': require.resolve('@catheadowl/pathscope'),
+		},
 	};
 
 	const contexts = await Promise.all([

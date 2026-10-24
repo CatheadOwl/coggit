@@ -27,9 +27,8 @@ import {
   toCognitionFolderReadmeUri,
   toRelativeUriPath,
 } from '../mapping';
-import { loadGitignoreRules, isIgnoredByGitignoreRules } from '../gitignore';
 import { directoryEntryFingerprint } from '../directoryEntrySourceFact';
-import { isIgnoredSourceStructureEntry } from '../sourceStructureIgnore';
+import { createSourceExclusion, SOURCE_DISCOVERY_SKIP_DIRECTORIES } from '../sourceExclusion';
 import {
   addCognition,
   getCognitionHandbook,
@@ -332,7 +331,7 @@ export async function openCoggitProject(
     	const discovery = await discoverCognitionEntries(services.fs, root.cognitionRootUri, {
     		sourceRootUri: root.sourceRootUri,
     		checkSourceCandidates: true,
-    		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
+    		shouldSkipDirectory: (name) => SOURCE_DISCOVERY_SKIP_DIRECTORIES.has(name),
     	});
     	const [orphaned, misplaced, stray, unbound] = await Promise.all([
     		detectOrphanedCognitionEntries(root, services.fs, entries),
@@ -1253,7 +1252,7 @@ async function isSourcePathIgnored(
     return false;
   }
 
-  let rules = await loadSourceRootGitignoreRules(root, fs);
+  const exclusion = await createSourceExclusion(root, fs);
   let currentDir = root.sourceRootUri;
   for (const segment of normalizedPath.split('/')) {
     const childUri = joinRelativePath(currentDir, segment);
@@ -1261,15 +1260,12 @@ async function isSourcePathIgnored(
     if (!stat) {
       return false;
     }
-    if (isIgnoredSourceStructureEntry(segment, stat.isDirectory)) {
-      return true;
-    }
-    if (isIgnoredByGitignoreRules(root.projectRootUri, rules, childUri, stat.isDirectory)) {
+    if (await exclusion.excludes(childUri, stat.isDirectory)) {
       return true;
     }
     if (stat.isDirectory) {
       currentDir = childUri;
-      rules = await loadGitignoreRulesForDirectory(root, fs, currentDir, rules);
+      await exclusion.foldDirectory(childUri);
     }
   }
   return false;
@@ -1286,7 +1282,18 @@ async function readDirectFolderFingerprint(
     return undefined;
   }
 
-  const rules = await loadRulesThroughSourceDirectory(root, fs, normalizedPath);
+  const exclusion = await createSourceExclusion(root, fs);
+  if (normalizedPath !== '.') {
+    let currentDir = root.sourceRootUri;
+    for (const segment of normalizedPath.split('/')) {
+      currentDir = joinRelativePath(currentDir, segment);
+      const dirStat = await fs.stat(currentDir);
+      if (!dirStat?.isDirectory) {
+        break;
+      }
+      await exclusion.foldDirectory(currentDir);
+    }
+  }
   const entries = await fs.readDirectory(directoryUri);
   const items: Array<{ name: string; kind: 'file' | 'folder' }> = [];
 
@@ -1296,12 +1303,9 @@ async function readDirectFolderFingerprint(
     if (!isDirectory && !isFile) {
       continue;
     }
-    if (isIgnoredSourceStructureEntry(name, isDirectory)) {
-      continue;
-    }
 
     const childUri = joinRelativePath(directoryUri, name);
-    if (isIgnoredByGitignoreRules(root.projectRootUri, rules, childUri, isDirectory)) {
+    if (await exclusion.excludes(childUri, isDirectory)) {
       continue;
     }
     items.push({
@@ -1311,58 +1315,6 @@ async function readDirectFolderFingerprint(
   }
 
   return directoryEntryFingerprint(items);
-}
-
-async function loadRulesThroughSourceDirectory(
-  root: CoggitWorkspaceRoot,
-  fs: CoggitServices['fs'],
-  normalizedPath: string,
-) {
-  let rules = await loadSourceRootGitignoreRules(root, fs);
-  if (normalizedPath === '.') {
-    return rules;
-  }
-
-  let currentDir = root.sourceRootUri;
-  for (const segment of normalizedPath.split('/')) {
-    currentDir = joinRelativePath(currentDir, segment);
-    const stat = await fs.stat(currentDir);
-    if (!stat?.isDirectory) {
-      return rules;
-    }
-    rules = await loadGitignoreRulesForDirectory(root, fs, currentDir, rules);
-  }
-  return rules;
-}
-
-async function loadSourceRootGitignoreRules(
-  root: CoggitWorkspaceRoot,
-  fs: CoggitServices['fs'],
-) {
-  const rootRules = await loadGitignoreRulesForDirectory(
-    root,
-    fs,
-    root.projectRootUri,
-    { rules: [] },
-  );
-  return loadGitignoreRulesForDirectory(root, fs, root.sourceRootUri, rootRules);
-}
-
-function loadGitignoreRulesForDirectory(
-  root: CoggitWorkspaceRoot,
-  fs: CoggitServices['fs'],
-  directoryUri: UriComponents,
-  inheritedRules: Parameters<typeof loadGitignoreRules>[2],
-) {
-  return loadGitignoreRules(
-    root.projectRootUri,
-    directoryUri,
-    inheritedRules,
-    {
-      readFile: (uri) => fs.readFile(uri),
-      exists: (uri) => fs.exists(uri),
-    },
-  );
 }
 
 function sourceKeyForReviewedNode(

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '@coggit/core';
-import { generatedSourceStructureGlobExcludePatterns } from '@coggit/core/internal';
+import { sourceDiscoveryExcludeGlobPatterns } from '@coggit/core/internal';
 import { toComponents } from './uri';
 
 type FilesExcludeConfig = Record<string, boolean | undefined>;
@@ -43,11 +43,15 @@ async function findFilesWithTimeout(pattern: string, exclude: string): Promise<v
 }
 
 export function buildConfigDiscoveryExclude(filesExclude: FilesExcludeConfig | undefined): string {
+  // files.exclude entries ride the policy channel: enabled === true maps to
+  // an exclude pattern; disabled entries add nothing (un-excluding coggit's
+  // own defaults is a gitignore negation, `!lib/`, not a files.exclude
+  // switch). The built-in floor is the engine's mounted presets.
   return combineGlobPatterns([
     ...Object.entries(filesExclude ?? {})
       .filter(([pattern, enabled]) => pattern.length > 0 && enabled === true)
       .map(([pattern]) => pattern),
-    ...generatedSourceStructureGlobExcludePatterns(),
+    ...sourceDiscoveryExcludeGlobPatterns(),
   ]);
 }
 

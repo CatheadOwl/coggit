@@ -195,7 +195,19 @@ function versionLiterals({ name, dir }, violations) {
   }
 }
 
-const checks = [dependencyExternals, reachableTypeImports, packageReadme, targetsResolve, versionLiterals, readmeExampleMatchesExports]
+// PKG-11 — no `link:` specs on the publish face (transition windows are red
+// on purpose; the closing train swaps to a registry pin).
+function linkSpecGuard({ name, manifest }, violations) {
+  for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+    for (const [dep, spec] of Object.entries(manifest[field] ?? {})) {
+      if (typeof spec === 'string' && spec.startsWith('link:')) {
+        violations.push(`PKG-11: ${name} ${field} carries transition spec ${dep}: "${spec}" — swap to a registry pin before publishing`)
+      }
+    }
+  }
+}
+
+const checks = [dependencyExternals, reachableTypeImports, packageReadme, targetsResolve, versionLiterals, readmeExampleMatchesExports, linkSpecGuard]
 
 export function check() {
   const violations = []

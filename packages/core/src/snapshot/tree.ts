@@ -19,13 +19,12 @@ import {
 	toRelativeUriPath,
 } from '../mapping';
 import { formatUri, joinUriPath, uriBasename, uriKey } from '../uri-utils';
-import { loadGitignoreRules, isIgnoredByGitignoreRules } from '../gitignore';
+import { createSourceExclusion, type SourceExclusion } from '../sourceExclusion';
 import { sourcePathToKey } from '../identity';
 import { computeSourceFactIdentity } from '../hash';
 import { directoryEntryFingerprint } from '../directoryEntrySourceFact';
 import { buildMappingIndex } from './mappingIndex';
 import { acceptCurrentPair } from '../acceptance';
-import { isIgnoredSourceStructureEntry } from '../sourceStructureIgnore';
 
 const FILE_TYPE_FILE = 1;
 const FILE_TYPE_DIRECTORY = 2;
@@ -110,20 +109,12 @@ export async function buildRootNode(
 		return rootNode;
 	}
 
-	const rootIgnoreRules = await loadGitignoreRules(
-		root.projectRootUri,
-		root.projectRootUri,
-		{ rules: [] },
-		{
-			readFile: (uri) => fs.readFile(uri),
-			exists: (uri) => fs.exists(uri),
-		},
-	);
+	const exclusion = await createSourceExclusion(root, fs);
 	rootNode.children = await buildDirectoryChildren(
 		rootNode,
 		root.sourceRootUri,
 		root.sourceRootUri,
-		rootIgnoreRules,
+		exclusion,
 		fs,
 		options,
 	);
@@ -169,19 +160,13 @@ export async function buildDirectoryChildren(
 	parent: CoggitTreeNode,
 	directoryUri: UriComponents,
 	sourceRootUri: UriComponents,
-	inheritedIgnoreRules: Parameters<typeof loadGitignoreRules>[2],
+	exclusion: SourceExclusion,
 	fs: FileSystem,
 	options: BuildProjectSnapshotOptions = {},
 ): Promise<CoggitTreeNode[]> {
-	const ignoreRules = await loadGitignoreRules(
-		parent.root.projectRootUri,
-		directoryUri,
-		inheritedIgnoreRules,
-		{
-			readFile: (uri) => fs.readFile(uri),
-			exists: (uri) => fs.exists(uri),
-		},
-	);
+	// The engine consumed the source root's own .gitignore at construction;
+	// every deeper directory folds when it is descended into (below), so the
+	// cascade is shallow-first deep-later exactly as git reads it.
 	const entries = await fs.readDirectory(directoryUri);
 	const children: CoggitTreeNode[] = [];
 
@@ -190,17 +175,7 @@ export async function buildDirectoryChildren(
 	)) {
 		const childSourceUri = joinUriPath(directoryUri, name);
 		const isDirectory = (type & FILE_TYPE_DIRECTORY) !== 0;
-		if (isIgnoredSourceStructureEntry(name, isDirectory)) {
-			continue;
-		}
-		if (
-			isIgnoredByGitignoreRules(
-				parent.root.projectRootUri,
-				ignoreRules,
-				childSourceUri,
-				isDirectory,
-			)
-		) {
+		if (await exclusion.excludes(childSourceUri, isDirectory)) {
 			continue;
 		}
 
@@ -210,7 +185,7 @@ export async function buildDirectoryChildren(
 					parent,
 					childSourceUri,
 					sourceRootUri,
-					ignoreRules,
+					exclusion,
 					fs,
 					options,
 				),
@@ -230,7 +205,7 @@ export async function buildFolderNode(
 	parent: CoggitTreeNode,
 	folderUri: UriComponents,
 	sourceRootUri: UriComponents,
-	inheritedIgnoreRules: Parameters<typeof loadGitignoreRules>[2],
+	exclusion: SourceExclusion,
 	fs: FileSystem,
 	options: BuildProjectSnapshotOptions = {},
 ): Promise<CoggitTreeNode> {
@@ -242,11 +217,12 @@ export async function buildFolderNode(
 	);
 	const cognitionStat = await fs.stat(cognitionUri);
 	const relativePath = toRelativeUriPath(sourceRootUri, folderUri);
+	await exclusion.foldDirectory(folderUri);
 	const children = await buildDirectoryChildren(
 		parentPlaceholder(parent, folderUri),
 		folderUri,
 		sourceRootUri,
-		inheritedIgnoreRules,
+		exclusion,
 		fs,
 		options,
 	);

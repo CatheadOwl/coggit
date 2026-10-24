@@ -1,0 +1,150 @@
+import {
+  createExclusionEngine,
+  PRESETS,
+  type ExclusionEngine,
+  type ExclusionIO,
+  type PresetName,
+} from '@catheadowl/pathscope';
+import type { FileSystem, UriComponents } from './interfaces';
+import type { CoggitWorkspaceRoot } from './types';
+import { joinUriPath, uriBasename, uriRelativePath } from './uri-utils';
+
+/**
+ * Source-tree exclusion over the shared pathscope engine.
+ *
+ * The walk that builds snapshots, fingerprints, and watcher feeds is
+ * coggit's own (async, `FileSystem`/URI-based, incremental) — it cannot ride
+ * a filesystem walker. This module bridges coggit's traversal to the
+ * pathscope decision core (createExclusionEngine): construction runs the
+ * gitignore inherited phase through the workspace `FileSystem`, and the two
+ * adjudication hooks mirror the engine contract —
+ *
+ *   excludes(uri, isDirectory) → false ⇒ descend ⇒ foldDirectory(uri) →
+ *   adjudicate the children (excludes(...) / fingerprint filters).
+ *
+ * Semantic change vs. the retired engines (gitignore.ts +
+ * sourceStructureIgnore.ts, 2026-10-24 adjudication): the hardcoded
+ * 23-entry list is gone. Cache trees ride the `caches` preset; colliding
+ * build/deps names (lib, vendor, build, dist, out, coverage, node_modules)
+ * ride the `build`/`deps` presets and are un-excludable by a named gitignore
+ * negation (`!lib/`) — source that legitimately lives in those directories
+ * is indexable again. A nested `.git` presence is the pathscope core
+ * boundary stone: vendored repository subtrees are truncated whole.
+ */
+
+/** Preset groups coggit mounts for source-tree exclusion (seam: pathscope exclusion floor). */
+export const COGGIT_SOURCE_PRESETS: readonly PresetName[] = ['vcs', 'deps', 'build', 'caches'];
+
+/**
+ * Directory names skipped by the config/cognition discovery walks — the
+ * mounted preset groups' directory entries, derived from the engine preset
+ * table (the retired sourceStructureIgnore name list's replacement).
+ */
+export const SOURCE_DISCOVERY_SKIP_DIRECTORIES: ReadonlySet<string> = new Set(
+  COGGIT_SOURCE_PRESETS.flatMap((name) => PRESETS[name].dirs ?? []),
+);
+
+/** VS Code recursive discovery exclude globs over the same preset directories. */
+export function sourceDiscoveryExcludeGlobPatterns(): string[] {
+  return [...SOURCE_DISCOVERY_SKIP_DIRECTORIES].map((name) => `**/${name}/**`);
+}
+
+/** Per-traversal exclusion adjudicator over one workspace root. */
+export interface SourceExclusion {
+  /** Adjudicate an entry below the source root (directories include the stone probe). */
+  excludes(uri: UriComponents, isDirectory: boolean): Promise<boolean>;
+  /**
+   * Fold a directory's `.gitignore` into the cascade (no-op when absent).
+   * Call exactly once per descended directory, before adjudicating its
+   * children; the source root's own `.gitignore` is consumed at construction.
+   */
+  foldDirectory(dirUri: UriComponents): Promise<void>;
+}
+
+/** POSIX path key for a URI inside the workspace root's universe. */
+function dirKeyOf(uri: UriComponents): string {
+  return uri.path.replace(/\/+$/, '');
+}
+
+/**
+ * Build the source-tree exclusion engine for a workspace root. The scan
+ * root is the source root; the gitignore inherited phase runs from the
+ * enclosing git root (found by probing `.git` upward through `fs`) down to
+ * the source root, so a project root `.gitignore` above the source root
+ * applies exactly as git would apply it.
+ */
+export async function createSourceExclusion(
+  root: CoggitWorkspaceRoot,
+  fs: FileSystem,
+): Promise<SourceExclusion> {
+  const scheme = root.sourceRootUri.scheme;
+  const authority = root.sourceRootUri.authority;
+  const toUri = (key: string): UriComponents => ({ scheme, authority, path: key, query: '', fragment: '' });
+  const rootKey = dirKeyOf(root.sourceRootUri);
+
+  // Tolerant IO, matching the pathscope node default (existsSync never
+  // throws, unreadable .gitignore reads as absent): the inherited-phase
+  // find-up probes every ancestor up to the universe's disk root, and some
+  // ancestor keys are not expressible in a given runtime's URI universe
+  // (win32 drive-root '/' under file URLs) — those probe as absent.
+  const io: ExclusionIO = {
+    exists: async (dirKey, name) => {
+      try {
+        return await fs.exists(joinUriPath(toUri(dirKey), ...name.split('/')));
+      } catch {
+        return false;
+      }
+    },
+    readGitignore: async (dirKey) => {
+      try {
+        const gitignoreUri = joinUriPath(toUri(dirKey), '.gitignore');
+        if (!(await fs.exists(gitignoreUri))) {
+          return null;
+        }
+        return await fs.readFile(gitignoreUri);
+      } catch {
+        return null;
+      }
+    },
+  };
+
+  // excludeDotEntries stays false (the retired engine's behavior): coggit
+  // indexes source trees, and dot entries are ordinary source here (the
+  // `.gitignore` files themselves, `.github/`, project dotfiles). Dot-tree
+  // junk is covered by the mounted presets (.git/.cache/...), not by a
+  // blanket dot category.
+  const engine: ExclusionEngine = await createExclusionEngine(rootKey, {
+    mountPresets: [...COGGIT_SOURCE_PRESETS],
+    excludeDotEntries: false,
+  }, io);
+
+  const stoneHit = async (dirKey: string): Promise<boolean> => {
+    for (const name of engine.stoneNames) {
+      if (await io.exists(dirKey, name)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  return {
+    async excludes(uri: UriComponents, isDirectory: boolean): Promise<boolean> {
+      const relative = uriRelativePath(root.sourceRootUri, uri);
+      if (relative === undefined || relative === '.') {
+        return false;
+      }
+      const relPath = relative.replace(/\\/g, '/');
+      if (!isDirectory) {
+        return !engine.admitFile(relPath);
+      }
+      return engine.excludeDirectory(uriBasename(uri), dirKeyOf(uri), await stoneHit(dirKeyOf(uri)));
+    },
+    async foldDirectory(dirUri: UriComponents): Promise<void> {
+      const key = dirKeyOf(dirUri);
+      if (key === rootKey) {
+        return;
+      }
+      engine.foldGitignore(key, await io.readGitignore(key));
+    },
+  };
+}

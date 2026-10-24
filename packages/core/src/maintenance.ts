@@ -8,7 +8,7 @@ import type {
 	UnboundCognitionEntry,
 } from './types';
 import { keyToCognitionPath } from './identity';
-import { isIgnoredSourceStructureEntry } from './sourceStructureIgnore';
+import { SOURCE_DISCOVERY_SKIP_DIRECTORIES } from './sourceExclusion';
 import { joinUriPath, uriRelativePath } from './uri-utils';
 export { detectMisplacedCognitionEntries } from './layout';
 
@@ -57,7 +57,7 @@ export async function detectStrayCognitionEntries(
 	const knownKeys = new Set(Object.keys(entries));
 	const resolved = discovery ?? await discoverCognitionEntries(fs, root.cognitionRootUri, {
 		sourceRootUri: root.sourceRootUri,
-		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
+		shouldSkipDirectory: (name) => SOURCE_DISCOVERY_SKIP_DIRECTORIES.has(name),
 	});
 
 	return [...resolved.values()]
@@ -77,7 +77,7 @@ export async function detectUnboundCognitionEntries(
 	const resolved = discovery ?? await discoverCognitionEntries(fs, root.cognitionRootUri, {
 		sourceRootUri: root.sourceRootUri,
 		checkSourceCandidates: true,
-		shouldSkipDirectory: (name) => isIgnoredSourceStructureEntry(name, true),
+		shouldSkipDirectory: (name) => SOURCE_DISCOVERY_SKIP_DIRECTORIES.has(name),
 	});
 
 	return [...resolved.values()]
@@ -91,7 +91,7 @@ export async function detectUnboundCognitionEntries(
 function hasIgnoredSourceStructureSegment(sourcePath: string): boolean {
 	const segments = sourcePath.replace(/\\/g, '/').split('/').filter(Boolean);
 	return segments.some((segment, index) =>
-		isIgnoredSourceStructureEntry(segment, index < segments.length - 1),
+		index < segments.length - 1 && SOURCE_DISCOVERY_SKIP_DIRECTORIES.has(segment),
 	);
 }
 

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 
 import type { ConfigProvider, UriComponents, WorkspaceFolderInfo } from '@coggit/core';
-import { isIgnoredSourceStructureEntry } from '@coggit/core/internal';
+import { SOURCE_DISCOVERY_SKIP_DIRECTORIES } from '@coggit/core/internal';
 import { pathToUriComponents } from './uri';
 
 const CONFIG_PATTERN = '**/.coggit/config.yaml';
@@ -116,7 +116,7 @@ async function collectDescendantConfigs(rootPath: string, results: Set<string>):
 }
 
 function shouldSkipDirectory(name: string): boolean {
-  return isIgnoredSourceStructureEntry(name, true);
+  return SOURCE_DISCOVERY_SKIP_DIRECTORIES.has(name);
 }
 
 async function exists(filePath: string): Promise<boolean> {

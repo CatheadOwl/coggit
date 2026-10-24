@@ -227,9 +227,9 @@ export { buildSnapshot } from './project';
 
 // ─── Internal-only surface (monorepo consumers via `@coggit/core/internal`) ───
 // These symbols are deliberately absent from `public.ts`: they are either
-// adapter/CLI-private (watch lease, registry implementation, gitignore rules,
-// source-structure ignore) or shared internal helpers not part of the stable
-// SDK contract.
+// adapter/CLI-private (watch lease, registry implementation, source
+// exclusion over the pathscope engine) or shared internal helpers not part
+// of the stable SDK contract.
 
 export { formatTimestamp, latestAcceptedTime } from './time';
 export {
@@ -243,18 +243,12 @@ export {
 } from './registry/index';
 export { InMemoryRegistryProvider } from './registry/inMemoryRegistryProvider';
 export {
-  GENERATED_SOURCE_STRUCTURE_DIRECTORY_NAMES,
-  generatedSourceStructureGlobExclude,
-  generatedSourceStructureGlobExcludePatterns,
-  isIgnoredSourceStructureEntry,
-} from './sourceStructureIgnore';
-export {
-  isIgnoredByGitignoreRules,
-  loadGitignoreRules,
-  type CoggitIgnoreRuleSet,
-  type FileReader,
-  __testing__ as gitignoreTesting,
-} from './gitignore';
+  COGGIT_SOURCE_PRESETS,
+  createSourceExclusion,
+  SOURCE_DISCOVERY_SKIP_DIRECTORIES,
+  sourceDiscoveryExcludeGlobPatterns,
+  type SourceExclusion,
+} from './sourceExclusion';
 export { __testing__ as statusTesting } from './status';
 export { RESOLVE_ERROR_CODES } from './operations';
 export { joinUriPath } from './uri-utils';
