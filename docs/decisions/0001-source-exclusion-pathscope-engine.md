@@ -78,8 +78,8 @@ mainstream precedence canon verified against ripgrep's ignore crate
 | constructed lib/vendor workspace | bug-fix proof | old misses `lib/engine.ts` + `vendor/adapter.ts` despite `!lib/`/`!vendor/`; new indexes both |
 
 The vendored-repo truncation matches the accepted M3.1/M3.2 precedents
-(any-nav DEC-0023 4c: dsh-extra `deepseek-harness/`; UKP ADR-0029: vendored
-`codex/`) — vendored repositories are foreign territory. Within this
+(any-nav DEC-0023 4c: dsh-extra `deepseek-harness/`; UKP's vendored-codex
+decision 0029) — vendored repositories are foreign territory. Within this
 workspace the cognition mirror for the truncated subtree
 (`codebase_cognition/coggit/**`) loses its source pairing; pointing coggit
 at the submodule as its own workspace (it is its own repository) is the
