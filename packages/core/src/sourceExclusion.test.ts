@@ -121,7 +121,7 @@ suite('source exclusion (pathscope engine)', () => {
 		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/dist'), true), true, 'non-negated preset still excluded');
 	});
 
-	test('nested .git presence truncates the whole vendored subtree (core boundary stone)', async () => {
+	test('nested .git descends under the scanner alignment face (declaration-as-registration)', async () => {
 		const fs = new MockFileSystem();
 		fs.addDirectory('/workspace/project');
 		fs.addDirectory('/workspace/project/src');
@@ -131,9 +131,27 @@ suite('source exclusion (pathscope engine)', () => {
 		fs.addFile('/workspace/project/src/vendored-lib/inner/a.ts');
 
 		const exclusion = await createSourceExclusion(mkRoot(), fs);
-		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib'), true), true);
-		// The source root itself never truncates via the stone, even though it
-		// may contain .git indirectly — the guard is on the root key.
+		// 2026-10-30 adjudication (decision 0002): the source-root declaration
+		// is the registration — nested repositories descend, report-not-cut.
+		// These assertions also pin the bridge's array-form discipline: the
+		// engine's boolean stoneHit truncates unconditionally under every
+		// face, so a bridge regression back to boolean turns them red.
+		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib'), true), false);
+		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib/inner'), true), false);
+		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib/inner/a.ts'), false), false);
+		// A deeper embedded .git descends too — any depth, the depth the
+		// exempt key cannot express.
+		fs.addDirectory('/workspace/project/src/vendored-lib/inner/nested-repo');
+		fs.addFile('/workspace/project/src/vendored-lib/inner/nested-repo/.git', 'gitdir: ../../.git/worktrees/y\n');
+		fs.addFile('/workspace/project/src/vendored-lib/inner/nested-repo/b.ts');
+		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib/inner/nested-repo'), true), false);
+		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib/inner/nested-repo/b.ts'), false), false);
+		// The gitdir pointer is a FILE — the vcs preset's name semantics are
+		// directory-only, so it is admitted like any dotfile (the retired
+		// engine's behavior; a directory named .git keeps its vcs exclusion).
+		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src/vendored-lib/.git'), false), false);
+		// The source root itself never truncates via the stone — the guard is
+		// on the root key.
 		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src'), true), false);
 	});
 

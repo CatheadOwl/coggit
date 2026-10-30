@@ -6,6 +6,8 @@ description: Source-tree exclusion swaps to the shared pathscope engine — the 
 
 - Status: accepted
 - Date: 2026-10-24
+- Amended by: [0002 — the scanner alignment face](0002-source-scope-scanner-alignment.md)
+  suspends the nested-.git truncation (2026-10-30); everything else here stands
 - Scope: `@coggit/core` traversal (snapshot tree, path-ignore walks, folder
   fingerprints, discovery scans), `@coggit/runtime-node` config discovery,
   the VS Code adapter's `files.exclude` merge

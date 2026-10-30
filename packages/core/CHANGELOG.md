@@ -17,8 +17,11 @@ All notable changes to `@coggit/core` are documented here. Format follows
   `dist`, `out`, `coverage`, `node_modules`) ride the `build`/`deps` presets
   and are un-excludable by a named gitignore negation (`!lib/`) — projects
   whose source legitimately lives in those directories are indexable again
-  (the zero-escape-hatch bug). A nested `.git` presence is the engine's core
-  boundary stone: vendored repository subtrees truncate whole. Dot entries
+  (the zero-escape-hatch bug). Nested repositories descend at any depth
+  (2026-10-30 adjudication, decision 0002): the bridge mounts the engine's
+  scanner alignment face — the source-root declaration is the registration,
+  `.git` hits are report-not-cut (per-stone hit names, never a boolean),
+  and a nested `.gitignore` is rules, not territory. Dot entries
   stay indexable (no blanket dot category; the retired engine's behavior).
   gitignore rules above the source root now inherit down from the enclosing
   git root, as git reads them. `files.exclude` merging on the VS Code side

@@ -28,8 +28,12 @@ import { joinUriPath, uriBasename, uriRelativePath } from './uri-utils';
  * build/deps names (lib, vendor, build, dist, out, coverage, node_modules)
  * ride the `build`/`deps` presets and are un-excludable by a named gitignore
  * negation (`!lib/`) — source that legitimately lives in those directories
- * is indexable again. A nested `.git` presence is the pathscope core
- * boundary stone: vendored repository subtrees are truncated whole.
+ * is indexable again. Nested repositories descend at any depth (2026-10-30
+ * adjudication, decision 0002): coggit's source scope is declaration-driven
+ * — the source-root declaration IS the registration — so the engine mounts
+ * the scanner alignment face; a `.git` hit is report-not-cut, a nested
+ * `.gitignore` is rules, not territory, and `.git` entries themselves keep
+ * their `vcs`-preset name exclusion.
  */
 
 /** Preset groups coggit mounts for source-tree exclusion (seam: pathscope exclusion floor). */
@@ -113,18 +117,27 @@ export async function createSourceExclusion(
   // `.gitignore` files themselves, `.github/`, project dotfiles). Dot-tree
   // junk is covered by the mounted presets (.git/.cache/...), not by a
   // blanket dot category.
+  // The scanner alignment face (2026-10-30, decision 0002): the source-root
+  // declaration is the registration — nested repositories participate
+  // (rg/fd family), report-not-cut.
   const engine: ExclusionEngine = await createExclusionEngine(rootKey, {
     mountPresets: [...COGGIT_SOURCE_PRESETS],
     excludeDotEntries: false,
+    alignment: 'scanner',
   }, io);
 
-  const stoneHit = async (dirKey: string): Promise<boolean> => {
+  // Per-stone hit NAMES, never a boolean (engine contract): under the
+  // scanner face the core-stone cut is suspended only in the array form —
+  // the boolean form truncates unconditionally under every face. The names
+  // double as report-not-cut metadata (a `.git` hit names a nested repo).
+  const stoneHits = async (dirKey: string): Promise<string[]> => {
+    const hits: string[] = [];
     for (const name of engine.stoneNames) {
       if (await io.exists(dirKey, name)) {
-        return true;
+        hits.push(name);
       }
     }
-    return false;
+    return hits;
   };
 
   return {
@@ -137,7 +150,7 @@ export async function createSourceExclusion(
       if (!isDirectory) {
         return !engine.admitFile(relPath);
       }
-      return engine.excludeDirectory(uriBasename(uri), dirKeyOf(uri), await stoneHit(dirKeyOf(uri)));
+      return engine.excludeDirectory(uriBasename(uri), dirKeyOf(uri), await stoneHits(dirKeyOf(uri)));
     },
     async foldDirectory(dirUri: UriComponents): Promise<void> {
       const key = dirKeyOf(dirUri);
