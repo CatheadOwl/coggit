@@ -3,7 +3,9 @@ import {
   type AddOperationResult,
   type CoggitOperationAction,
   type ResolveOperationResult,
-  renderStatusAgentInspectionText,
+  projectStatusAgentPresentation,
+  type StatusAgentPresentation,
+  renderStatusAgentPresentation,
   type SnapshotOperationResult,
   type StatusOperationResult,
 } from '@coggit/core';
@@ -21,7 +23,9 @@ export function renderStatusOperationResult(
 ): string {
   // Use inspection-based rendering when available.
   if (result.inspection) {
-    return renderStatusAgentInspectionText(result.inspection);
+    return renderStatusAgentPresentation(withCliHandbookAddressing(
+      projectStatusAgentPresentation(result.inspection),
+    ));
   }
 
   // Fallback for not-found results (no node, no inspection).
@@ -67,7 +71,16 @@ export function renderAddOperationResult(result: AddOperationResult): string {
   }
 
   const action = result.created ? 'Created' : 'Already exists';
-  return `${action} ${result.kind} cognition: ${result.cognitionPath}`;
+  const lines = [`${action} ${result.kind} cognition: ${result.cognitionPath}`];
+  // The CLI spelling of the add surface's handbook hint (MCP emits the same
+  // guidance as the `coggit://handbook/<kind>` resource): the freshly created
+  // document is template material — the handbook says what to write into it.
+  if (result.handbookId) {
+    lines.push(
+      `Next: read coggit handbook ${result.handbookId}, then complete the paired cognition document with design intent/contracts/boundaries rather than implementation summaries.`,
+    );
+  }
+  return lines.join('\n');
 }
 
 export function renderResolveOperationResult(result: ResolveOperationResult): string {
@@ -98,6 +111,31 @@ function recheckCommandText(actions: readonly CoggitOperationAction[]): string {
     }
   }
   return '';
+}
+
+/**
+ * CLI surface addressing for handbook-bearing actions: core's action legend
+ * describes the remediation ("Read leaf handbook…") with zero surface
+ * spellings; the CLI names the command that prints the handbook — the same
+ * re-voicing seam as `recheckCommandText` and the MCP `resource_link`.
+ */
+const CLI_ACTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
+  'sync-leaf':
+    'Read the leaf handbook (coggit handbook leaf) and sync cognition with source.',
+  'sync-skeleton':
+    'Read the skeleton handbook (coggit handbook skeleton) and sync folder README.',
+};
+
+function withCliHandbookAddressing(
+  presentation: StatusAgentPresentation,
+): StatusAgentPresentation {
+  return {
+    ...presentation,
+    actionLegend: presentation.actionLegend.map((entry) => ({
+      ...entry,
+      description: CLI_ACTION_DESCRIPTIONS[entry.tag] ?? entry.description,
+    })),
+  };
 }
 
 function hasSnapshotTreeOptions(options: SnapshotTreeTextOptions): boolean {

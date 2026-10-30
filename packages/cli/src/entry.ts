@@ -1,4 +1,9 @@
-import { getCoggitSystemPrompt, type CoggitSystemPromptKind } from '@coggit/core';
+import {
+  getCoggitSystemPrompt,
+  STANDARD_SYSTEM_PROMPT_SEGMENTS,
+  type CoggitSystemPromptKind,
+  type StandardPromptSegmentKey,
+} from '@coggit/core';
 
 import { UserFacingError } from './status';
 
@@ -27,6 +32,20 @@ export const CLI_STANDARD_ORIENTATION_SENTENCE =
   'Orient with `coggit status`: the header names the source and cognition roots, and `coggit status <path>` names a file\'s paired cognition document.';
 
 /**
+ * The CLI host's spellings for the `standard` form — the same per-host access
+ * seam `@coggit/mcp` mounts at its `instructions` (it re-voices the delegation
+ * segment to the `coggit://handbook/<kind>` resource): core's body references
+ * "handbook guidance" with zero surface spellings, so the CLI names the
+ * command that prints it. Every other segment passes through byte-equal to
+ * core; `minimal` has no delegation segment, so the override is standard-only
+ * by construction.
+ */
+const CLI_SEGMENT_OVERRIDES: Readonly<Partial<Record<StandardPromptSegmentKey, string>>> = {
+  delegation:
+    'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant `coggit handbook <kind>` guidance.',
+};
+
+/**
  * Print-side of the prompt-form channel for CLI agent hosts: access
  * sentences + form (access is a host axis, orthogonal to kind — the entry
  * sentence gives minimal's "Use it" its referent; the orientation sentence
@@ -52,7 +71,16 @@ export function runEntry(
     kind === 'standard'
       ? [CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE]
       : [CLI_ENTRY_SENTENCE];
-  const composite = [...accessLines, prompt.content].join('\n');
+  // The standard body is re-derived from the segments so the CLI overrides
+  // apply (the joined form is byte-equal to core's content for untouched
+  // segments); minimal is a single content blob with no segments to re-voice.
+  const body =
+    kind === 'standard'
+      ? STANDARD_SYSTEM_PROMPT_SEGMENTS.map(
+          (segment) => CLI_SEGMENT_OVERRIDES[segment.key] ?? segment.text,
+        ).join('\n')
+      : prompt.content;
+  const composite = [...accessLines, body].join('\n');
   if (format === 'raw') {
     return composite;
   }

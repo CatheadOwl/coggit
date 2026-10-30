@@ -21,6 +21,9 @@ suite('CLI operation DTO surfacing', () => {
     };
     const text = renderAddOperationResult(result);
     assert.match(text, /Created leaf cognition: src\/main\.ts\.md/);
+    // The add surface carries the CLI spelling of the handbook hint (parity
+    // with the MCP add tool's `Next: read coggit://handbook/<kind>` line).
+    assert.match(text, /Next: read coggit handbook leaf, then complete the paired cognition document/);
     assert.doesNotMatch(text, /Next: verify/);
   });
 
@@ -299,6 +302,9 @@ suite('CLI operation DTO surfacing', () => {
     assert.match(text, /Legend:/);
     assert.match(text, /Actions:/);
     assert.match(text, /WARN \| stale-cognition \| source=src\/stale\.ts \| actions=sync-leaf,resolve/);
+    // Handbook-bearing action descriptions carry the CLI spelling — core's
+    // spelling-free text never reaches this surface as-is.
+    assert.match(text, /sync-leaf\s+Read the leaf handbook \(coggit handbook leaf\) and sync cognition with source\./);
     assert.doesNotMatch(text, /Suggested actions:/);
     assert.doesNotMatch(text, /Subtree triage:/);
   });

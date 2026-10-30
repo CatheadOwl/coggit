@@ -1,5 +1,8 @@
 import * as assert from 'node:assert';
-import { getCoggitSystemPrompt } from '@coggit/core';
+import {
+  getCoggitSystemPrompt,
+  STANDARD_SYSTEM_PROMPT_SEGMENTS,
+} from '@coggit/core';
 
 import { CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE, runEntry } from './entry';
 
@@ -8,7 +11,17 @@ function expectedComposite(kind: 'minimal' | 'standard'): string {
     kind === 'standard'
       ? [CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE]
       : [CLI_ENTRY_SENTENCE];
-  return [...accessLines, getCoggitSystemPrompt(kind).content].join('\n');
+  // Mirrors runEntry's body derivation: the standard body re-derives from the
+  // segments (CLI delegation override applies); minimal passes through.
+  const body =
+    kind === 'standard'
+      ? STANDARD_SYSTEM_PROMPT_SEGMENTS.map((segment) =>
+          segment.key === 'delegation'
+            ? 'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant `coggit handbook <kind>` guidance.'
+            : segment.text,
+        ).join('\n')
+      : getCoggitSystemPrompt(kind).content;
+  return [...accessLines, body].join('\n');
 }
 
 suite('CLI entry', () => {
@@ -51,5 +64,27 @@ suite('CLI entry', () => {
     assert.match(runEntry('standard', 'raw'), /coggit status/);
     // Minimal keeps entry-only access (owner ruling 2026-10-08).
     assert.doesNotMatch(runEntry('minimal', 'raw'), /coggit status/);
+  });
+
+  test('the standard delegation segment is re-voiced with the CLI handbook spelling; every other segment stays core-owned', () => {
+    const body = runEntry('standard', 'raw').split('\n').slice(2).join('\n');
+    const coreBody = getCoggitSystemPrompt('standard').content;
+    assert.match(body, /`coggit handbook <kind>` guidance/);
+    // Only the delegation segment differs from the universal body — the CLI
+    // adds spellings at its access seam, it never re-words core text.
+    const bodyLines = body.split('\n');
+    const coreLines = coreBody.split('\n');
+    assert.strictEqual(bodyLines.length, coreLines.length);
+    const differing = bodyLines.filter((line, index) => line !== coreLines[index]);
+    assert.deepStrictEqual(differing, [
+      'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant `coggit handbook <kind>` guidance.',
+    ]);
+    // Minimal has no delegation segment to re-voice: it stays byte-equal to
+    // core and carries no handbook spelling.
+    assert.strictEqual(
+      runEntry('minimal', 'raw').split('\n').slice(1).join('\n'),
+      getCoggitSystemPrompt('minimal').content,
+    );
+    assert.doesNotMatch(runEntry('minimal', 'raw'), /coggit handbook/);
   });
 });

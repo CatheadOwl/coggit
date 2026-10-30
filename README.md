@@ -43,7 +43,7 @@ Legend:
 WARN  stale-cognition  Cognition is out of date with source.
 
 Actions:
-sync-leaf  Read leaf handbook and sync cognition with source.
+sync-leaf  Read the leaf handbook (coggit handbook leaf) and sync cognition with source.
 resolve    Accept the reviewed pair after sync.
 
 Own issues: 1
