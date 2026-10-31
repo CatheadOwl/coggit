@@ -55,8 +55,8 @@ as rules; git itself descends into *registered* submodules.
   diagnostics surface (report-not-cut consumption); surfacing them in
   snapshot output is deliberately out of scope (agent-visible face, needs a
   release-acceptance packet).
-- Supply: consumes `@catheadowl/pathscope` `alignment` (post-0.1.0, `link:`
-  window, dist rebuilt 2026-10-30); rides the same link until the registry
-  pin train (PKG-11).
+- Supply: consumes `@catheadowl/pathscope` `alignment` (post-0.1.0); the
+  `link:` window closed at the registry pin train — `^0.1.1`
+  (published 2026-10-31).
 - Amends decision 0001's core-stone sentence; everything else in 0001
   stands.

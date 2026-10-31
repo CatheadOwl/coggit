@@ -36,10 +36,11 @@ mainstream precedence canon verified against ripgrep's ignore crate
    adjudicates through pathscope's composable decision core
    (`createExclusionEngine`) behind `createSourceExclusion`, which runs the
    engine's construction-time inherited phase and per-directory probes over
-   coggit's async `FileSystem`. Supply is a pnpm `link:` dependency on the
-   local pathscope checkout (junction; the any-nav DEC-0023 form) during
-   the transition window; the closing train swaps to a registry pin. The
-   published bundle inlines the engine's CJS face.
+   coggit's async `FileSystem`. Supply is a registry dependency on
+   `@catheadowl/pathscope` `^0.1.1` (0.1.1 published 2026-10-31; the
+   closing train closed the `link:` transition window, which rode the
+   local checkout as a pnpm junction). The published bundle inlines the
+   engine's CJS face.
 2. **List unmounts into mounted presets.** coggit mounts `vcs` / `deps` /
    `build` / `caches`. Cache trees (the uncontentious subset of the old
    list) ride `caches`; colliding build/deps names ride `build`/`deps` and
@@ -89,11 +90,10 @@ mitigation, mirroring any-nav's drill-down route.
 
 - Install closure of `@coggit/core` grows to `@catheadowl/pathscope` and
   its transitive `ignore` / `fdir` / `find-up` (all zero install scripts,
-  verified 2026-10-24). The published bundle inlines them (esbuild), so the
-  runtime install set is the link/junction until the closing train.
-- `verify:publish-face` is red on purpose during the transition (PKG-11
-  `link:` guard, the UKP pack-audit form); it returns green when the spec
-  becomes a registry pin.
+  verified 2026-10-24). The published bundle inlines them (esbuild); the
+  runtime install set resolves from the registry (pathscope 0.1.1).
+- `verify:publish-face` (PKG-11 `link:` guard, the UKP pack-audit form) is
+  green again with the registry pin (`^0.1.1`).
 - Case absorption: the retired matcher's corpus diffed against the pathscope
   fixtures produced fixture 32 (two-level nested rule base, git-oracle);
   everything else was already covered (01/09/11/14/15/17).
@@ -107,8 +107,6 @@ mitigation, mirroring any-nav's drill-down route.
   drill-down route (scan the nested repo as its own workspace) does not
   fit — escalate to the pathscope seam (an opt-out key would be a
   registered extension there), do not fork the semantics locally.
-- The `link:` transition breaks cross-machine/CI installs before the
-  closing train — swap to the registry pin early.
 - The gitignore inheritance above the source root misfires on a real
   workspace (an outer repo's rules wrongly hiding project source) with no
   git-native remedy — same escalation path (engine-side hatch), not a

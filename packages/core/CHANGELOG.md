@@ -28,8 +28,8 @@ All notable changes to `@coggit/core` are documented here. Format follows
   maps `enabled === true` entries to exclude patterns (the policy channel);
   the built-in floor is the engine's mounted presets — the old
   "add-only, never un-exclude" limitation dissolves via the gitignore hatch.
-  Supply form: `link:` dependency on the local pathscope checkout during the
-  transition window (junction; swap to a registry pin at the closing train).
+  Supply form: registry dependency on `@catheadowl/pathscope` `^0.1.1`
+  (0.1.1, published 2026-10-31 — the `link:` transition window closed).
 
 ## [0.4.0] - 2026-10-17
 

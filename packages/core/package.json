@@ -46,6 +46,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@catheadowl/pathscope": "link:../../../../../pathscope"
+    "@catheadowl/pathscope": "^0.1.1"
   }
 }
