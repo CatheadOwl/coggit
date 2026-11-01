@@ -15,8 +15,8 @@ importers:
         specifier: link:../../packages/core
         version: link:../../packages/core
       '@coggit/runtime-node':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
     devDependencies:
       '@catheadowl/dsh-eval':
         specifier: ^0.4.1
@@ -42,8 +42,8 @@ packages:
     peerDependencies:
       '@deepseek-ai/dsh-llm': '*'
 
-  '@coggit/runtime-node@0.4.0':
-    resolution: {integrity: sha512-LCSZolxVUS9mHY0uheHo92ZiRMFQPw0XG2gDnyLcoa+pMqmYUmGrLGurI8G9zeVTYMDUvikEw2j5vwhw6tGR4w==}
+  '@coggit/runtime-node@0.5.0':
+    resolution: {integrity: sha512-RB/+ybBw9tB21H8DVqiu9Yyfw203XH1TMqgD4u2Og7QIP0VuODi2ngJxEYx+YFnV3QDyy12v79BEGRaBZIhtyA==}
     engines: {node: '>=18'}
 
   '@parcel/watcher-android-arm64@2.6.0':
@@ -182,7 +182,7 @@ snapshots:
 
   '@catheadowl/dsh-eval@0.4.1': {}
 
-  '@coggit/runtime-node@0.4.0':
+  '@coggit/runtime-node@0.5.0':
     dependencies:
       '@coggit/core': link:../../packages/core
       '@parcel/watcher': 2.6.0
