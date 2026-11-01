@@ -46,7 +46,7 @@
     "typescript-eslint": "^8.61.1",
     "yaml": "^2.8.1",
     "zod": "^4.4.3",
-    "@catheadowl/pathscope": "^0.1.1"
+    "@catheadowl/pathscope": "^0.2.0"
   },
   "overrides": {
     "diff": "^8.0.4",

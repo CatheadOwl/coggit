@@ -3,6 +3,32 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Added
+
+- Point-query exclusion probe (`explainSourcePath`): adjudicates one
+  source-root-relative path via `@catheadowl/pathscope`'s `explainScopePath`
+  (0.2.0), returning the verdict plus the hit chain (preset name, gitignore
+  layer anchor, stone hits) and the un-exclude projection. The engine options
+  are the one constant the walk hooks and the probe both mount — probe
+  verdicts cannot drift from walk verdicts. File-scheme roots only; remote
+  schemes return `null` (the engine-level IO-injection face is a registered
+  pathscope exit).
+- Status misses carry an exclusion diagnosis: `coggit status <path>` on a
+  missed path under a file-scheme project source root explains why the path
+  is invisible to the scan (`Excluded from the scan scope of <id>: yes` /
+  hit chain / `un-exclude:` action line) instead of a bare not-found. A path
+  outside every scope, a non-file root, or any probe failure keeps the plain
+  miss — the diagnosis never masks the miss. Output wording adjudicated in
+  the 2026-11-01 release-acceptance packet.
+
+### Changed
+
+- `@catheadowl/pathscope` pins `^0.2.0` (the probe release; additive over
+  0.1.1 — the walk face is unchanged, verified by the full suite on the
+  registry build).
+
 ## [0.5.0] - 2026-11-01
 
 ### Changed
