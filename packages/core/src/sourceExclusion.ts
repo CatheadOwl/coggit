@@ -1,13 +1,16 @@
 import {
   createExclusionEngine,
+  explainScopePath,
   PRESETS,
   type ExclusionEngine,
   type ExclusionIO,
+  type ExplanationResult,
   type PresetName,
+  type ScopeOptions,
 } from '@catheadowl/pathscope';
 import type { FileSystem, UriComponents } from './interfaces';
 import type { CoggitWorkspaceRoot } from './types';
-import { joinUriPath, uriBasename, uriRelativePath } from './uri-utils';
+import { joinUriPath, uriBasename, uriRelativePath, uriToExternalPath } from './uri-utils';
 
 /**
  * Source-tree exclusion over the shared pathscope engine.
@@ -65,6 +68,43 @@ export interface SourceExclusion {
   foldDirectory(dirUri: UriComponents): Promise<void>;
 }
 
+/**
+ * Engine options every coggit adjudication face mounts — the walk hooks and
+ * the point-query probe replay the same configuration, so a probe verdict can
+ * never drift from what a walk would decide (consistency by construction,
+ * one shared constant).
+ */
+const COGGIT_ENGINE_OPTIONS: ScopeOptions = {
+  mountPresets: [...COGGIT_SOURCE_PRESETS],
+  excludeDotEntries: false,
+  alignment: 'scanner',
+};
+
+/**
+ * Point-query probe: adjudicate one source-root-relative path against the
+ * same engine configuration a walk mounts, returning the verdict plus the
+ * hit chain (which preset / which gitignore layer / which stone decided) and
+ * the explicit-pierce projection. This is the diagnostics half of the
+ * exclusion seam — the "why is this path invisible" answer for status-style
+ * queries about paths that never entered an index (nonexistent paths
+ * adjudicate hypothetically, exactly the status-query shape).
+ *
+ * File-scheme roots only: the probe is pathscope's self-contained replay
+ * over the node filesystem. Remote/memfs roots return `null` — the
+ * engine-level reuse face (IO injection) is a registered additive exit on
+ * the pathscope side; until it lands, the probe covers local roots and
+ * callers degrade to the plain not-found presentation.
+ */
+export async function explainSourcePath(
+  root: CoggitWorkspaceRoot,
+  relPath: string,
+): Promise<ExplanationResult | null> {
+  if (root.sourceRootUri.scheme !== 'file') {
+    return null;
+  }
+  return explainScopePath(uriToExternalPath(root.sourceRootUri), relPath, COGGIT_ENGINE_OPTIONS);
+}
+
 /** POSIX path key for a URI inside the workspace root's universe. */
 function dirKeyOf(uri: UriComponents): string {
   return uri.path.replace(/\/+$/, '');
@@ -112,19 +152,13 @@ export async function createSourceExclusion(
     },
   };
 
-  // excludeDotEntries stays false (the retired engine's behavior): coggit
-  // indexes source trees, and dot entries are ordinary source here (the
-  // `.gitignore` files themselves, `.github/`, project dotfiles). Dot-tree
-  // junk is covered by the mounted presets (.git/.cache/...), not by a
-  // blanket dot category.
-  // The scanner alignment face (2026-10-30, decision 0002): the source-root
-  // declaration is the registration — nested repositories participate
+  // The engine options themselves live in COGGIT_ENGINE_OPTIONS (shared
+  // with the point-query probe): excludeDotEntries false (the retired
+  // engine's behavior — dot entries are ordinary source here), and the
+  // scanner alignment face (2026-10-30, decision 0002) — the source-root
+  // declaration is the registration, nested repositories participate
   // (rg/fd family), report-not-cut.
-  const engine: ExclusionEngine = await createExclusionEngine(rootKey, {
-    mountPresets: [...COGGIT_SOURCE_PRESETS],
-    excludeDotEntries: false,
-    alignment: 'scanner',
-  }, io);
+  const engine: ExclusionEngine = await createExclusionEngine(rootKey, COGGIT_ENGINE_OPTIONS, io);
 
   // Per-stone hit NAMES, never a boolean (engine contract): under the
   // scanner face the core-stone cut is suspended only in the array form —

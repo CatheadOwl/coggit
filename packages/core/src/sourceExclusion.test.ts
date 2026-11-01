@@ -241,3 +241,161 @@ suite('source exclusion (pathscope engine)', () => {
 		assert.strictEqual(await exclusion.excludes(mkUri('/workspace/project/src'), true), false, 'the source root itself');
 	});
 });
+
+import * as fsReal from 'node:fs';
+import * as os from 'node:os';
+import * as nodePath from 'node:path';
+import { explainSourcePath } from './sourceExclusion';
+
+suite('source exclusion point-query probe (explainScopePath bridge)', () => {
+	// Self-contained tree FS: the first suite's MockFileSystem lives inside
+	// that suite's scope, and this suite only needs exists/readFile over the
+	// real-path keys of one physical tree.
+	class ProbeTreeFileSystem implements FileSystem {
+		private entries = new Map<string, { isDirectory: boolean; content?: string }>();
+
+		addFile(path: string, content = ''): void {
+			this.entries.set(path, { isDirectory: false, content });
+		}
+
+		addDirectory(path: string): void {
+			this.entries.set(path, { isDirectory: true });
+		}
+
+		async stat(uri: UriComponents) {
+			const e = this.entries.get(uri.path);
+			return e ? { isDirectory: e.isDirectory, mtimeMs: 1000 } : undefined;
+		}
+
+		async readDirectory(): Promise<Array<[string, number]>> {
+			return [];
+		}
+
+		async readFile(uri: UriComponents): Promise<string> {
+			const e = this.entries.get(uri.path);
+			if (!e || e.isDirectory) {
+				throw new Error('ENOENT');
+			}
+			return e.content ?? '';
+		}
+
+		async exists(uri: UriComponents): Promise<boolean> {
+			return this.entries.has(uri.path);
+		}
+
+		async writeFile(): Promise<void> {}
+		async createDirectory(): Promise<void> {}
+		async delete(): Promise<void> {}
+	}
+
+	function toUriPath(nativePath: string): string {
+		return nativePath.replace(/\\/g, '/');
+	}
+
+	function realRoot(srcDir: string, scheme = 'file'): CoggitWorkspaceRoot {
+		const uri = scheme === 'file'
+			? { scheme: 'file', authority: '', path: toUriPath(srcDir), query: '', fragment: '' }
+			: { scheme, authority: 'mem', path: '/', query: '', fragment: '' };
+		return {
+			id: 'probe-root',
+			label: 'probe',
+			workspaceFolder: { uri, name: 'probe', index: 0 },
+			configUri: uri,
+			projectRootUri: uri,
+			sourceRootUri: uri,
+			cognitionRootUri: uri,
+		};
+	}
+
+	test('probe verdicts agree with the walk hooks over the same physical tree', async () => {
+		const tmp = fsReal.mkdtempSync(nodePath.join(os.tmpdir(), 'coggit-probe-'));
+		try {
+			const srcDir = nodePath.join(tmp, 'src');
+			fsReal.mkdirSync(nodePath.join(srcDir, 'node_modules', 'pkg'), { recursive: true });
+			fsReal.writeFileSync(nodePath.join(srcDir, 'node_modules', 'pkg', 'index.js'), '');
+			fsReal.mkdirSync(nodePath.join(srcDir, 'lib'));
+			fsReal.writeFileSync(nodePath.join(srcDir, '.gitignore'), '!lib/\n');
+			fsReal.writeFileSync(nodePath.join(srcDir, 'lib', 'engine.ts'), '');
+			fsReal.writeFileSync(nodePath.join(srcDir, 'top.ts'), '');
+
+			// The walk side sees the same physical tree through the mock (keys = real paths).
+			const fs = new ProbeTreeFileSystem();
+			fs.addDirectory(toUriPath(srcDir));
+			fs.addFile(toUriPath(nodePath.join(srcDir, '.gitignore')), '!lib/\n');
+			fs.addDirectory(toUriPath(nodePath.join(srcDir, 'node_modules')));
+			fs.addDirectory(toUriPath(nodePath.join(srcDir, 'node_modules', 'pkg')));
+			fs.addFile(toUriPath(nodePath.join(srcDir, 'node_modules', 'pkg', 'index.js')));
+			fs.addDirectory(toUriPath(nodePath.join(srcDir, 'lib')));
+			fs.addFile(toUriPath(nodePath.join(srcDir, 'lib', 'engine.ts')));
+			fs.addFile(toUriPath(nodePath.join(srcDir, 'top.ts')));
+
+			const root = realRoot(srcDir);
+			const exclusion = await createSourceExclusion(root, fs);
+			await exclusion.foldDirectory(root.sourceRootUri);
+
+			const cases: Array<{ rel: string; isDir: boolean }> = [
+				{ rel: 'top.ts', isDir: false },
+				{ rel: 'node_modules', isDir: true },
+				{ rel: 'node_modules/pkg/index.js', isDir: false },
+				{ rel: 'lib', isDir: true },
+				{ rel: 'lib/engine.ts', isDir: false },
+			];
+			for (const { rel, isDir } of cases) {
+				const walkVerdict = await exclusion.excludes(
+					{ scheme: 'file', authority: '', path: `${toUriPath(srcDir)}/${rel}`, query: '', fragment: '' },
+					isDir,
+				);
+				const probe = await explainSourcePath(root, isDir ? `${rel}/` : rel);
+				assert.ok(probe, `probe answers for ${rel}`);
+				assert.strictEqual(probe!.excluded, walkVerdict, `probe agrees with walk on ${rel}`);
+			}
+		} finally {
+			fsReal.rmSync(tmp, { recursive: true, force: true });
+		}
+	});
+
+	test('hitChain attributes preset hits and reports the pierce projection', async () => {
+		const tmp = fsReal.mkdtempSync(nodePath.join(os.tmpdir(), 'coggit-probe-'));
+		try {
+			const srcDir = nodePath.join(tmp, 'src');
+			fsReal.mkdirSync(srcDir, { recursive: true });
+			fsReal.mkdirSync(nodePath.join(srcDir, 'node_modules'));
+			fsReal.writeFileSync(nodePath.join(srcDir, 'node_modules', 'x.js'), '');
+
+			const root = realRoot(srcDir);
+			const probe = await explainSourcePath(root, 'node_modules/x.js');
+			assert.ok(probe);
+			assert.strictEqual(probe!.excluded, true);
+			// A file under an excluded ancestor is a structural answer: the
+			// verdict was made at the directory (the prune IS the answer), and
+			// the hit chain attributes it to the excluded ancestor.
+			assert.strictEqual(probe!.structural, true);
+			const presetHit = probe!.hitChain.find((h) => 'presetName' in h && h.presetName === 'deps');
+			assert.ok(presetHit, 'hit chain names the deps preset');
+			assert.strictEqual(presetHit!.path, 'node_modules', 'the excluded ancestor carries the verdict');
+			// Preset hits stay pierceable: explicit naming is the terminal include.
+			assert.strictEqual(probe!.explicit.pierceable, true);
+			assert.strictEqual(probe!.explicit.blockers.length, 0);
+		} finally {
+			fsReal.rmSync(tmp, { recursive: true, force: true });
+		}
+	});
+
+	test('nonexistent paths adjudicate hypothetically; non-file schemes return null', async () => {
+		const tmp = fsReal.mkdtempSync(nodePath.join(os.tmpdir(), 'coggit-probe-'));
+		try {
+			const srcDir = nodePath.join(tmp, 'src');
+			fsReal.mkdirSync(srcDir, { recursive: true });
+
+			const root = realRoot(srcDir);
+			const probe = await explainSourcePath(root, 'never/created/but/named.ts');
+			assert.ok(probe);
+			assert.strictEqual(probe!.excluded, false, 'hypothetical clean path is in scope');
+
+			const nonFile = await explainSourcePath(realRoot('unused', 'memfs'), 'x.ts');
+			assert.strictEqual(nonFile, null, 'remote schemes degrade to null (additive exit pending)');
+		} finally {
+			fsReal.rmSync(tmp, { recursive: true, force: true });
+		}
+	});
+});
