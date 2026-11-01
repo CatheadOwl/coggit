@@ -4,6 +4,15 @@ All notable changes to the CogGit extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-11-01
+
+Lockstep with the 0.5.0 wave (source-exclusion engine swap in
+`@coggit/core`). No extension changes of its own — the bundled core's new
+exclusion semantics are user-visible through the extension's scans:
+nested repositories inside a declared source root are indexed, source in
+`lib`/`vendor`-style directories is indexable via a named gitignore
+negation, and gitignore rules inherit from the enclosing git root.
+
 ## [0.4.0] - 2026-10-17
 
 Lockstep with the 0.4.0 wave (cli entry rename, core standard-body

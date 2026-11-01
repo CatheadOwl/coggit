@@ -3,6 +3,12 @@
 All notable changes to `@coggit/runtime-node` are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.0] - 2026-11-01
+
+Lockstep with the 0.5.0 wave (source-exclusion engine swap in
+`@coggit/core`). No functional changes of its own — consumers riding
+this runtime inherit the core engine's exclusion semantics transitively.
+
 ## [0.4.0] - 2026-10-17
 
 Lockstep with the 0.4.0 wave (cli entry rename, core standard-body

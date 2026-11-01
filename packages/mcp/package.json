@@ -1,6 +1,6 @@
 {
   "name": "@coggit/mcp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "CogGit MCP runtime: protocol registration, stdio entry, and prompt/tool assets.",
   "license": "MIT",
   "repository": {

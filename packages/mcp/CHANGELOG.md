@@ -3,6 +3,13 @@
 All notable changes to `@coggit/mcp` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.0] - 2026-11-01
+
+Lockstep with the 0.5.0 wave (source-exclusion engine swap in
+`@coggit/core`). No functional changes of its own — the server re-voices
+the core prompt forms unchanged, while the file sets its snapshot/status
+tools return follow the bundled core's new exclusion semantics.
+
 ## [0.4.0] - 2026-10-17
 
 Lockstep with the 0.4.0 wave (cli entry rename, core standard-body

@@ -3,6 +3,19 @@
 All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.0] - 2026-11-01
+
+### Changed
+
+- Every CLI surface that names the handbook now spells where it lives on
+  a CLI host — `coggit handbook <kind>`: the standard prompt's delegation
+  segment, the status action legend, and the add success line previously
+  referenced the handbook without a CLI address (the MCP and dsh surfaces
+  already carried their own spellings).
+- Lockstep with the 0.5.0 wave: the CLI's file visibility rides
+  `@coggit/core`'s source-exclusion engine swap — see the core changelog
+  for the semantics.
+
 ## [0.4.0] - 2026-10-17
 
 ### Removed
