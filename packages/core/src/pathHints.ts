@@ -61,11 +61,31 @@ export function renderPathMissText(result: {
   pathMissMessage?: string;
   pathHintMessage?: string;
   pathHints: readonly string[];
+  /** Exclusion diagnosis (status misses only): rendered as extra lines when the path is excluded. */
+  exclusionDiagnosis?: {
+    projectId: string;
+    excluded: boolean;
+    hits: readonly string[];
+    pierceable: boolean;
+    blockers: readonly string[];
+  } | null;
 }): string {
   const lines = [result.pathMissMessage ?? pathMissMessage(result.sourcePath ?? '')];
   if (result.pathHintMessage && result.pathHints.length > 0) {
     lines.push(result.pathHintMessage);
     lines.push(pathHintsTryText(result.pathHints));
+  }
+  const diagnosis = result.exclusionDiagnosis;
+  if (diagnosis?.excluded) {
+    lines.push(`Excluded from the scan scope of ${diagnosis.projectId}: yes`);
+    if (diagnosis.hits.length > 0) {
+      lines.push(`  hit: ${diagnosis.hits.join('; ')}`);
+    }
+    lines.push(
+      diagnosis.pierceable
+        ? '  un-exclude: rule-level only (a named gitignore negation re-includes it)'
+        : `  un-exclude: blocked (${diagnosis.blockers.join('; ')})`,
+    );
   }
   return lines.join('\n');
 }

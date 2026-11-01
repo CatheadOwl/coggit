@@ -105,6 +105,9 @@ export async function explainSourcePath(
   return explainScopePath(uriToExternalPath(root.sourceRootUri), relPath, COGGIT_ENGINE_OPTIONS);
 }
 
+/** The probe's answer shape, re-exported for consumers (operations layer). */
+export type SourcePathExplanation = ExplanationResult;
+
 /** POSIX path key for a URI inside the workspace root's universe. */
 function dirKeyOf(uri: UriComponents): string {
   return uri.path.replace(/\/+$/, '');

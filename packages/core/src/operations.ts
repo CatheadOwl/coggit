@@ -21,7 +21,8 @@ import {
   sourceIdentityToProjectRelative,
   toRelativeUriPath,
 } from './mapping';
-import { uriKey } from './uri-utils';
+import { uriKey, uriToExternalPath } from './uri-utils';
+import { explainSourcePath, type SourcePathExplanation } from './sourceExclusion';
 import {
   PATH_HINT_MESSAGE,
   PATH_MISS_MESSAGE,
@@ -132,6 +133,11 @@ export interface StatusOperationResult {
   pathMissMessage?: string;
   /** Present only when a miss produced fuzzy hints. */
   pathHintMessage?: string;
+  /** Exclusion diagnosis for the miss: why the path is invisible to the
+   *  scan, from the point-query probe over the containing file-scheme source
+   *  root. Always set by `statusOperation` on a miss; `null` when no project
+   *  scope contains the path (plain miss). */
+  exclusionDiagnosis?: StatusExclusionDiagnosis | null;
   /** Canonical status inspection when the node was found.
    *  undefined when found is false. */
   inspection?: NodeStatusInspection | undefined;
@@ -296,6 +302,7 @@ async function resolveSourcePathWithHits(
 ): Promise<{
   match: { project: CoggitProject; node: CoggitTreeNode } | undefined;
   pathHints: string[];
+  normalizedPath?: string;
 }> {
   let allCandidates: string[] = [];
   let normalizedPath: string | undefined;
@@ -305,7 +312,7 @@ async function resolveSourcePathWithHits(
         ? resolveNodeInSnapshot(snapshot, project.root, candidate)
         : await project.resolveSourcePath(candidate);
       if (resolution.node) {
-        return { match: { project, node: resolution.node }, pathHints: [] };
+        return { match: { project, node: resolution.node }, pathHints: [], normalizedPath };
       }
       if (resolution.candidatePaths) {
         allCandidates.push(...resolution.candidatePaths);
@@ -313,7 +320,66 @@ async function resolveSourcePathWithHits(
       normalizedPath ??= resolution.normalizedPath;
     }
   }
-  return { match: undefined, pathHints: suggestPathHints(allCandidates, normalizedPath ?? sourcePath) };
+  return { match: undefined, pathHints: suggestPathHints(allCandidates, normalizedPath ?? sourcePath), normalizedPath };
+}
+
+function explanationHitSummary(hit: SourcePathExplanation['hitChain'][number]): string {
+  if ('stoneName' in hit) {
+    return `stone ${hit.stoneName}${hit.enforced ? ' (enforced)' : ' (reported)'}`;
+  }
+  if ('presetName' in hit) {
+    return `${hit.presetName} preset at ${hit.path}`;
+  }
+  if ('gitignoreAnchor' in hit) {
+    return `gitignore \`${hit.ruleText ?? ''}\` @ ${hit.gitignoreAnchor}`;
+  }
+  return hit.source;
+}
+
+/**
+ * Exclusion diagnosis for a missed path: when the normalized path lies under
+ * a file-scheme project source root, the point-query probe answers "why is
+ * this path invisible to the scan". Conservative by construction — a path
+ * under no project scope, or any probe failure, yields `null` and the plain
+ * miss presentation stands (the diagnosis never masks the miss).
+ */
+async function exclusionDiagnosisFor(
+  projects: readonly CoggitProject[],
+  normalizedPath: string | undefined,
+): Promise<StatusExclusionDiagnosis | null> {
+  if (!normalizedPath) {
+    return null;
+  }
+  const query = normalizedPath.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+  for (const project of projects) {
+    const rootUri = project.root.sourceRootUri;
+    if (rootUri.scheme !== 'file') {
+      continue;
+    }
+    const baseNative = uriToExternalPath(rootUri).replace(/\/+$/, '');
+    const base = baseNative.replace(/\\/g, '/').toLowerCase();
+    if (!(query === base || query.startsWith(`${base}/`))) {
+      continue;
+    }
+    const relPath = normalizedPath.replace(/\\/g, '/').slice(baseNative.replace(/\\/g, '/').length).replace(/^\/+/, '');
+    try {
+      const explanation = await explainSourcePath(project.root, relPath || '.');
+      if (!explanation) {
+        return null;
+      }
+      return {
+        projectId: project.root.id,
+        excluded: explanation.excluded,
+        structural: explanation.structural,
+        hits: explanation.hitChain.map(explanationHitSummary),
+        pierceable: explanation.explicit.pierceable,
+        blockers: explanation.explicit.blockers.map(explanationHitSummary),
+      };
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export interface SnapshotOperationOptions {
@@ -405,12 +471,27 @@ export interface StatusOperationOptions {
   snapshot?: CoggitSnapshot;
 }
 
+/** Why a missed source path is invisible to the scan (the probe's summary). */
+export interface StatusExclusionDiagnosis {
+  /** The project whose source scope contains the path. */
+  projectId: string;
+  excluded: boolean;
+  /** True when the verdict came from a directory-level adjudication (an excluded ancestor). */
+  structural: boolean;
+  /** Hit-chain summaries in full-stack priority order, e.g. `deps preset at node_modules`. */
+  hits: string[];
+  /** Whether the exclusion is rule-level only (re-includable by a named gitignore negation). */
+  pierceable: boolean;
+  /** The hard blockers (enforced stones / strict hits) when `pierceable` is false. */
+  blockers: string[];
+}
+
 export async function statusOperation(
   projects: readonly CoggitProject[],
   sourcePath: string,
   options: StatusOperationOptions = {},
 ): Promise<StatusOperationResult> {
-  const { match, pathHints } = await resolveSourcePathWithHits(
+  const { match, pathHints, normalizedPath } = await resolveSourcePathWithHits(
     projects,
     sourcePath,
     options.sourcePathCandidates,
@@ -445,6 +526,7 @@ export async function statusOperation(
       pathHints,
       pathMissMessage: pathMissMessage(sourcePath),
       ...(pathHints.length > 0 ? { pathHintMessage: PATH_HINT_MESSAGE } : {}),
+      exclusionDiagnosis: await exclusionDiagnosisFor(projects, normalizedPath),
     };
   }
 
