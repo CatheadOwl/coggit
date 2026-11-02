@@ -1,6 +1,6 @@
 ---
 name: coggit
-description: Invoke by name to set up CogGit in a project or drive its cognition loop (orient / author / maintain) from a CLI host; no auto-trigger on the word coggit; not for developing coggit itself.
+description: manually — dispatch SOP for the coggit CLI
 # Frontmatter ownership (the refresh reconciliation taxonomy; contract in the
 # Payload section below):
 #   tool-owned        = name, description, plus keys declared tool-owned here
