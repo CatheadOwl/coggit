@@ -65,6 +65,22 @@ suite('CLI main', () => {
     assert.match(invalid.stderr, /must be one of: minimal, standard/);
   });
 
+  test('skills guards help before touching the payload and fails loud without one', async () => {
+    // The help guard answers from any cwd without looking for the payload.
+    const help = await runCli(['skills', '--help'], cwd, homeDirectory);
+    assert.strictEqual(help.stderr, '');
+    assert.match(help.stdout, /Usage: coggit skills \[options\]/);
+    assert.match(help.stdout, /--json/);
+    assert.match(help.stdout, /never writes an agent directory/);
+
+    // The compiled test tree carries no skills/ payload, so the announce must
+    // refuse loudly (user-facing, exit 1) rather than print a dangling path.
+    const missing = await runCliCapture(['skills'], cwd, homeDirectory);
+    assert.strictEqual(missing.code, 1);
+    assert.strictEqual(missing.stdout, '');
+    assert.match(missing.stderr, /skill payload missing: .*SKILL\.md/);
+  });
+
   async function runCli(
     args: readonly string[],
     workingDirectory: string,

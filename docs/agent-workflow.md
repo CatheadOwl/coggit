@@ -31,6 +31,14 @@ coggit entry --kind standard --format block >> AGENTS.md
 `>>` is for first install; on update, replace the whole marked block instead
 of appending (the first line inside the block carries the same notice).
 
+Hosts that read agent skills can also take the dispatch SOP that ships with
+the CLI: `coggit skills` locates the `coggit` skill tree (`--json` for the
+locator fields); copying or linking that whole directory into the host's
+skills directory is the agent's own move — the command never writes it. The
+skill carries the set-up / author / maintain sequences and points back to
+`coggit entry`, `--help`, and `coggit handbook` for stance, mechanics, and
+authoring rules.
+
 dsh and MCP hosts do not need this — they inject the guidance through their
 own adapter surfaces.
 

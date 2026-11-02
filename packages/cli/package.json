@@ -13,6 +13,7 @@
   },
   "files": [
     "dist",
+    "skills",
     "CHANGELOG.md",
     "LICENSE"
   ],

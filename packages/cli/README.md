@@ -18,6 +18,7 @@ coggit snapshot              # project-wide source/cognition snapshot
 coggit orphans               # cognition files whose source is gone
 coggit add / resolve         # register or accept a source/cognition pair
 coggit entry                 # print agent guidance for CLI hosts (raw or AGENTS.md block; kind via --kind or positional)
+coggit skills                # locate the shipped `coggit` agent skill (copy or link the tree into your agent's skills directory; --json for the locator)
 coggit mcp install           # install the CogGit MCP stdio runtime
 coggit watch                 # watch mode
 ```

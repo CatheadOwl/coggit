@@ -3,6 +3,21 @@
 All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Added
+
+- `coggit skills` — locates the agent skill that now ships with the package
+  (`skills/coggit/`, a dispatch SOP for CLI agent hosts: the set-up / author
+  / maintain command sequences, pointing back to `coggit entry`, `--help`,
+  and `coggit handbook` for stance, mechanics, and authoring rules). The
+  command only announces where the tree is (`--json`: `name`, `version`,
+  `skillRoot`, `skillMd` — additive-only) and never writes an agent
+  directory; copying or linking the tree is the agent's move. A linked
+  development install announces the working tree it follows. Agent-visible
+  command-surface increment: ships behind an owner-accepted release
+  acceptance packet (PKG-10).
+
 ## [0.5.0] - 2026-11-01
 
 ### Changed

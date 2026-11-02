@@ -10,6 +10,7 @@ import { runEntry, type EntryFormat } from './entry';
 import { resolveBundledMcpEntryPath, runMcpInstall } from './mcpInstall';
 import { runOrphans } from './orphans';
 import { runResolve } from './resolve';
+import { resolveSkillsPackageRoot, runSkills } from './skills';
 import { runSnapshot } from './snapshot';
 import { runStatus, UserFacingError } from './status';
 import { openStrictWatchProject, startWatchSession } from './watch';
@@ -173,6 +174,22 @@ function createProgram(
     });
 
   program
+    .command('skills')
+    // Payload announce for the agent skill shipped with this package — tool
+    // announces, agent completes: package-relative, read-only, any cwd, no
+    // project discovery, never writes an agent directory. `--json` is the
+    // locator contract (name, version, skillRoot, skillMd; additive-only).
+    .description('Locate the agent skill shipped with this package (the `coggit` skill tree) so an agent can copy or link it into its skills directory; prints the locator only and never writes an agent directory.')
+    .option('-j, --json', 'output the locator JSON (name, version, skillRoot, skillMd) instead of text')
+    .action((options: SkillsCommandOptions) => {
+      console.log(runSkills({
+        packageRoot: resolveSkillsPackageRoot(__dirname),
+        version: packageVersion(),
+        json: options.json,
+      }));
+    });
+
+  program
     .command('watch')
     .description('Watch source, cognition, and config changes and emit observations.')
     .argument('[path]', 'initialized project root (defaults to the current directory)')
@@ -223,6 +240,10 @@ interface McpInstallCommandOptions {
 interface EntryOptions {
   kind: CoggitSystemPromptKind;
   format: EntryFormat;
+}
+
+interface SkillsCommandOptions {
+  json?: boolean;
 }
 
 interface AddOptions {

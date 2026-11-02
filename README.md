@@ -103,6 +103,9 @@ dsh plugin add @coggit/dsh
 # CLI agent hosts (Claude Code, Codex, Gemini CLI, ...) — print the agent guidance
 claude --append-system-prompt "$(coggit entry)"
 coggit entry --kind standard --format block >> AGENTS.md
+
+# CLI agent hosts that read skills — locate the shipped `coggit` skill, then copy or link its tree
+coggit skills
 ```
 
 `>>` is for first install. To update an existing block, re-run the same
@@ -110,7 +113,11 @@ command and replace the whole marked block (begin marker to end marker)
 instead of appending — the first line inside the block carries the same rule.
 
 dsh and MCP hosts inject the guidance through their own adapter surfaces;
-`coggit entry` is the channel for hosts without an adapter.
+`coggit entry` is the channel for hosts without an adapter. `coggit skills`
+only locates the skill tree (`--json` for the locator fields) — copying or
+linking it into the host's skills directory is the agent's own move; the skill
+carries the set-up / author / maintain sequences and points back to `coggit
+entry`, `--help`, and `coggit handbook` for everything else.
 
 ## Development
 
