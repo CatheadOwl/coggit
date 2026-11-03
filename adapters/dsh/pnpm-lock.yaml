@@ -15,8 +15,8 @@ importers:
         specifier: link:../../packages/core
         version: link:../../packages/core
       '@coggit/runtime-node':
-        specifier: ^0.5.0
-        version: 0.5.0
+        specifier: ^0.5.1
+        version: 0.5.1(@parcel/watcher@2.6.0)
     devDependencies:
       '@catheadowl/dsh-eval':
         specifier: ^0.4.1
@@ -42,9 +42,14 @@ packages:
     peerDependencies:
       '@deepseek-ai/dsh-llm': '*'
 
-  '@coggit/runtime-node@0.5.0':
-    resolution: {integrity: sha512-RB/+ybBw9tB21H8DVqiu9Yyfw203XH1TMqgD4u2Og7QIP0VuODi2ngJxEYx+YFnV3QDyy12v79BEGRaBZIhtyA==}
+  '@coggit/runtime-node@0.5.1':
+    resolution: {integrity: sha512-uJiYSTrf03swBksFYZ/FBsbGPjUHhBLN8qpLMUHZsF12gtxHjeY+v737Slc7lzbZUFr0ZBF5oEtSLY1KDTbIJw==}
     engines: {node: '>=18'}
+    peerDependencies:
+      '@parcel/watcher': ^2.6.0
+    peerDependenciesMeta:
+      '@parcel/watcher':
+        optional: true
 
   '@parcel/watcher-android-arm64@2.6.0':
     resolution: {integrity: sha512-trgpLSCKRC/huFjXX/Smh+0sWe4+YtKfktIToiMl59ghz7z+qkH6kMvNnUbLyRs9N11t8l4svSCs1+5B3rOAhA==}
@@ -182,9 +187,10 @@ snapshots:
 
   '@catheadowl/dsh-eval@0.4.1': {}
 
-  '@coggit/runtime-node@0.5.0':
+  '@coggit/runtime-node@0.5.1(@parcel/watcher@2.6.0)':
     dependencies:
       '@coggit/core': link:../../packages/core
+    optionalDependencies:
       '@parcel/watcher': 2.6.0
 
   '@parcel/watcher-android-arm64@2.6.0':
@@ -242,6 +248,7 @@ snapshots:
       '@parcel/watcher-linux-x64-musl': 2.6.0
       '@parcel/watcher-win32-arm64': 2.6.0
       '@parcel/watcher-win32-x64': 2.6.0
+    optional: true
 
   '@types/node@22.20.1':
     dependencies:
@@ -256,13 +263,16 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  detect-libc@2.1.2: {}
+  detect-libc@2.1.2:
+    optional: true
 
-  is-extglob@2.1.1: {}
+  is-extglob@2.1.1:
+    optional: true
 
   is-glob@4.0.3:
     dependencies:
       is-extglob: 2.1.1
+    optional: true
 
   js-tokens@4.0.0: {}
 
@@ -270,9 +280,11 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  node-addon-api@7.1.1: {}
+  node-addon-api@7.1.1:
+    optional: true
 
-  picomatch@4.0.7: {}
+  picomatch@4.0.7:
+    optional: true
 
   react@18.3.1:
     dependencies:
