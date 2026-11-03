@@ -3,7 +3,7 @@
 All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
-## [Unreleased]
+## [0.5.1] - 2026-11-03
 
 ### Added
 
@@ -18,13 +18,17 @@ All notable changes to `@coggit/cli` are documented here. Format follows
   project set-up dance and the post-upgrade guidance refresh); and
   `skills/coggit/references/payload.md` carries the full install/refresh
   reconciliation contract (version stamps, frontmatter ownership, conflict
-  handling). The SKILL.md frontmatter is pure key-value with zero comments.
-  The command only announces where the tree is (`--json`: `name`, `version`,
+  handling). The SKILL.md frontmatter is pure key-value with zero comments,
+  and its description is the bare manual marker (`manually — …`): a by-name
+  skill has no auto-trigger reader; the name is the trigger word. The
+  command only announces where the tree is (`--json`: `name`, `version`,
   `skillRoot`, `skillMd` — additive-only) and never writes an agent
   directory; copying or linking the tree is the agent's move. A linked
   development install announces the working tree it follows. Agent-visible
   command-surface increment: ships behind an owner-accepted release
   acceptance packet (PKG-10).
+
+## [Unreleased]
 
 ## [0.5.0] - 2026-11-01
 

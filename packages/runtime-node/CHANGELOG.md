@@ -3,6 +3,20 @@
 All notable changes to `@coggit/runtime-node` are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.1] - 2026-11-03
+
+### Changed
+
+- `@parcel/watcher` becomes an optional peer instead of a hard dependency —
+  watch is opt-in. Trees that never watch (adapters, service-only consumers)
+  install no native watcher at all, so the package manager's build-script
+  approval gate has no object there and installs stop prompting for it.
+  Constructing the watcher observer without the peer present throws a typed
+  error naming the missing peer and its install fix (watch stays a
+  type-level import; the resolution is a guarded `require` at observer
+  construction). The published CLI carries the watcher as its own direct
+  dependency, so its watch daemon is unaffected.
+
 ## [0.5.0] - 2026-11-01
 
 Lockstep with the 0.5.0 wave (source-exclusion engine swap in

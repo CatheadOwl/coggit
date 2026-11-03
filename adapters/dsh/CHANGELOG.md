@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-11-03
+
+Lockstep with the 0.5.1 wave; the `@coggit/*` SDK specifiers realign to
+`^0.5.1`. No adapter changes of its own — the adapter source is unchanged
+since 0.5.0, and riding `@coggit/runtime-node` 0.5.1 removes the native
+watcher from adapter installs entirely (the watcher became an optional
+peer, so the install-time build-script approval gate has no object here).
+
 ## [0.5.0] - 2026-11-01
 
 Lockstep with the 0.5.0 wave; the `@coggit/*` SDK specifiers realign to

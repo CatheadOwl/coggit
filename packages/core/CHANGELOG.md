@@ -3,7 +3,7 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
-## [Unreleased]
+## [0.5.1] - 2026-11-03
 
 ### Added
 
@@ -28,6 +28,8 @@ All notable changes to `@coggit/core` are documented here. Format follows
 - `@catheadowl/pathscope` pins `^0.2.0` (the probe release; additive over
   0.1.1 — the walk face is unchanged, verified by the full suite on the
   registry build).
+
+## [Unreleased]
 
 ## [0.5.0] - 2026-11-01
 

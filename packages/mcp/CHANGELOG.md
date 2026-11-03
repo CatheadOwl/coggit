@@ -3,6 +3,14 @@
 All notable changes to `@coggit/mcp` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.1] - 2026-11-03
+
+Lockstep with the 0.5.1 wave. No server changes of its own — the bundled
+core gains the point-query exclusion probe and the CLI-side status-miss
+diagnosis, and the MCP DTO intentionally carries no diagnosis field this
+round (the diagnosis rides the CLI text surface; an MCP field would be a
+later packet).
+
 ## [0.5.0] - 2026-11-01
 
 Lockstep with the 0.5.0 wave (source-exclusion engine swap in

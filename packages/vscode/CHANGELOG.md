@@ -4,6 +4,13 @@ All notable changes to the CogGit extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-11-03
+
+Lockstep with the 0.5.1 wave. No extension changes of its own — the
+manifest realigns to the wave line after the 0.5.0 identity-flip restore
+wiped its version bump (the CHANGELOG kept that section); the Marketplace
+upload remains the owner-shelved standing item.
+
 ## [0.5.0] - 2026-11-01
 
 Lockstep with the 0.5.0 wave (source-exclusion engine swap in
