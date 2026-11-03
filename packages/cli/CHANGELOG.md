@@ -11,7 +11,15 @@ All notable changes to `@coggit/cli` are documented here. Format follows
   (`skills/coggit/`, a dispatch SOP for CLI agent hosts: the set-up / author
   / maintain command sequences, pointing back to `coggit entry`, `--help`,
   and `coggit handbook` for stance, mechanics, and authoring rules). The
-  command only announces where the tree is (`--json`: `name`, `version`,
+  tree is multi-file and split by use temperature: SKILL.md carries the
+  everyday loop (orient / author / maintain) plus the standard payload core
+  (install unit + consent boundary + canon-site pointer);
+  `skills/coggit/references/setup.md` carries the one-time operations (the
+  project set-up dance and the post-upgrade guidance refresh); and
+  `skills/coggit/references/payload.md` carries the full install/refresh
+  reconciliation contract (version stamps, frontmatter ownership, conflict
+  handling). The SKILL.md frontmatter is pure key-value with zero comments.
+  The command only announces where the tree is (`--json`: `name`, `version`,
   `skillRoot`, `skillMd` — additive-only) and never writes an agent
   directory; copying or linking the tree is the agent's move. A linked
   development install announces the working tree it follows. Agent-visible

@@ -63,10 +63,29 @@ suite('CLI skills', () => {
     assert.strictEqual(path.basename(parsed.skillRoot), parsed.name);
     const frontmatter = readFileSync(parsed.skillMd, 'utf8').split('\n---')[0];
     assert.match(frontmatter, new RegExp(`^name: ${parsed.name}$`, 'm'));
-    // The payload text carries its own install-unit contract so a consumer
-    // whose whole universe is the announce output plus this tree knows what
-    // to copy or link.
-    assert.match(readFileSync(parsed.skillMd, 'utf8'), /\*\*Payload & reconciliation\.\*\*/);
+    // The face carries the standard payload core (install unit + consent
+    // boundary + canon-site pointer) and not the full contract — the
+    // reconciliation details live in references/payload.md.
+    const face = readFileSync(parsed.skillMd, 'utf8');
+    assert.match(face, /\*\*Payload\.\*\*/);
+    assert.match(face, /\[references\/payload\.md\]\(references\/payload\.md\)/);
+    assert.doesNotMatch(face, /\*\*Payload & reconciliation\.\*\*/);
+    assert.match(
+      readFileSync(path.join(parsed.skillRoot, 'references', 'payload.md'), 'utf8'),
+      /\*\*Payload & reconciliation\.\*\*/,
+    );
+    // One-time operations are cold content off the face: the install dance
+    // and the guidance refresh live in references/setup.md, the face only
+    // routes there.
+    assert.doesNotMatch(face, /coggit init/);
+    assert.doesNotMatch(face, /mcp install/);
+    assert.match(
+      readFileSync(path.join(parsed.skillRoot, 'references', 'setup.md'), 'utf8'),
+      /install dance/,
+    );
+    // Frontmatter is pure key-value, zero comments (ruling 2026-11-02): the
+    // ownership taxonomy lives in references/payload.md, not on the face.
+    assert.doesNotMatch(frontmatter, /^\s*#/m);
   });
 
   test('the package root resolves from the bundle directory through a link', () => {
