@@ -1,6 +1,6 @@
 import * as nodeFs from 'node:fs/promises';
 import * as path from 'node:path';
-import ParcelWatcher = require('@parcel/watcher');
+import type ParcelWatcher = require('@parcel/watcher');
 
 import type { CoggitWorkspaceRoot } from '@coggit/core';
 import type { UriComponents } from '@coggit/core';
@@ -20,6 +20,24 @@ interface WatchTarget {
 }
 
 type ParcelSubscribe = typeof ParcelWatcher.subscribe;
+
+/**
+ * `@parcel/watcher` is an optional peer: importing this module must not
+ * require it, so the default subscription backend resolves lazily at
+ * observer construction. Hosts that use the watch face declare the peer
+ * themselves; hosts that do not (e.g. adapters riding only the service
+ * primitives) get a tree with no native watcher at all.
+ */
+function loadParcelWatcher(): typeof ParcelWatcher {
+  try {
+    return require('@parcel/watcher') as typeof ParcelWatcher;
+  } catch {
+    throw new Error(
+      'The Node watch adapter needs the optional @parcel/watcher peer; '
+        + 'install @parcel/watcher to use coggit watch.',
+    );
+  }
+}
 
 export interface NodeFileWatchObserverOptions {
   readonly roots: readonly CoggitWorkspaceRoot[];
@@ -50,7 +68,7 @@ class NodeFileWatchObserver implements WatchObserver {
   private readonly subscribeFn: ParcelSubscribe;
 
   constructor(private readonly options: NodeFileWatchObserverOptions) {
-    this.subscribeFn = options.subscribe ?? ParcelWatcher.subscribe;
+    this.subscribeFn = options.subscribe ?? loadParcelWatcher().subscribe;
   }
 
   subscribe(handler: WatchObservationHandler): WatchObserverSubscription {

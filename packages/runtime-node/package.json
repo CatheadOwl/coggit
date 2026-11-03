@@ -36,10 +36,18 @@
     "watch": "node build.js --watch"
   },
   "dependencies": {
-    "@coggit/core": "workspace:*",
+    "@coggit/core": "workspace:*"
+  },
+  "peerDependencies": {
     "@parcel/watcher": "^2.6.0"
   },
+  "peerDependenciesMeta": {
+    "@parcel/watcher": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@parcel/watcher": "^2.6.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "esbuild": "^0.28.1",
