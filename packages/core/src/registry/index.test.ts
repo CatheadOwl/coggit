@@ -415,17 +415,18 @@ suite('Registry — freshness times', () => {
     assert.strictEqual(entry.sourceFactHash, 'abc123hash');
   });
 
-  test('records cognition time and auxiliary cognition cache', async () => {
+  test('records cognition time without auxiliary cache fields', async () => {
     const provider = new InMemoryRegistryProvider();
     const registry = await Registry.create(provider);
     registry.setEntry('src/foo', makeEntry());
 
-    registry.recordCognitionTime('src/foo', 4567, 'coghash', 42);
+    registry.recordCognitionTime('src/foo', 4567);
 
     const entry = registry.getEntry('src/foo')!;
     assert.strictEqual(entry.cognitionMtimeMs, 4567);
-    assert.strictEqual(entry.cognitionBlobHash, 'coghash');
-    assert.strictEqual(entry.cognitionLength, 42);
+    // Deprecated cache fields are no longer writable through the legacy API
+    assert.strictEqual(entry.cognitionBlobHash, undefined);
+    assert.strictEqual(entry.cognitionLength, undefined);
   });
 
   test('records explicit verification time', async () => {

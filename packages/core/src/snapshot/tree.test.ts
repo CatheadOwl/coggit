@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 
-import { computeBlobHash } from '../hash';
 import type { CoggitTreeNode, CoggitWorkspaceRoot } from '../types';
 import type { FileStat, FileSystem, UriComponents } from '../interfaces';
 import { buildFileNode, buildFolderNode, buildProjectSnapshot } from './tree';
@@ -359,7 +358,7 @@ suite('folder node freshness fallback', () => {
 		const fs = new MockFileSystem();
 		const folderUri = mkUri('/workspace/src/foo');
 		const sourceRootUri = mkUri('/workspace/src');
-		const currentHash = computeBlobHash('bar.ts');
+		const currentHash = 'fixture-hash:bar.ts';
 		const records: Array<{ sourceKey: string; mtimeMs: number }> = [];
 
 		fs.addDirectory('/workspace/src/foo', 3000);
@@ -428,7 +427,7 @@ suite('folder node freshness fallback', () => {
 							sourceFactMtimeMs: 1000,
 							cognitionMtimeMs: 2000,
 							verificationTimeMs: null,
-							sourceFactHash: computeBlobHash('bar.ts'),
+							sourceFactHash: 'fixture-hash:bar.ts',
 						}),
 						recordSourceFactTime: (_rootId, sourceKey, mtimeMs, sourceFactHash) => {
 							records.push({ sourceKey, mtimeMs, sourceFactHash });
@@ -557,7 +556,7 @@ suite('folder node freshness fallback', () => {
 	test('root directory mtime noise does not advance unchanged structure source fact', async () => {
 		const root = mkRoot();
 		const fs = new MockFileSystem();
-		const currentHash = computeBlobHash('foo/');
+		const currentHash = 'fixture-hash:foo/';
 		const records: Array<{ sourceKey: string; mtimeMs: number }> = [];
 
 		fs.addDirectory('/workspace/src', 3000);

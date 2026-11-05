@@ -6,12 +6,6 @@ export type ContentIdentity = `sha256:v1:${string}`;
 
 const IDENTITY_HEX_LENGTH = 64;
 
-/** Compute the legacy unprefixed SHA-256 used by reconcile rename caches. */
-
-export function computeBlobHash(content: string): string {
-	return createHash('sha256').update(content, 'utf-8').digest('hex');
-}
-
 /**
  * Compute the versioned CogGit identity used by freshness acceptance.
  * Domain separation prevents the same bytes in different fact kinds from

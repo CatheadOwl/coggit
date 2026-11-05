@@ -2,7 +2,6 @@ import * as assert from 'node:assert';
 import { REGISTRY_SCHEMA_VERSION, Registry } from './index';
 import { InMemoryRegistryProvider } from './inMemoryRegistryProvider';
 import type { RegistryFile, RegistryProvider } from '../types';
-import { computeBlobHash } from '../hash';
 import {
   scanCognitionDirectory,
   reconcileRegistry,
@@ -20,6 +19,7 @@ interface MockFileEntry {
 
 class MockFileSystem implements FileSystem {
   private entries = new Map<string, MockFileEntry>();
+  readFileCalls = 0;
 
   addDirectory(path: string, mtimeMs = 1000): void {
     this.entries.set(path, { isDirectory: true, content: '', mtimeMs });
@@ -38,6 +38,7 @@ class MockFileSystem implements FileSystem {
   }
 
   async readFile(uri: UriComponents): Promise<string> {
+    this.readFileCalls++;
     const entry = this.entries.get(uri.path);
     if (!entry || entry.isDirectory) {
       throw new Error('ENOENT');
@@ -127,7 +128,7 @@ function createCountingProvider() {
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 suite('reconcile — scanCognitionDirectory', () => {
-  test('walks subdirectories and computes SHA256 for .md files', async () => {
+  test('walks subdirectories and collects keys for .md files', async () => {
     const fs = new MockFileSystem();
     fs.addFile('/cog/a.ts.md', 'content A');
     fs.addFile('/cog/sub/b.ts.md', 'content B');
@@ -153,7 +154,7 @@ suite('reconcile — scanCognitionDirectory', () => {
     assert.ok(scan.has('foo.ts'));
   });
 
-  test('skips unreadable files gracefully', async () => {
+  test('yields an empty scan for an empty directory', async () => {
     const fs = new MockFileSystem();
     // Only add a directory; no files
     fs.addDirectory('/cog');
@@ -162,18 +163,17 @@ suite('reconcile — scanCognitionDirectory', () => {
     assert.strictEqual(scan.size, 0);
   });
 
-  test('computes contentHash and contentLength correctly', async () => {
+  test('derives keys without reading file content', async () => {
     const fs = new MockFileSystem();
-    const content = 'some cognition content';
-    fs.addFile('/cog/foo.ts.md', content);
+    fs.addFile('/cog/foo.ts.md', 'some cognition content');
 
     const scan = await scanCognitionDirectory(fs, cogUri('/cog'));
-    const info = scan.get('foo.ts')!;
 
-    assert.strictEqual(info.contentHash, computeBlobHash(content));
-    assert.strictEqual(info.contentLength, content.length);
-    assert.strictEqual(info.path, 'foo.ts.md');
-    assert.ok(info.mtimeMs > 0);
+    assert.strictEqual(scan.size, 1);
+    assert.ok(scan.has('foo.ts'));
+    // Existence-only contract: membership comes from directory listings, so
+    // no file content is ever read (readability of a listed file is moot)
+    assert.strictEqual(fs.readFileCalls, 0);
   });
 
   test('handles README.md as root key', async () => {

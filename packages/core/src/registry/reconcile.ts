@@ -9,7 +9,7 @@
  *
  * ```
  * Input:
- *   A = walk cognition dir → {key → {path, mtimeMs, contentHash, contentLength}}
+ *   A = walk cognition dir → set of registry keys (existence only)
  *   B = registry entries   → {key → entry}
  *
  * 1.  deleted  = keys(B) - keys(A)
@@ -20,28 +20,10 @@
 import type { FileSystem, UriComponents } from '../interfaces';
 import { Registry } from './index';
 import { discoverCognitionEntries } from '../cognition/cognitionDiscovery';
-import { computeBlobHash } from '../hash';
 import type { PathKeyRecord } from '../types';
 
-/**
- * Scan-specific info for a cognition file found on disk.
- *
- * NOT the same as `CognitionFileInfo` from types.ts — this type is purpose-built
- * for directory scanning and carries content-hash data for scan diagnostics.
- */
-export interface CognitionFileScanInfo {
-	/** Relative path from cognition root to the `.md` file */
-	path: string;
-	/** Last modification time in milliseconds */
-	mtimeMs: number;
-	/** SHA256 hex hash of file content */
-	contentHash: string;
-	/** Content length in characters */
-	contentLength: number;
-}
-
-/** Result of scanning the cognition directory: registry key → scan info. */
-export type CognitionDirScan = Map<string, CognitionFileScanInfo>;
+/** Result of scanning the cognition directory: the set of registry keys on disk. */
+export type CognitionDirScan = ReadonlySet<string>;
 
 /**
  * Result of a reconcile run.
@@ -64,62 +46,32 @@ export interface ReconcileDiff {
 // ─── Scan ───────────────────────────────────────────────────────────────────
 
 /**
- * Walk the cognition directory tree recursively and collect structured info for
- * every source-paired cognition file.
+ * Walk the cognition directory tree and collect the registry keys of every
+ * source-paired cognition file present on disk.
  *
- * - Computes registry keys via `cognitionPathToKey`
- * - Skips free-form markdown, non-`.md` files, and unreadable entries
- * - Reads file content and computes a SHA256 content hash via `computeBlobHash`
+ * Existence-only: keys derive from directory listings through the shared
+ * discovery layer (`cognitionPathToKey` conventions); file content is never
+ * read and no content hash is computed — reconcile decisions consume the key
+ * set alone.
  *
  * @param fs               Platform filesystem abstraction
  * @param cognitionRootUri URI of the cognition root directory
- * @returns Map of registry key → cognition file scan info
+ * @returns Set of registry keys found on disk
  */
 export async function scanCognitionDirectory(
 	fs: FileSystem,
 	cognitionRootUri: UriComponents,
 ): Promise<CognitionDirScan> {
-	const result: CognitionDirScan = new Map();
+	const keys = new Set<string>();
 	const discovery = await discoverCognitionEntries(fs, cognitionRootUri);
 
 	for (const entry of discovery.values()) {
-		const [content, fileStat] = await safeReadFile(fs, entry.cognitionUri);
-		if (content === null) {
-			continue;
-		}
-
-		const contentHash = computeBlobHash(content);
-		const contentLength = content.length;
-		const mtimeMs = fileStat?.mtimeMs ?? 0;
-
-		// Avoid overwriting entries that would produce duplicate keys (last file wins)
-		result.set(entry.registryKey, {
-			path: entry.cognitionPath,
-			mtimeMs,
-			contentHash,
-			contentLength,
-		});
+		// Duplicate keys collapse into one membership (degenerate case; should
+		// not occur with correct `cognitionPathToKey` mappings)
+		keys.add(entry.registryKey);
 	}
 
-	return result;
-}
-
-/**
- * Safely read a file's content and stat, returning `null` for both on error.
- */
-async function safeReadFile(
-	fs: FileSystem,
-	uri: UriComponents,
-): Promise<[string | null, { mtimeMs: number } | null]> {
-	try {
-		const [content, stat] = await Promise.all([
-			fs.readFile(uri),
-			fs.stat(uri),
-		]);
-		return [content, stat ?? null];
-	} catch {
-		return [null, null];
-	}
+	return keys;
 }
 
 // ─── Reconcile orchestrator ─────────────────────────────────────────────────
@@ -144,15 +96,14 @@ function inferType(key: string): 'leaf' | 'folder' {
  * 3. Return a `ReconcileDiff` summarising the structural outcome
  *
  * @param registry   The in-memory registry (will be mutated and marked dirty)
- * @param scanResult On-disk cognition file scan from `scanCognitionDirectory`
+ * @param scanKeys   On-disk cognition key scan from `scanCognitionDirectory`
  * @returns Diff describing what changed
  */
 export async function reconcileRegistry(
 	registry: Registry,
-	scanResult: CognitionDirScan,
+	scanKeys: CognitionDirScan,
 ): Promise<ReconcileDiff> {
 	const registryKeys = new Set(Object.keys(registry.getAllEntries()));
-	const scanKeys = new Set(scanResult.keys());
 
 	// ── Step 1: Set arithmetic ──────────────────────────────────────────────
 
@@ -191,7 +142,7 @@ export async function reconcileRegistry(
 		added: addedKeys,
 		deleted: deletedKeys,
 		stats: {
-			totalScanned: scanResult.size,
+			totalScanned: scanKeys.size,
 			totalRegistryEntries: registryKeys.size,
 		},
 	};

@@ -244,12 +244,10 @@ export class Registry {
 	}
 
 	/** @deprecated Legacy observation API; not used by v5 runtime. */
-	recordCognitionTime(key: string, mtimeMs: number, contentHash?: string | null, contentLength?: number | null): void {
+	recordCognitionTime(key: string, mtimeMs: number): void {
 		const entry = this.file.entries[key];
 		if (!entry) { return; }
 		entry.cognitionMtimeMs = mtimeMs;
-		if (contentHash !== undefined) { entry.cognitionBlobHash = contentHash; }
-		if (contentLength !== undefined) { entry.cognitionLength = contentLength; }
 		this.dirty = true;
 	}
 

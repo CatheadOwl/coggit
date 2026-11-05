@@ -7,7 +7,6 @@ import type {
   UriComponents,
 } from './interfaces';
 import type { CoggitWorkspaceRoot, RegistryFile } from './types';
-import { computeBlobHash } from './hash';
 import { buildSnapshotFromProjects, openCoggitProject } from './project';
 import {
   addOperation,

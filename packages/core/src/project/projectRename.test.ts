@@ -9,7 +9,6 @@ import type {
 import type { CoggitWorkspaceRoot, PathKeyRecord, RegistryFile } from '../types';
 import { createCoggitServices, openCoggitProject } from './project';
 import { REGISTRY_SCHEMA_VERSION } from '../registry/index';
-import { computeBlobHash } from '../hash';
 
 interface MockFileEntry {
   isDirectory: boolean;
@@ -503,7 +502,7 @@ suite('project — source rename tracking', () => {
         sourcePath: 'src/watch',
         type: 'folder',
         sourceFactMtimeMs: 1000,
-        sourceFactHash: computeBlobHash('foo.ts'),
+        sourceFactHash: 'fixture-hash:foo.ts',
       }),
     }));
     const services = createCoggitServices(
@@ -694,7 +693,7 @@ suite('project — source rename tracking', () => {
         sourcePath: 'src/watch',
         type: 'folder',
         sourceFactMtimeMs: 5000,
-        sourceFactHash: computeBlobHash('foo.ts'),
+        sourceFactHash: 'fixture-hash:foo.ts',
       }),
     }));
     const services = createCoggitServices(
