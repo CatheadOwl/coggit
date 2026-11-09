@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Publish-face gate for the npm-published packages (rules SSOT:
-// packages/.agent/rules/npm-publish-face.md, ids PKG-1..PKG-9; every
+// packages/.agent/rules/npm-publish-face.md, ids PKG-n; every
 // violation is prefixed with its rule id).
 //
 // Coverage:

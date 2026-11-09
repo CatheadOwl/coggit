@@ -1,11 +1,11 @@
 /**
- * The cross-session composition driver (issue 20260913 regression): a Cordis
+ * The cross-session composition driver (composition regression): a Cordis
  * plugin mounted through the eval overlay INSTEAD of the one-shot
  * headless-runner. It drives TWO sequential main agents inside ONE host
  * process — the exact topology the behavior-experiment face cannot express
  * (each run there boots a fresh host with a single session, so cross-session
- * closure state is out of its domain; dsh-extra eval docs record the
- * boundary) and the shape the original delivery bug lived in: plugin closures
+ * closure state is out of its domain) and the shape the original delivery bug
+ * lived in: plugin closures
  * (the cognition-link provider's render state) are shared by construction.
  *
  * Plan (env COGGIT_CROSS_SESSION_PLAN, JSON): `{ cwd, sessions: [{ id, task }] }`.

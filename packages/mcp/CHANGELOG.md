@@ -8,8 +8,8 @@ All notable changes to `@coggit/mcp` are documented here. Format follows
 Lockstep with the 0.5.1 wave. No server changes of its own — the bundled
 core gains the point-query exclusion probe and the CLI-side status-miss
 diagnosis, and the MCP DTO intentionally carries no diagnosis field this
-round (the diagnosis rides the CLI text surface; an MCP field would be a
-later packet).
+round (the diagnosis rides the CLI text surface; an MCP diagnosis field may
+follow in a later release).
 
 ## [0.5.0] - 2026-11-01
 

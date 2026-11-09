@@ -1,6 +1,6 @@
 /**
- * Cross-session delivery regression (issue 20260913 acceptance #3) — the
- * composition path the dsh-extra defer handed to the consumer side: ONE
+ * Cross-session delivery regression (composition acceptance #3) — the
+ * composition path the framework defer handed to the consumer side: ONE
  * headless host, TWO sequential main sessions mentioning the SAME path, assert
  * BOTH receive the cognition-link injection. The pre-fix provider (process-
  * global lastRendered) silenced session 2 exactly here; the session-scoped
@@ -11,7 +11,7 @@
  * not model behavior.
  *
  * The behavior-experiment face runs one fresh host per run and structurally
- * cannot express this topology (dsh-extra eval docs record the boundary), so
+ * cannot express this topology, so
  * this script composes the host itself through the experimental entry (no
  * compat promise — the same acceptance the behavior experiments already
  * make): stageProfileStore + buildOverlayYaml + a file://-mounted driver

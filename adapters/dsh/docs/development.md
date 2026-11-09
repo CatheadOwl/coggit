@@ -130,4 +130,4 @@ The normalized layout is documented in the `eval/README.md` file in this directo
 
 ## What still needs a dsh profile (rare)
 
-The suite covers every layer up to — but not including — a real Cordis boot: resolving `inject`, `cordis.patch.yml` composition, and profile config. Those matter only when the *structural* surface changes (tool names, `inject`, `Config`, the patch file, plugin name) and are verified by a one-shot headless boot, not a long-lived web server (see the dsh plugin-dev handbook's debug topic, Part 6, in the dsh-extra repository). Routine business-logic and tool-surface edits do not reach this layer.
+The suite covers every layer up to — but not including — a real Cordis boot: resolving `inject`, `cordis.patch.yml` composition, and profile config. Those matter only when the *structural* surface changes (tool names, `inject`, `Config`, the patch file, plugin name) and are verified by a one-shot headless boot, not a long-lived web server. Routine business-logic and tool-surface edits do not reach this layer.

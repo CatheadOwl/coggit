@@ -1,10 +1,12 @@
-# Touch Lane Consumer Design (cognition-link × enrichment W11)
+---
+description: Consumer-side touch-lane design for the cognition-link provider — declaration, rendering policy, failure boundaries
+---
 
-Status: active · Scope: `@coggit/dsh` consumer side only. Framework authority lives
-with the enrichment project (dsh-extra): its workunit ADR series records
-the tool-touch sensor seam and the touchSubjects lane decisions, and the
-`tool-touch sensor lane` section of `modules/enrichment/docs/contract.md` in the
-extras checkout carries the current contract. This document records
+# Touch Lane Consumer Design (cognition-link)
+
+Status: active · Scope: `@coggit/dsh` consumer side only. Framework authority
+lives with the enrichment framework (the tool-touch sensor seam and the
+touchSubjects lane decisions are its records). This document records
 only how this adapter declares and renders; it does not restate framework
 decisions.
 
@@ -48,7 +50,7 @@ discovery while `touchSubjects` is synchronous. The provider keeps a
 `Map<cwd, roots>` warmed by every turn (`resolve` sees `input.cwd`) and
 consulted through `context.cwd`; the warm is failure-isolated and ordered
 BEFORE the snapshot build, so a failing first batch cannot starve the touch
-projection (issue 20260913 finding C). An unwarmed cwd returns no subjects
+projection (a recorded failure case). An unwarmed cwd returns no subjects
 and is warmed in the background for the next call (rejections warn through
 the logger, never an unhandled float). The residual cold start is one missed
 invalidation for the first touches of a brand-new cwd — never a wrong
@@ -79,7 +81,7 @@ degrades to one anonymous scope (the pre-fix behavior). No persistence;
 session states are never evicted (matching the framework ledger's
 semantics — eviction would detonate a re-injection burst).
 
-Failure boundaries (issue 20260913):
+Failure boundaries (from the recorded failure case):
 
 - each path's `statusWithSnapshot` call is isolated — a failure resolves
   `undefined` for that path only and warns; the framework's v0 contract does

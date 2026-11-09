@@ -159,7 +159,7 @@ function createProgram(
   program
     .command('entry')
     // Ecosystem convention name for entry-type commands — self-describing,
-    // context-free, idempotent stdout (any-nav tool-entry hosting). The
+    // context-free, idempotent stdout (generic tool-entry hosting). The
     // former `instructions` spelling is retired without a compat alias.
     .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md). Persistent guidance (an AGENTS.md block) should prefer `--kind standard`; the default `minimal` suits per-invocation composition.')
     .argument('[kind]', 'system prompt kind: minimal, standard (synonym of --kind)', parsePositionalSystemPromptKind)

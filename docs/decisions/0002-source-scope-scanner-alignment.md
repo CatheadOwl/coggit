@@ -53,10 +53,9 @@ as rules; git itself descends into *registered* submodules.
   the pre-0001 state by design.
 - The per-stone hit names are available as nested-repo metadata for a future
   diagnostics surface (report-not-cut consumption); surfacing them in
-  snapshot output is deliberately out of scope (agent-visible face, needs a
-  release-acceptance packet).
+  snapshot output is deliberately out of scope (agent-visible face).
 - Supply: consumes `@catheadowl/pathscope` `alignment` (post-0.1.0); the
-  `link:` window closed at the registry pin train — `^0.1.1`
+  `link:` transition window closed at the registry pin `^0.1.1`
   (published 2026-10-31).
 - Amends decision 0001's core-stone sentence; everything else in 0001
   stands.

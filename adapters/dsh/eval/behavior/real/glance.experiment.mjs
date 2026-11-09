@@ -21,7 +21,7 @@
  *                later re-measures its increment by re-running this file.
  *   control    — provider disabled; isolates injection presence from copy.
  *
- * Boundary (VP-6): competing NON-cognition injection lanes (e.g. breadcrumb
+ * Boundary: competing NON-cognition injection lanes (e.g. breadcrumb
  * lines) would need host-profile work outside this repo; round 3 approximates
  * competition with multi-path cognition-link lines only.
  *
@@ -41,7 +41,7 @@ const { executeBehaviorExperiment, writeBehaviorArtifacts, defineBehaviorExperim
   () => ({}),
 )
 if (typeof defineBehaviorExperiment !== 'function') {
-  console.error('glance.experiment: this @catheadowl/dsh-eval release does not carry the behavior-experiment surface (experimental entry, dsh-extra ADR 0006 / EVAL-023). Upgrade the devDependency once that release ships.')
+  console.error('glance.experiment: this @catheadowl/dsh-eval release does not carry the behavior-experiment surface (experimental entry). Upgrade the devDependency once that release ships.')
   process.exit(1)
 }
 

@@ -20,8 +20,7 @@ All notable changes to `@coggit/core` are documented here. Format follows
   is invisible to the scan (`Excluded from the scan scope of <id>: yes` /
   hit chain / `un-exclude:` action line) instead of a bare not-found. A path
   outside every scope, a non-file root, or any probe failure keeps the plain
-  miss — the diagnosis never masks the miss. Output wording adjudicated in
-  the 2026-11-01 release-acceptance packet.
+  miss — the diagnosis never masks the miss.
 
 ### Changed
 

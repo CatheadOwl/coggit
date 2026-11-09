@@ -18,7 +18,7 @@
  * failure fakes a null result. The framework enforces this per run and marks
  * a zero-guard-clean arm INVALID.
  *
- * Requires the behavior-experiment surface (dsh-eval ADR 0006 / EVAL-023,
+ * Requires the behavior-experiment surface (the experimental entry
  * `@catheadowl/dsh-eval/experimental` — no compat promise until published;
  * the pinned devDep must be bumped past that release first). Run host-side
  * (credential + spawn capability):
@@ -39,7 +39,7 @@ const { executeBehaviorExperiment, writeBehaviorArtifacts, defineBehaviorExperim
   () => ({}),
 )
 if (typeof defineBehaviorExperiment !== 'function') {
-  console.error('adoption.experiment: this @catheadowl/dsh-eval release does not carry the behavior-experiment surface (experimental entry, dsh-extra ADR 0006 / EVAL-023). Upgrade the devDependency once that release ships.')
+  console.error('adoption.experiment: this @catheadowl/dsh-eval release does not carry the behavior-experiment surface (experimental entry). Upgrade the devDependency once that release ships.')
   process.exit(1)
 }
 

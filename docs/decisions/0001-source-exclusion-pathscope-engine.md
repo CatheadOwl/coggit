@@ -74,17 +74,15 @@ mainstream precedence canon verified against ripgrep's ignore crate
 
 | tree | shape | result |
 | --- | --- | --- |
-| vscode-plugins | vendored nested repo (the coggit submodule, `.git` file form) inside the source root | 369 → 25 files: the whole `coggit/` subtree (344 files) truncates via the core stone; `coggit.pre-submodule-backup/` (a plain copy, no `.git`) stays indexed by both engines |
-| UKP (`ukp/`), session-manager (`codebase/`) | regular trees | 113 → 113 and 254 → 254 files: byte-identical, zero diff |
+| a workspace vendoring this repo | vendored nested repo (`.git` file form) inside the source root | 369 → 25 files: the vendored subtree (344 files) truncates via the core stone; a sibling plain-copy directory (no `.git`) stays indexed by both engines |
+| two unrelated regular trees | regular trees | byte-identical counts, zero diff |
 | constructed lib/vendor workspace | bug-fix proof | old misses `lib/engine.ts` + `vendor/adapter.ts` despite `!lib/`/`!vendor/`; new indexes both |
 
-The vendored-repo truncation matches the accepted M3.1/M3.2 precedents
-(any-nav DEC-0023 4c: dsh-extra `deepseek-harness/`; UKP's vendored-codex
-decision 0029) — vendored repositories are foreign territory. Within this
-workspace the cognition mirror for the truncated subtree
-(`codebase_cognition/coggit/**`) loses its source pairing; pointing coggit
-at the submodule as its own workspace (it is its own repository) is the
-mitigation, mirroring any-nav's drill-down route.
+The vendored-repo truncation matches the accepted earlier vendored-repo
+precedents — vendored repositories are foreign territory. A workspace whose
+cognition mirror covers the truncated subtree loses the source pairing for
+those paths; pointing the tool at the nested repository as its own workspace
+(it is its own repository) is the mitigation.
 
 ## Consequences
 
@@ -92,7 +90,7 @@ mitigation, mirroring any-nav's drill-down route.
   its transitive `ignore` / `fdir` / `find-up` (all zero install scripts,
   verified 2026-10-24). The published bundle inlines them (esbuild); the
   runtime install set resolves from the registry (pathscope 0.1.1).
-- `verify:publish-face` (PKG-11 `link:` guard, the UKP pack-audit form) is
+- `verify:publish-face` (the PKG-11 `link:` guard) is
   green again with the registry pin (`^0.1.1`).
 - Case absorption: the retired matcher's corpus diffed against the pathscope
   fixtures produced fixture 32 (two-level nested rule base, git-oracle);
@@ -112,7 +110,7 @@ mitigation, mirroring any-nav's drill-down route.
   git-native remedy — same escalation path (engine-side hatch), not a
   local re-anchoring.
 
-## Reversal-condition note (2026-10-24, M3.4)
+## Reversal-condition note (2026-10-24)
 
 The engine-side exemption hatch landed: pathscope `boundaryStones.exempt`
 (named-subtree core-stone exemption, registered fixture 33). For coggit
