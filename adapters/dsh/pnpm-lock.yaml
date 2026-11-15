@@ -15,8 +15,8 @@ importers:
         specifier: link:../../packages/core
         version: link:../../packages/core
       '@coggit/runtime-node':
-        specifier: ^0.5.1
-        version: 0.5.1(@parcel/watcher@2.6.0)
+        specifier: ^0.5.2
+        version: 0.5.2(@parcel/watcher@2.6.0)
     devDependencies:
       '@catheadowl/dsh-eval':
         specifier: ^0.4.1
@@ -42,8 +42,8 @@ packages:
     peerDependencies:
       '@deepseek-ai/dsh-llm': '*'
 
-  '@coggit/runtime-node@0.5.1':
-    resolution: {integrity: sha512-uJiYSTrf03swBksFYZ/FBsbGPjUHhBLN8qpLMUHZsF12gtxHjeY+v737Slc7lzbZUFr0ZBF5oEtSLY1KDTbIJw==}
+  '@coggit/runtime-node@0.5.2':
+    resolution: {integrity: sha512-eaahvNBeX3XHdo6PD+Xbo1Y8XJrcWybj+Rex0YcfapW52s5lDobqTdLketmiBVIuYLXl37m3pe5n3n61U8ddEA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@parcel/watcher': ^2.6.0
@@ -187,7 +187,7 @@ snapshots:
 
   '@catheadowl/dsh-eval@0.4.1': {}
 
-  '@coggit/runtime-node@0.5.1(@parcel/watcher@2.6.0)':
+  '@coggit/runtime-node@0.5.2(@parcel/watcher@2.6.0)':
     dependencies:
       '@coggit/core': link:../../packages/core
     optionalDependencies:
