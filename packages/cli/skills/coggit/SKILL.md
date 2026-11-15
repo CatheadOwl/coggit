@@ -1,6 +1,7 @@
 ---
 name: coggit
-description: manually — dispatch SOP for the `coggit` CLI
+description: manually
+_description: dispatch SOP for the `coggit` CLI
 metadata:
   author: coggit
 ---
