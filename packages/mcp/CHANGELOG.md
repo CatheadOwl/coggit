@@ -3,6 +3,14 @@
 All notable changes to `@coggit/mcp` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.2] - 2026-11-15
+
+Lockstep with the 0.5.2 wave (the paste-once minimal block ships in
+`@coggit/core` / `@coggit/cli`). No functional changes since 0.5.1 —
+the server's `instructions` seam re-voices the standard segments, which
+are byte-identical in this wave; the minimal form is an entry concern
+the server does not mount.
+
 ## [0.5.1] - 2026-11-03
 
 Lockstep with the 0.5.1 wave. No server changes of its own — the bundled

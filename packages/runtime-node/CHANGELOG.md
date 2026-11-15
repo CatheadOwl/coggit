@@ -3,6 +3,12 @@
 All notable changes to `@coggit/runtime-node` are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [0.5.2] - 2026-11-15
+
+Lockstep with the 0.5.2 wave. No functional changes since 0.5.1 — the
+node runtime mounts the unchanged port contracts; core's
+existence-only reconcile scan rides behind the same service seams.
+
 ## [0.5.1] - 2026-11-03
 
 ### Changed

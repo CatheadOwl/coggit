@@ -9,3 +9,6 @@ dist/*.vsix
 **/tsconfig.json
 **/*.map
 **/*.ts
+**/*.tsbuildinfo
+.agent/**
+AGENTS.md

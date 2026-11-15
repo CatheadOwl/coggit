@@ -5,6 +5,8 @@ All notable changes to `@coggit/core` are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-15
+
 ### Changed
 
 - `MINIMAL_SYSTEM_PROMPT` (version bumped to `system-prompt-v2`) is the
@@ -15,6 +17,14 @@ All notable changes to `@coggit/core` are documented here. Format follows
   source ordering joins the identity and keep-current directives. The
   standard form and its segment table are byte-identical to 0.5.1; the
   content contract (invariant element classes only) is test-pinned.
+- The registry reconcile scan is existence-only: the cognition-directory
+  walk returns the registry-key set on disk — no file-content reads and no
+  hashes; reconcile diffs consume the key set alone, so verdicts are
+  unchanged and the scan stops paying content reads. The scan-time
+  diagnostics (`CognitionFileScanInfo`: per-file mtime / content-hash /
+  length) and the `computeBlobHash` primitive retire with the change; both
+  were registry-module-local and never rode the public or `./internal`
+  export maps.
 
 ## [0.5.1] - 2026-11-03
 
@@ -40,8 +50,6 @@ All notable changes to `@coggit/core` are documented here. Format follows
 - `@catheadowl/pathscope` pins `^0.2.0` (the probe release; additive over
   0.1.1 — the walk face is unchanged, verified by the full suite on the
   registry build).
-
-## [Unreleased]
 
 ## [0.5.0] - 2026-11-01
 

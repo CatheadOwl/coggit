@@ -3,6 +3,30 @@
 All notable changes to `@coggit/cli` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+## [0.5.2] - 2026-11-15
+
+### Changed
+
+- The stance's delivery splits into a paste-once ambient layer and an
+  on-demand full stance: the AGENTS.md block is now the default
+  `minimal` kind — an invariant block (entry + orientation + fetch pointer
+  over the identity/ordering/upkeep body) pasted once and never re-pasted;
+  stance wording evolution reaches agents through the block's fetch pointer
+  (`coggit entry --kind standard`), not through re-pasting. The orientation
+  sentence now rides `minimal` as well (supersedes the 2026-10-08
+  entry-only ruling), and the `entry` help recommendation flips
+  accordingly. `--kind standard` raw/block output is byte-identical to
+  0.5.1; existing standard-shaped blocks keep working.
+- The shipped skill's frontmatter tightens to the loader convention:
+  `description` is now the bare trigger word (`manually`), and the
+  capability text moves to the loader-inert `_description` key — a by-name
+  skill's description carries the trigger, not a capability pitch.
+- Publish-audit wording scrub on shipped text: the skill's setup
+  reference drops workspace-world narration (docs-only; commands and
+  semantics unchanged).
+
 ## [0.5.1] - 2026-11-03
 
 ### Added
@@ -25,22 +49,6 @@ All notable changes to `@coggit/cli` are documented here. Format follows
   `skillRoot`, `skillMd` — additive-only) and never writes an agent
   directory; copying or linking the tree is the agent's move. A linked
   development install announces the working tree it follows.
-
-## [Unreleased]
-
-### Changed
-
-- The stance's delivery splits into a paste-once ambient layer and an
-  on-demand full stance: the AGENTS.md block is now the default
-  `minimal` kind — an invariant block (entry + orientation + fetch pointer
-  over the identity/ordering/upkeep body) pasted once and never re-pasted;
-  stance wording evolution reaches agents through the block's fetch pointer
-  (`coggit entry --kind standard`), not through re-pasting. The orientation
-  sentence now rides `minimal` as well (supersedes the 2026-10-08
-  entry-only ruling), and the `entry` help recommendation flips
-  accordingly. `--kind standard` raw/block output is byte-identical to
-  0.5.1; existing standard-shaped blocks keep working.
-
 
 ## [0.5.0] - 2026-11-01
 

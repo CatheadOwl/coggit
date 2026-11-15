@@ -4,6 +4,21 @@ All notable changes to the CogGit extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.2] - 2026-11-15
+
+### Fixed
+
+- The packaged VSIX no longer carries dev-layer files: `.agent/rules/`,
+  the package-local `AGENTS.md`, and `tsconfig.tsbuildinfo` join the
+  `.vscodeignore` exclusion list, so the artifact holds only the
+  production release assets (bundle, MCP host, icons, listing metadata).
+  The pre-existing leak rode every VSIX since the 0.5.0 split.
+
+Lockstep with the 0.5.2 wave. No extension changes of its own — the
+bundled SDK's consumer-visible moves this wave (the `minimal`
+paste-once block, the existence-only reconcile scan) do not touch the
+extension's views, commands, or MCP configuration path.
+
 ## [0.5.1] - 2026-11-03
 
 Lockstep with the 0.5.1 wave. No extension changes of its own — the

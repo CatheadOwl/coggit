@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-11-15
+
+Lockstep with the 0.5.2 wave; the `@coggit/*` SDK specifiers realign to
+`^0.5.2`. No adapter publish this wave — the adapter's prompt face
+passes the core forms through, so its minimal form moves with
+`@coggit/core` 0.5.2 at the adapter's next lane run; the frozen
+surface-contract baseline is already re-captured to the paste-once body.
+
 ## [0.5.1] - 2026-11-03
 
 Lockstep with the 0.5.1 wave; the `@coggit/*` SDK specifiers realign to

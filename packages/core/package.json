@@ -1,6 +1,6 @@
 {
   "name": "@coggit/core",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "CogGit core kernel: source/cognition freshness semantics, registry, snapshot, status, and operations.",
   "license": "MIT",
   "repository": {
