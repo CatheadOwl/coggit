@@ -14,19 +14,39 @@ suite('system prompt', () => {
     assert.strictEqual(getCoggitSystemPrompt('standard').kind, 'standard');
   });
 
-  test('minimal form states the mirror relationship and stays surface-neutral', () => {
-    assert.match(MINIMAL_SYSTEM_PROMPT.content, /mirrors the source tree/);
+  test('minimal form is the invariant paste-once body derived from the standard segments', () => {
+    assert.strictEqual(MINIMAL_SYSTEM_PROMPT.version, 'system-prompt-v2');
+    // Byte-equal derivation: every body line is a standard segment text or
+    // minimal's one connective prose line — a stance wording round edits one
+    // segment and both forms move together.
+    const standardTexts = STANDARD_SYSTEM_PROMPT_SEGMENTS.map(
+      (segment) => segment.text,
+    );
+    for (const line of MINIMAL_SYSTEM_PROMPT.content.split('\n')) {
+      assert.ok(
+        line === 'Use it to explore the codebase.' || standardTexts.includes(line),
+        `minimal line is neither the connective nor a standard segment: ${line}`,
+      );
+    }
+    assert.match(MINIMAL_SYSTEM_PROMPT.content, /mirrored design layer over the source tree/);
     assert.match(MINIMAL_SYSTEM_PROMPT.content, /paired cognition document/);
-    assert.match(MINIMAL_SYSTEM_PROMPT.content, /README\.md/);
+    assert.match(MINIMAL_SYSTEM_PROMPT.content, /README\.md at that folder's mirrored path/);
     assert.match(
       MINIMAL_SYSTEM_PROMPT.content,
       /design intent, contracts, boundaries, and invariants/,
     );
+    assert.match(MINIMAL_SYSTEM_PROMPT.content, /Before reading source code/);
     assert.match(
       MINIMAL_SYSTEM_PROMPT.content,
       /keep the paired cognition document up to date/,
     );
+    // Surface-neutral, and scoped to the paste-once contract: no CLI
+    // spellings, and none of the standard-only classes (the
+    // delegation/handbook spelling, the contradictions clause).
     assert.doesNotMatch(MINIMAL_SYSTEM_PROMPT.content, /coggit_|coggit:\/\//);
+    assert.doesNotMatch(MINIMAL_SYSTEM_PROMPT.content, /coggit (snapshot|status|handbook|entry)/);
+    assert.doesNotMatch(MINIMAL_SYSTEM_PROMPT.content, /handbook/);
+    assert.doesNotMatch(MINIMAL_SYSTEM_PROMPT.content, /Report contradictions/);
   });
 
   test('standard form content is exactly its segments joined by newlines', () => {

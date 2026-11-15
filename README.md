@@ -101,16 +101,17 @@ coggit mcp install
 dsh plugin add @coggit/dsh
 
 # CLI agent hosts (Claude Code, Codex, Gemini CLI, ...) — print the agent guidance
-claude --append-system-prompt "$(coggit entry)"
-coggit entry --kind standard --format block >> AGENTS.md
+claude --append-system-prompt "$(coggit entry --kind standard)"
+coggit entry --format block >> AGENTS.md
 
 # CLI agent hosts that read skills — locate the shipped `coggit` skill, then copy or link its tree
 coggit skills
 ```
 
-`>>` is for first install. To update an existing block, re-run the same
-command and replace the whole marked block (begin marker to end marker)
-instead of appending — the first line inside the block carries the same rule.
+The pasted block is invariant-shaped — paste it once; stance evolution
+reaches agents through the fetch pointer inside the block, not through
+re-pasting. `coggit entry --kind standard` prints the full stance at any
+time.
 
 dsh and MCP hosts inject the guidance through their own adapter surfaces;
 `coggit entry` is the channel for hosts without an adapter. `coggit skills`

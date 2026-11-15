@@ -20,16 +20,27 @@ export const CLI_ENTRY_SENTENCE =
   'CogGit is available as the `coggit` CLI — `coggit --help` lists the commands.';
 
 /**
- * The standard form's orientation pointer: the entry sentence teaches
- * entry, this sentence answers the first orientation questions (where are
- * the roots, where is this file's pair) with the commands that actually
- * answer on the CLI text surface — status header and per-path status.
- * Applies to the standard kind only (owner ruling 2026-10-08: orientation
- * rides the standard form; minimal keeps entry-only so its density is
- * preserved).
+ * The orientation pointer: the entry sentence teaches entry, this sentence
+ * answers the first orientation questions (where are the roots, where is
+ * this file's pair) with the commands that actually answer on the CLI text
+ * surface — status header and per-path status. Rides both kinds: the
+ * standard composite keeps it, and the minimal invariant block needs it to
+ * orient a pasting host. Supersedes owner ruling 2026-10-08 (orientation
+ * rode the standard kind only; minimal kept entry-only density) — minimal
+ * exchanges that density for the self-refreshing paste-once property
+ * (ADR 0034).
  */
-export const CLI_STANDARD_ORIENTATION_SENTENCE =
+export const CLI_ORIENTATION_SENTENCE =
   'Orient with `coggit status`: the header names the source and cognition roots, and `coggit status <path>` names a file\'s paired cognition document.';
+
+/**
+ * The paste-once layer's self-refresh seam (ADR 0034): the minimal invariant
+ * block carries invariant content only, so stance wording evolution reaches
+ * agents through this pointer instead of a re-paste. Rides the minimal kind
+ * only — the standard form IS the full stance this pointer names.
+ */
+export const CLI_FETCH_POINTER_SENTENCE =
+  'Full stance: `coggit entry --kind standard` prints the complete, always-current guidance.';
 
 /**
  * The CLI host's spellings for the `standard` form — the same per-host access
@@ -49,7 +60,8 @@ const CLI_SEGMENT_OVERRIDES: Readonly<Partial<Record<StandardPromptSegmentKey, s
  * Print-side of the prompt-form channel for CLI agent hosts: access
  * sentences + form (access is a host axis, orthogonal to kind — the entry
  * sentence gives minimal's "Use it" its referent; the orientation sentence
- * rides the standard form only). `raw` is for `$(...)` composition with
+ * rides both kinds, and the fetch pointer rides the paste-once minimal
+ * block only). `raw` is for `$(...)` composition with
  * host flags; `block` wraps the composite in managed markers carrying kind
  * and version so an update replaces the block inside an instruction file
  * such as `AGENTS.md` without touching surrounding text — the first line
@@ -69,8 +81,8 @@ export function runEntry(
   }
   const accessLines =
     kind === 'standard'
-      ? [CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE]
-      : [CLI_ENTRY_SENTENCE];
+      ? [CLI_ENTRY_SENTENCE, CLI_ORIENTATION_SENTENCE]
+      : [CLI_ENTRY_SENTENCE, CLI_ORIENTATION_SENTENCE, CLI_FETCH_POINTER_SENTENCE];
   // The standard body is re-derived from the segments so the CLI overrides
   // apply (the joined form is byte-equal to core's content for untouched
   // segments); minimal is a single content blob with no segments to re-voice.

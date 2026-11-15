@@ -3,7 +3,10 @@
  *
  * A "system prompt" is the short guidance a host injects so an agent knows
  * CogGit exists and how to approach it. Forms range from a short hint
- * (minimal) to fuller operational instructions (standard). Every form is a
+ * (minimal) to fuller operational instructions (standard). Minimal is the
+ * invariant-only paste-once body (ADR 0034): the block an instruction file
+ * pastes once, kept version-stable while stance wording evolves in the
+ * standard form. Every form is a
  * universal body: it names CogGit as the project and references operations
  * by name ("the snapshot operation", "the status operation", "handbook
  * guidance") with zero surface spellings — no CLI command spellings, no
@@ -27,21 +30,11 @@ export type CoggitSystemPromptKind = 'minimal' | 'standard';
 
 export interface CoggitSystemPrompt {
   kind: CoggitSystemPromptKind;
-  version: 'system-prompt-v1';
+  /** Versioned per form: a form's content contract change bumps its own
+   * stamp, so block markers re-detect replaces across the transition. */
+  version: 'system-prompt-v1' | 'system-prompt-v2';
   content: string;
 }
-
-/**
- * The minimal form: the essential identity of CogGit — the mirrored cognition
- * layer and what it records — plus the keep-it-current directive, without
- * prescribing a workflow.
- */
-export const MINIMAL_SYSTEM_PROMPT: CoggitSystemPrompt = {
-  kind: 'minimal',
-  version: 'system-prompt-v1',
-  content:
-    'CogGit mirrors the source tree with a cognition layer: each source file or folder has a paired cognition document at the same source-relative path — a file is mirrored by `<source path>.md`, a folder by the `README.md` at its mirrored path — recording design intent, contracts, boundaries, and invariants rather than implementation summaries. Use it to explore the codebase, and when changing code, keep the paired cognition document up to date.',
-};
 
 /**
  * Stable per-line identities for the `standard` form. Hosts that re-address
@@ -108,6 +101,40 @@ export const STANDARD_SYSTEM_PROMPT_SEGMENTS: readonly StandardPromptSegment[] =
     text: 'Report contradictions between source, cognition, design intent, or the requested change before editing a cognition document; do not silently resolve uncertainty, and verify edited nodes with the status operation.',
   },
 ];
+
+function segmentText(key: StandardPromptSegmentKey): string {
+  const segment = STANDARD_SYSTEM_PROMPT_SEGMENTS.find(
+    (candidate) => candidate.key === key,
+  );
+  if (segment === undefined) {
+    throw new Error(`unknown prompt segment '${key}'`);
+  }
+  return segment.text;
+}
+
+/**
+ * The minimal form: the paste-once ambient body (ADR 0034) — CogGit's
+ * identity and the invariant duties only (mirror convention, what cognition
+ * records, the before-reading-source ordering, the keep-it-current
+ * directive), with no workflow, tool, URI, or concrete path. Its text is
+ * re-derived from the standard segment table so the two forms share one
+ * source — a stance wording round edits one segment and both forms move;
+ * "Use it to explore the codebase." is minimal's only standalone connective
+ * prose. The host access layer (`@coggit/cli`'s entry sentences) completes
+ * it into the invariant block an instruction file pastes once; the full
+ * stance stays available on demand through the standard form.
+ */
+export const MINIMAL_SYSTEM_PROMPT: CoggitSystemPrompt = {
+  kind: 'minimal',
+  version: 'system-prompt-v2',
+  content: [
+    segmentText('mirror'),
+    'Use it to explore the codebase.',
+    segmentText('records'),
+    segmentText('snapshot'),
+    segmentText('upkeep'),
+  ].join('\n'),
+};
 
 export const STANDARD_SYSTEM_PROMPT: CoggitSystemPrompt = {
   kind: 'standard',

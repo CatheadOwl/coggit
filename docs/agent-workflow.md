@@ -25,11 +25,12 @@ Give your agent host the CogGit guidance with `coggit entry` — it prints the m
 claude --append-system-prompt "$(coggit entry --kind standard)"
 
 # persistent, for hosts that read AGENTS.md (Codex, Claude Code, Gemini CLI, ...)
-coggit entry --kind standard --format block >> AGENTS.md
+coggit entry --format block >> AGENTS.md
 ```
 
-`>>` is for first install; on update, replace the whole marked block instead
-of appending (the first line inside the block carries the same notice).
+The pasted block is invariant-shaped: paste once; stance evolution reaches
+agents through the fetch pointer inside the block (`coggit entry --kind
+standard`), not through re-pasting.
 
 Hosts that read agent skills can also take the dispatch SOP that ships with
 the CLI: `coggit skills` locates the `coggit` skill tree (`--json` for the

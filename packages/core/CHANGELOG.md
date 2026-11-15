@@ -3,6 +3,19 @@
 All notable changes to `@coggit/core` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Changed
+
+- `MINIMAL_SYSTEM_PROMPT` (version bumped to `system-prompt-v2`) is the
+  paste-once ambient body (ADR 0034): re-derived from the standard segment
+  table (`mirror` / `records` / `snapshot` / `upkeep` byte-equal, plus the
+  "Use it to explore the codebase." connective), trading the short hint for
+  the invariant duties the pasted block must carry — the before-reading-
+  source ordering joins the identity and keep-current directives. The
+  standard form and its segment table are byte-identical to 0.5.1; the
+  content contract (invariant element classes only) is test-pinned.
+
 ## [0.5.1] - 2026-11-03
 
 ### Added

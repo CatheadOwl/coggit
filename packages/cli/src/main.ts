@@ -161,7 +161,7 @@ function createProgram(
     // Ecosystem convention name for entry-type commands — self-describing,
     // context-free, idempotent stdout (generic tool-entry hosting). The
     // former `instructions` spelling is retired without a compat alias.
-    .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md). Persistent guidance (an AGENTS.md block) should prefer `--kind standard`; the default `minimal` suits per-invocation composition.')
+    .description('Print the CogGit agent guidance for CLI hosts (stdout only; compose with host flags or paste into AGENTS.md). Persistent guidance (an AGENTS.md block) should prefer the default `minimal` — an invariant block pasted once, never re-pasted; `--kind standard` prints the full stance for per-invocation composition or on-demand fetch.')
     .argument('[kind]', 'system prompt kind: minimal, standard (synonym of --kind)', parsePositionalSystemPromptKind)
     .option('--kind <kind>', 'system prompt kind: minimal, standard', parseSystemPromptKind, 'minimal')
     .option('--format <format>', 'output shape: raw or block', parseEntryFormat, 'raw')

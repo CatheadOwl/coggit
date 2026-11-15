@@ -1,10 +1,10 @@
 ---
-description: One-time coggit operations — the project set-up dance (init, entry guidance install, MCP install, verify) and refreshing the installed guidance after an upgrade
+description: One-time coggit operations — the project set-up dance (init, entry guidance install, MCP install, verify) and the paste-once contract for the installed guidance
 ---
 
-# Set-up & refresh (one-time)
+# Set-up & paste-once guidance (one-time)
 
-Cold operations, consulted once per project or once per upgrade; the
+Cold operations, consulted once per project; the
 everyday loop (orient / author / maintain) lives on the face
 (`../SKILL.md`).
 
@@ -13,16 +13,21 @@ everyday loop (orient / author / maintain) lives on the face
 1. `coggit init` — defaults: source root `src`, cognition root
    `<source-root>_cognition`; `--source-root` / `--cognition-root`
    override.
-2. Install the guidance:
-   `coggit entry --kind standard --format block >> AGENTS.md` on first
-   install; on update, replace the whole marked block instead of
-   appending — the first line inside the block states this rule. A repo
-   that hosts tool-entry commands can declare `coggit entry --kind
-   standard` there instead of pasting a block.
+2. Install the guidance: `coggit entry --format block >> AGENTS.md` —
+   paste once. The block is invariant-shaped: stance evolution reaches
+   agents through the fetch pointer inside it (`coggit entry --kind
+   standard`), never through re-pasting. A repo that hosts tool-entry
+   commands can declare `coggit entry --kind standard` there instead —
+   tool-entry hosts get the full stance fresh every session.
 3. Hosts that speak MCP: `coggit mcp install`.
 4. Verify: `coggit status` now prints the roots.
 
-## Refresh the installed guidance after an upgrade
+## The installed block does not need refreshing
 
-Re-run the command named in the installed block's first line and replace
-the whole block (markers included).
+The paste-once layer carries invariant content only (the contract is owned
+by core's `systemPrompt.ts` and test-pinned), so stance wording evolution
+never touches the block. Re-run `coggit entry --kind minimal --format
+block` and replace the whole block (markers included) only if that
+contract itself changes — architecture-level events, expected rare. A
+standard-shaped block from an older install keeps working; replacing it
+with the minimal block is optional and can happen at any time.

@@ -4,13 +4,20 @@ import {
   STANDARD_SYSTEM_PROMPT_SEGMENTS,
 } from '@coggit/core';
 
-import { CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE, runEntry } from './entry';
+import {
+  CLI_ENTRY_SENTENCE,
+  CLI_FETCH_POINTER_SENTENCE,
+  CLI_ORIENTATION_SENTENCE,
+  runEntry,
+} from './entry';
 
 function expectedComposite(kind: 'minimal' | 'standard'): string {
+  // Mirrors runEntry's access layer: both kinds carry the orientation
+  // sentence; only the paste-once minimal block carries the fetch pointer.
   const accessLines =
     kind === 'standard'
-      ? [CLI_ENTRY_SENTENCE, CLI_STANDARD_ORIENTATION_SENTENCE]
-      : [CLI_ENTRY_SENTENCE];
+      ? [CLI_ENTRY_SENTENCE, CLI_ORIENTATION_SENTENCE]
+      : [CLI_ENTRY_SENTENCE, CLI_ORIENTATION_SENTENCE, CLI_FETCH_POINTER_SENTENCE];
   // Mirrors runEntry's body derivation: the standard body re-derives from the
   // segments (CLI delegation override applies); minimal passes through.
   const body =
@@ -25,7 +32,7 @@ function expectedComposite(kind: 'minimal' | 'standard'): string {
 }
 
 suite('CLI entry', () => {
-  test('raw format prepends the entry sentence to the form content', () => {
+  test('raw format prepends the access sentences to the form content', () => {
     for (const kind of ['minimal', 'standard'] as const) {
       assert.strictEqual(runEntry(kind, 'raw'), expectedComposite(kind));
     }
@@ -58,12 +65,38 @@ suite('CLI entry', () => {
     assert.doesNotMatch(CLI_ENTRY_SENTENCE, /snapshot|status|handbook|init/);
   });
 
-  test('the orientation sentence rides the standard form only and names the answering commands', () => {
-    assert.match(CLI_STANDARD_ORIENTATION_SENTENCE, /`coggit status`/);
-    assert.match(CLI_STANDARD_ORIENTATION_SENTENCE, /`coggit status <path>`/);
+  test('the orientation sentence rides both kinds and names the answering commands', () => {
+    assert.match(CLI_ORIENTATION_SENTENCE, /`coggit status`/);
+    assert.match(CLI_ORIENTATION_SENTENCE, /`coggit status <path>`/);
     assert.match(runEntry('standard', 'raw'), /coggit status/);
-    // Minimal keeps entry-only access (owner ruling 2026-10-08).
-    assert.doesNotMatch(runEntry('minimal', 'raw'), /coggit status/);
+    // The paste-once minimal block orients too (supersedes owner ruling
+    // 2026-10-08 — minimal exchanges entry-only density for self-refresh).
+    assert.match(runEntry('minimal', 'raw'), /coggit status/);
+  });
+
+  test('the fetch pointer rides the paste-once minimal block only', () => {
+    assert.match(CLI_FETCH_POINTER_SENTENCE, /`coggit entry --kind standard`/);
+    assert.match(runEntry('minimal', 'raw'), /always-current guidance/);
+    // The standard form IS the full stance — pointing at itself would be
+    // circular, so the pointer never rides it.
+    assert.doesNotMatch(runEntry('standard', 'raw'), /always-current guidance/);
+  });
+
+  test('the minimal block is the paste-once invariant layer (ADR 0034 contract)', () => {
+    const minimal = runEntry('minimal', 'raw');
+    // The seven element classes: entry, mirror, records, ordering,
+    // orientation spellings, upkeep, fetch pointer.
+    assert.match(minimal, /`coggit` CLI/);
+    assert.match(minimal, /mirrored design layer over the source tree/);
+    assert.match(minimal, /design intent, contracts, boundaries, and invariants/);
+    assert.match(minimal, /Before reading source code/);
+    assert.match(minimal, /`coggit status <path>`/);
+    assert.match(minimal, /keep the paired cognition document up to date/);
+    assert.match(minimal, /`coggit entry --kind standard`/);
+    // The excluded classes: no handbook spelling, no contradictions clause —
+    // they live in the standard body and reach agents through the fetch.
+    assert.doesNotMatch(minimal, /coggit handbook/);
+    assert.doesNotMatch(minimal, /Report contradictions/);
   });
 
   test('the standard delegation segment is re-voiced with the CLI handbook spelling; every other segment stays core-owned', () => {
@@ -79,10 +112,10 @@ suite('CLI entry', () => {
     assert.deepStrictEqual(differing, [
       'CogGit cognition maintenance is source-scoped and suitable for subagents: delegate independent sourcePath updates along with the relevant `coggit handbook <kind>` guidance.',
     ]);
-    // Minimal has no delegation segment to re-voice: it stays byte-equal to
-    // core and carries no handbook spelling.
+    // Minimal has no delegation segment to re-voice: its body stays
+    // byte-equal to core and carries no handbook spelling.
     assert.strictEqual(
-      runEntry('minimal', 'raw').split('\n').slice(1).join('\n'),
+      runEntry('minimal', 'raw').split('\n').slice(3).join('\n'),
       getCoggitSystemPrompt('minimal').content,
     );
     assert.doesNotMatch(runEntry('minimal', 'raw'), /coggit handbook/);
