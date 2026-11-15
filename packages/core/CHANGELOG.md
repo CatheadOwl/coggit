@@ -8,7 +8,7 @@ All notable changes to `@coggit/core` are documented here. Format follows
 ### Changed
 
 - `MINIMAL_SYSTEM_PROMPT` (version bumped to `system-prompt-v2`) is the
-  paste-once ambient body (ADR 0034): re-derived from the standard segment
+  paste-once ambient body: re-derived from the standard segment
   table (`mirror` / `records` / `snapshot` / `upkeep` byte-equal, plus the
   "Use it to explore the codebase." connective), trading the short hint for
   the invariant duties the pasted block must carry — the before-reading-

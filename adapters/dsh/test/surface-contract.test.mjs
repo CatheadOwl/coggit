@@ -41,7 +41,7 @@ export function surfaceContractFindings(text) {
 // deliberately on 2026-10-07 for the paired-document terminology canonicalization
 // ("cognition document" everywhere), again the same day for the wording-candidates
 // round (folder mirror path made explicit: "the README.md at its mirrored path"),
-// and on 2026-11-15 for the paste-once invariant-block contract (ADR 0034): minimal
+// and on 2026-11-15 for the paste-once invariant-block contract: minimal
 // is re-derived from the standard segment table (mirror / records / snapshot /
 // upkeep + the use-it connective), trading the short hint for the invariant duties
 // the pasted block must carry.

@@ -4,7 +4,7 @@
  * A "system prompt" is the short guidance a host injects so an agent knows
  * CogGit exists and how to approach it. Forms range from a short hint
  * (minimal) to fuller operational instructions (standard). Minimal is the
- * invariant-only paste-once body (ADR 0034): the block an instruction file
+ * invariant-only paste-once body: the block an instruction file
  * pastes once, kept version-stable while stance wording evolves in the
  * standard form. Every form is a
  * universal body: it names CogGit as the project and references operations
@@ -113,7 +113,7 @@ function segmentText(key: StandardPromptSegmentKey): string {
 }
 
 /**
- * The minimal form: the paste-once ambient body (ADR 0034) — CogGit's
+ * The minimal form: the paste-once ambient body — CogGit's
  * identity and the invariant duties only (mirror convention, what cognition
  * records, the before-reading-source ordering, the keep-it-current
  * directive), with no workflow, tool, URI, or concrete path. Its text is

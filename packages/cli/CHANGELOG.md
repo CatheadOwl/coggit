@@ -31,7 +31,7 @@ All notable changes to `@coggit/cli` are documented here. Format follows
 ### Changed
 
 - The stance's delivery splits into a paste-once ambient layer and an
-  on-demand full stance (ADR 0034): the AGENTS.md block is now the default
+  on-demand full stance: the AGENTS.md block is now the default
   `minimal` kind — an invariant block (entry + orientation + fetch pointer
   over the identity/ordering/upkeep body) pasted once and never re-pasted;
   stance wording evolution reaches agents through the block's fetch pointer

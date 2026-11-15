@@ -82,7 +82,7 @@ suite('CLI entry', () => {
     assert.doesNotMatch(runEntry('standard', 'raw'), /always-current guidance/);
   });
 
-  test('the minimal block is the paste-once invariant layer (ADR 0034 contract)', () => {
+  test('the minimal block is the paste-once invariant layer', () => {
     const minimal = runEntry('minimal', 'raw');
     // The seven element classes: entry, mirror, records, ordering,
     // orientation spellings, upkeep, fetch pointer.

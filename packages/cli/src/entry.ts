@@ -27,14 +27,13 @@ export const CLI_ENTRY_SENTENCE =
  * standard composite keeps it, and the minimal invariant block needs it to
  * orient a pasting host. Supersedes owner ruling 2026-10-08 (orientation
  * rode the standard kind only; minimal kept entry-only density) — minimal
- * exchanges that density for the self-refreshing paste-once property
- * (ADR 0034).
+ * exchanges that density for the self-refreshing paste-once property.
  */
 export const CLI_ORIENTATION_SENTENCE =
   'Orient with `coggit status`: the header names the source and cognition roots, and `coggit status <path>` names a file\'s paired cognition document.';
 
 /**
- * The paste-once layer's self-refresh seam (ADR 0034): the minimal invariant
+ * The paste-once layer's self-refresh seam: the minimal invariant
  * block carries invariant content only, so stance wording evolution reaches
  * agents through this pointer instead of a re-paste. Rides the minimal kind
  * only — the standard form IS the full stance this pointer names.
