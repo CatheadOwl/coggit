@@ -1,8 +1,9 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { ToolExecution } from '@deepseek-ai/dsh-tools'
+import type { ToolActivationContext, ToolExecution } from '@deepseek-ai/dsh-tools'
 
 import type { CoggitService } from './service.js'
+import { hasCoggitConfig } from './service.js'
 import {
   addProjection,
   renderJson,
@@ -15,6 +16,18 @@ import {
 /** Calling session's workspace (`SessionHeader.cwd`); non-agent callers fall back to the process cwd. */
 function sessionWorkspace(exec: ToolExecution): string {
   return exec.agent?.session.header.cwd ?? '.'
+}
+
+/**
+ * Step-time admission for the `coggit_*` tools: visible (and dispatchable) only
+ * when the calling session's workspace is a configured CogGit project. The
+ * registration-time `when` condition is the host's designed face for per-step
+ * tool visibility — the retired system-prompt/assemble hook reached for
+ * `result.tools`, which the current assemble contract (`PromptPresentation`
+ * in and out; tools live on the completed `PromptAssembly`) no longer carries.
+ */
+function coggitToolWhen({ agent }: ToolActivationContext): boolean {
+  return hasCoggitConfig(agent?.session.header.cwd ?? process.cwd())
 }
 
 /**
@@ -45,7 +58,7 @@ export function registerCoggitTools(ctx: Context): void {
       const result = await coggitService(ctx).status(sessionWorkspace(exec), args.sourcePath ?? '.')
       return statusText(result)
     },
-  }))
+  }), { when: coggitToolWhen })
 
   ctx.tools.register(defineTool({
     name: 'coggit_add',
@@ -76,7 +89,7 @@ export function registerCoggitTools(ctx: Context): void {
       const { view, surfaceHints: hints } = addProjection(result)
       return toJsonValue({ ...view, surfaceHints: hints })
     },
-  }))
+  }), { when: coggitToolWhen })
 
   ctx.tools.register(defineTool({
     name: 'coggit_resolve',
@@ -98,5 +111,5 @@ export function registerCoggitTools(ctx: Context): void {
       const { view, surfaceHints: hints } = resolveProjection(result)
       return toJsonValue({ ...view, surfaceHints: hints })
     },
-  }))
+  }), { when: coggitToolWhen })
 }

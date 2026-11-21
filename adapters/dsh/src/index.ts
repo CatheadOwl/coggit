@@ -60,8 +60,9 @@ function registerHandbookSkills(ctx: Context): void {
 export async function apply(ctx: Context, config: CoggitConfig): Promise<void> {
   // No startup discovery gate: the workspace follows each caller (session cwd /
   // browser current workspace), so every face still registers unconditionally.
-  // Model visibility is gated lazily below instead (per-assemble, per-session),
-  // not at registration.
+  // Model visibility of the tools is gated by their registration-time `when`
+  // conditions (per-step, per-session cwd — see coggitToolWhen); the prompt
+  // sections below gate their text lazily per assemble.
   await ctx.plugin(CoggitInitService)
   await ctx.plugin(CoggitService, config)
   registerHandbookSkills(ctx)
@@ -101,17 +102,5 @@ export async function apply(ctx: Context, config: CoggitConfig): Promise<void> {
     text: (context) => hasCoggitConfig(context.agent?.session.header.cwd ?? process.cwd()) && config.cognitionLinkDirective === true
       ? COGNITION_LINK_DIRECTIVE
       : '',
-  })
-
-  // Hide the `coggit_*` tool schemas when the workspace is not configured. The
-  // execution face stays active — the tools are total functions (an
-  // unconfigured workspace reports `found: false`), so this only controls model
-  // visibility and no execution guard is needed.
-  ctx.on('system-prompt/assemble', async (assembly, context, next) => {
-    const result = await next()
-    if (!hasCoggitConfig(context.agent?.session.header.cwd ?? process.cwd())) {
-      result.tools = result.tools.filter(tool => !tool.name.startsWith('coggit_'))
-    }
-    return result
   })
 }

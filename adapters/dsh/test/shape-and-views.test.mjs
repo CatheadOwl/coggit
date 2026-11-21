@@ -133,31 +133,31 @@ test('section text hides the overview on an unconfigured workspace and renders i
   }
 })
 
-test('assemble waterfall hides coggit_* tools on an unconfigured workspace only', async () => {
+test('registration-time when gate admits coggit_* tools on a configured workspace only', async () => {
   const mod = await import(fromLib('index'))
-  let assembleListener
+  const registrations = []
   const ctx = {
     plugin: async () => {},
     skills: { register() {} },
-    tools: { register() {} },
+    tools: { register(definition, options) { registrations.push(options) } },
     systemPrompt: { section() {} },
     inject() {},
-    on(name, listener) { if (name === 'system-prompt/assemble') assembleListener = listener },
+    on() {},
     get(name) { if (name === 'coggit') return {}; throw new Error('unexpected ctx.get(' + name + ')') },
   }
   await mod.apply(ctx, {})
-  assert.equal(typeof assembleListener, 'function', 'apply must register a system-prompt/assemble listener')
-
-  const base = () => ({
-    sections: [],
-    tools: [{ name: 'coggit_status' }, { name: 'coggit_add' }, { name: 'coggit_resolve' }, { name: 'read' }],
-    variables: {},
-  })
+  assert.equal(registrations.length, 3, 'all three coggit tools register with options')
 
   const unconfigured = await makeTempDir('coggit-noconfig')
   try {
-    const out = await assembleListener({}, { agent: { session: { header: { cwd: unconfigured } } } }, async () => base())
-    assert.deepEqual(out.tools.map(t => t.name), ['read'], 'unconfigured workspace hides every coggit_* tool')
+    for (const options of registrations) {
+      assert.equal(typeof options.when, 'function', 'every coggit tool carries a when condition')
+      assert.equal(
+        options.when({ agent: { session: { header: { cwd: unconfigured } } } }),
+        false,
+        'unconfigured workspace denies the tool (excluded from declarations and dispatch)',
+      )
+    }
   } finally {
     await removeTempDir(unconfigured)
   }
@@ -165,8 +165,13 @@ test('assemble waterfall hides coggit_* tools on an unconfigured workspace only'
   const configured = await makeTempDir('coggit-config')
   try {
     await createInitializedProject(configured)
-    const out = await assembleListener({}, { agent: { session: { header: { cwd: configured } } } }, async () => base())
-    assert.deepEqual(out.tools.map(t => t.name).sort(), ['coggit_add', 'coggit_resolve', 'coggit_status', 'read'], 'configured workspace keeps coggit_* tools')
+    for (const options of registrations) {
+      assert.equal(
+        options.when({ agent: { session: { header: { cwd: configured } } } }),
+        true,
+        'configured workspace admits the tool',
+      )
+    }
   } finally {
     await removeTempDir(configured)
   }
