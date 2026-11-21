@@ -1,7 +1,19 @@
 const esbuild = require('esbuild');
+const path = require('node:path');
 const packageJson = require('./package.json');
 
 const watch = process.argv.includes('--watch');
+
+// Bundle the pathscope CJS face, not its ESM module graph — same ruling as
+// packages/core/build.js: esbuild resolves ESM sources through the `import`
+// condition, and the ESM face's fdir entry (index.mjs) calls
+// createRequire(import.meta.url), which does not survive a CJS bundle (the
+// mcp-stdio payload crashed at startup because of exactly this). pathscope is
+// @coggit/core's dependency, not this package's, so resolve through core's
+// own node_modules link — machine-independent and no new dependency edge.
+const pathscopeCjsEntry = require.resolve('@catheadowl/pathscope', {
+	paths: [path.dirname(require.resolve('@coggit/core/package.json'))],
+});
 
 async function main() {
 	const shared = {
@@ -15,6 +27,9 @@ async function main() {
 		},
 		define: {
 			__COGGIT_PACKAGE_VERSION__: JSON.stringify(packageJson.version),
+		},
+		alias: {
+			'@catheadowl/pathscope': pathscopeCjsEntry,
 		},
 		logLevel: 'silent',
 	};

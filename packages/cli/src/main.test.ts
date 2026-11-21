@@ -1,8 +1,10 @@
 import * as assert from 'node:assert';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
+
+import { runMcpInstall } from './mcpInstall';
 
 suite('CLI main', () => {
   let tempDirectory: string;
@@ -97,6 +99,132 @@ suite('CLI main', () => {
     const parsed: unknown = JSON.parse(result.stdout);
     assert.ok(typeof parsed === 'object' && parsed !== null);
   });
+
+  test('the INSTALLED launcher completes the MCP stdio handshake', async function () {
+    // Regression: the self-contained payload bundled pathscope's ESM fdir
+    // entry, whose createRequire(import.meta.url) is undefined inside a CJS
+    // bundle — mcp install reported success while every installed launcher
+    // exited 1 before the handshake. A stub payload passes the other tests,
+    // so this one drives the REAL esbuild artifact through the real install
+    // layout and speaks MCP to the installed launcher like a host would.
+    this.timeout(30000);
+    const bundledPayload = path.resolve(
+      __dirname,
+      '../../../..',
+      'packages',
+      'cli',
+      'dist',
+      'mcp-stdio.js',
+    );
+    await fs.access(bundledPayload); // pnpm test builds first; fail loud if run bare.
+
+    const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'coggit-mcp-handshake-'));
+    try {
+      const installation = JSON.parse(
+        await runMcpInstall({
+          bundledEntryPath: bundledPayload,
+          version: '0.0.0-development',
+          installedBy: 'cli-main-test',
+          homeDirectory: scratch,
+          json: true,
+        }),
+      ) as { launcherPath: string };
+      assert.match(installation.launcherPath, /coggit-mcp\.js$/);
+
+      const lines = await speakMcp(installation.launcherPath, scratch, [
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'coggit-handshake-test', version: '0.0.0' },
+          },
+        },
+        { jsonrpc: '2.0', method: 'notifications/initialized' },
+        { jsonrpc: '2.0', id: 2, method: 'tools/list' },
+      ]);
+
+      const init = lines.find((line) => line.id === 1 && line.result) as
+        | { result: { protocolVersion: string; serverInfo: { name: string } } }
+        | undefined;
+      assert.ok(init, 'no initialize response');
+      assert.strictEqual(init.result.serverInfo.name, 'coggit');
+
+      const tools = lines.find((line) => line.id === 2 && line.result) as
+        | { result: { tools: unknown[] } }
+        | undefined;
+      assert.ok(tools, 'no tools/list response');
+      assert.ok(Array.isArray(tools.result.tools));
+    } finally {
+      await fs.rm(scratch, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * Speaks newline-delimited JSON-RPC to the installed launcher like an MCP
+   * host: write the messages, close stdin (the stdio transport then winds
+   * down), and return every parsed response line. A hard timer kills a
+   * launcher that never answers, so the failure carries both streams.
+   */
+  async function speakMcp(
+    launcherPath: string,
+    workingDirectory: string,
+    messages: readonly unknown[],
+  ): Promise<Array<{ id?: number; result?: unknown; error?: unknown }>> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [launcherPath], {
+        cwd: workingDirectory,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      const stdout: Buffer[] = [];
+      const stderr: Buffer[] = [];
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error(
+          `launcher handshake timed out\nstdout: ${Buffer.concat(stdout).toString('utf8')}\n`
+            + `stderr: ${Buffer.concat(stderr).toString('utf8')}`,
+        ));
+      }, 20000);
+      child.stdout.on('data', (chunk: Buffer) => stdout.push(chunk));
+      child.on('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        const lines = Buffer.concat(stdout).toString('utf8').split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line !== '');
+        if (lines.length === 0) {
+          reject(new Error(
+            `launcher exited (code ${code}) without an MCP response\n`
+              + `stderr: ${Buffer.concat(stderr).toString('utf8')}`,
+          ));
+          return;
+        }
+        const parsed: Array<{ id?: number; result?: unknown; error?: unknown }> = [];
+        try {
+          for (const line of lines) {
+            parsed.push(JSON.parse(line) as { id?: number; result?: unknown; error?: unknown });
+          }
+        } catch {
+          reject(new Error(
+            `launcher stdout broke newline-delimited JSON: ${lines.find((l) => !l.startsWith('{'))}\n`
+              + `stderr: ${Buffer.concat(stderr).toString('utf8')}`,
+          ));
+          return;
+        }
+        resolve(parsed);
+      });
+
+      for (const message of messages) {
+        child.stdin.write(`${JSON.stringify(message)}\n`);
+      }
+      child.stdin.end();
+    });
+  }
 
   async function runCli(
     args: readonly string[],
