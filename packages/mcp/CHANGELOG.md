@@ -3,6 +3,16 @@
 All notable changes to `@coggit/mcp` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is semver.
 
+## [Unreleased]
+
+### Changed
+
+- The `coggit_status` tool description is simplified and no longer
+  references `coggit_snapshot`: status stands alone — diagnose one node
+  to decide what to do, then re-check after editing its paired
+  cognition. Agent-visible wording: rides the next release's acceptance
+  packet.
+
 ## [0.5.2] - 2026-11-15
 
 Lockstep with the 0.5.2 wave (the paste-once minimal block ships in
