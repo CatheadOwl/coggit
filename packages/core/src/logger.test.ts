@@ -19,7 +19,7 @@ suite('Coggit logger', () => {
     const lines: string[] = [];
     setConsole({
       ...originalConsole,
-      debug: (line?: unknown) => lines.push(String(line)),
+      error: (line?: unknown) => lines.push(String(line)),
       warn: (line?: unknown) => lines.push(String(line)),
     });
 
@@ -38,7 +38,7 @@ suite('Coggit logger', () => {
     const lines: string[] = [];
     setConsole({
       ...originalConsole,
-      debug: (line?: unknown) => lines.push(String(line)),
+      error: (line?: unknown) => lines.push(String(line)),
     });
 
     const logger = createEnvCoggitLogger('[test]');
@@ -55,8 +55,8 @@ suite('Coggit logger', () => {
     const lines: string[] = [];
     setConsole({
       ...originalConsole,
-      debug: (line?: unknown) => lines.push(`debug:${String(line)}`),
-      warn: (line?: unknown) => lines.push(`warn:${String(line)}`),
+      error: (line?: unknown) => lines.push(String(line)),
+      warn: (line?: unknown) => lines.push(String(line)),
     });
 
     const logger = createEnvCoggitLogger('[test]');
@@ -64,7 +64,7 @@ suite('Coggit logger', () => {
     logger.log({ level: 'warn', category: 'registry.io', message: 'warn event' });
 
     assert.deepStrictEqual(lines, [
-      'warn:[test] [warn] registry.io: warn event',
+      '[test] [warn] registry.io: warn event',
     ]);
   });
 });

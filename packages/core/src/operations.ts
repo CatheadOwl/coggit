@@ -191,6 +191,9 @@ export interface AddOperationResult {
 /**
  * Resolve failure codes.
  *
+ * - `tracked-shape-unavailable`: a git index governs the folder but cannot
+ *   be read right now; the acceptance was refused rather than persist a
+ *   fingerprint from the wrong domain (decision 0003 (docs/decisions/0003-structural-signal-tracked-shape.md)). Retry when git is readable.
  * - `content-changed`: the source/cognition pair changed during the resolve
  *   acceptance window. The guard compares the accepted-pair identity captured
  *   before and after the accept write — the registry `sourceKey` plus the
@@ -209,6 +212,7 @@ export const RESOLVE_ERROR_CODES = [
   'registry-unavailable',
   'registry-changed',
   'content-changed',
+  'tracked-shape-unavailable',
   'unknown',
 ] as const;
 
@@ -663,7 +667,9 @@ export async function resolveOperation(
           sawPathNotFound = true;
           continue;
         }
-        const code = message.includes('Registry not available')
+        const code: ResolveErrorCode = error instanceof ResolveAcceptanceError && error.code
+          ? error.code as ResolveErrorCode
+          : message.includes('Registry not available')
           ? 'registry-unavailable'
           : message.includes('Registry changed during resolve')
             ? 'registry-changed'

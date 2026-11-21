@@ -6,7 +6,7 @@ import type {
 	SourceFactKind,
 	StatusIssue,
 } from '../types';
-import type { AcceptanceStore, FileSystem, FreshnessEvidenceStore, UriComponents } from '../interfaces';
+import type { AcceptanceStore, FileSystem, FreshnessEvidenceStore, TrackedEntriesIndex, TrackedShapeDomain, UriComponents } from '../interfaces';
 import type { AcceptedPair } from '../registryTypes';
 import {
 	aggregateNodeStatus,
@@ -33,6 +33,17 @@ export interface BuildProjectSnapshotOptions {
 	acceptance?: AcceptanceStore | null;
 	/** @deprecated v3 test adapter; ignored by the v5 acceptance model. */
 	freshnessEvidence?: FreshnessEvidenceStore | null;
+	/**
+	 * Git-tracked shape index. When present and answering `git`, folder source
+	 * facts fingerprint only tracked children — scratch trees git does not
+	 * track must not flip skeleton pairs stale (and a fresh clone, which lacks
+	 * untracked entries, must reproduce the same shape). Absent service and
+	 * `non-git` answers degrade to counting every on-disk entry passed through
+	 * the regular scope exclusions (pre-tracked-shape behavior). An
+	 * `unavailable` answer keeps the fallback children for display but holds
+	 * acceptance writes for the folder's own pair.
+	 */
+	trackedEntries?: TrackedEntriesIndex | null;
 }
 
 export function computeFolderFingerprint(children: CoggitTreeNode[]): string {
@@ -40,6 +51,71 @@ export function computeFolderFingerprint(children: CoggitTreeNode[]): string {
 		name: child.label,
 		kind: child.kind === 'folder' || child.kind === 'root' ? 'folder' : 'file',
 	})));
+}
+
+/** The fingerprint input for one directory, plus the tracked-shape domain that produced it. */
+export interface TrackedShapeChildren {
+	children: CoggitTreeNode[];
+	/**
+	 * `'unavailable'` means a git index governs this directory but could not
+	 * be read: the children above are the include-all fallback for DISPLAY,
+	 * and acceptance writes for this folder's own pair must be held.
+	 */
+	domain: TrackedShapeDomain;
+}
+
+/** Membership test tolerant of Windows case-aliasing between disk and index. */
+export function trackedNamesHas(names: Set<string>, label: string): boolean {
+	if (names.has(label)) {
+		return true;
+	}
+	if (process.platform === 'win32') {
+		const lowered = label.toLowerCase();
+		for (const name of names) {
+			if (name.toLowerCase() === lowered) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+const NON_GIT_DOMAIN: TrackedShapeDomain = { kind: 'non-git' };
+
+/**
+ * Children whose entries participate in the folder's directory-entry source
+ * fact, narrowed to the git-tracked shape when a tracked-shape index answers.
+ * The node tree keeps every child — only the fingerprint input is narrowed.
+ * Absent service and `non-git` both mean the stable include-all semantics;
+ * `unavailable` keeps the fallback children but flags the domain so callers
+ * hold acceptance writes (decision 0003 (docs/decisions/0003-structural-signal-tracked-shape.md)).
+ */
+export async function trackedShapeChildren(
+	children: CoggitTreeNode[],
+	directoryUri: UriComponents,
+	trackedEntries: TrackedEntriesIndex | null | undefined,
+): Promise<TrackedShapeChildren> {
+	if (!trackedEntries) {
+		return { children, domain: NON_GIT_DOMAIN };
+	}
+	const domain = await trackedEntries.trackedChildNames(directoryUri);
+	if (domain.kind !== 'git') {
+		return { children, domain };
+	}
+	const names = domain.names;
+	return { children: children.filter((child) => trackedNamesHas(names, child.label)), domain };
+}
+
+/** Info diagnostic attached while the tracked shape index cannot be read. */
+function trackedShapeUnverifiedIssue(): StatusIssue {
+	return {
+		diagnostic: {
+			code: 'tracked-shape-unverified',
+			severity: 'info',
+			message: 'Tracked shape could not be read; structure freshness is unverified.',
+		},
+		actions: [],
+	};
 }
 
 export function folderSourceKey(relativePath: string): string {
@@ -122,12 +198,17 @@ export async function buildRootNode(
 		summarizeRepresentativeMtime(rootNode.children) ?? sourceStat.mtimeMs;
 	rootNode.representativeMtimeMs = representativeMtimeMs;
 
-	const rootFingerprint = computeFolderFingerprint(rootNode.children);
+	const rootShape = await trackedShapeChildren(
+		rootNode.children ?? [],
+		root.sourceRootUri,
+		options.trackedEntries,
+	);
+	const rootFingerprint = computeFolderFingerprint(rootShape.children);
 	const rootCognitionStat = await fs.stat(rootNode.cognitionUri!);
 	const rootCognitionContent = rootCognitionStat
 		? await fs.readFile(rootNode.cognitionUri!)
 		: null;
-	const rootAccepted = options.acceptance
+	const rootAccepted = options.acceptance && rootShape.domain.kind !== 'unavailable'
 		? acceptCurrentPair(
 			options.acceptance,
 			root.id,
@@ -136,7 +217,7 @@ export async function buildRootNode(
 			rootCognitionContent,
 		).accepted
 		: undefined;
-	const ownStatus = await computeNodeStatus({
+	const ownStatusBase = await computeNodeStatus({
 		sourceUri: root.sourceRootUri,
 		cognitionUri: rootNode.cognitionUri,
 		relativePath: rootNode.relativePath,
@@ -147,6 +228,9 @@ export async function buildRootNode(
 		readCognitionContent: async () => rootCognitionContent ?? fs.readFile(rootNode.cognitionUri!),
 		acceptedPair: rootAccepted,
 	});
+	const ownStatus = rootShape.domain.kind === 'unavailable' && rootCognitionStat
+		? { ...ownStatusBase, issues: [...(ownStatusBase.issues ?? []), trackedShapeUnverifiedIssue()] }
+		: ownStatusBase;
 	const status = aggregateNodeStatus({
 		ownStatus,
 		descendantStatuses: rootNode.children.map((child) => child.status),
@@ -230,11 +314,12 @@ export async function buildFolderNode(
 		summarizeRepresentativeMtime(children) ?? stat?.mtimeMs;
 
 	const sourceKey = folderSourceKey(relativePath);
-	const fingerprint = computeFolderFingerprint(children);
+	const shape = await trackedShapeChildren(children, folderUri, options.trackedEntries);
+	const fingerprint = computeFolderFingerprint(shape.children);
 	const cognitionContent = cognitionStat
 		? await fs.readFile(cognitionUri)
 		: null;
-	const acceptedPair = options.acceptance
+	const acceptedPair = options.acceptance && shape.domain.kind !== 'unavailable'
 		? acceptCurrentPair(
 			options.acceptance,
 			parent.root.id,
@@ -243,7 +328,7 @@ export async function buildFolderNode(
 			cognitionContent,
 		).accepted
 		: undefined;
-	const ownStatus = await computeNodeStatus({
+	const ownStatusBase = await computeNodeStatus({
 		sourceUri: folderUri,
 		cognitionUri,
 		relativePath,
@@ -254,6 +339,9 @@ export async function buildFolderNode(
 		readCognitionContent: async () => cognitionContent ?? fs.readFile(cognitionUri),
 		acceptedPair,
 	});
+	const ownStatus = shape.domain.kind === 'unavailable' && cognitionStat
+		? { ...ownStatusBase, issues: [...(ownStatusBase.issues ?? []), trackedShapeUnverifiedIssue()] }
+		: ownStatusBase;
 	const status = aggregateNodeStatus({
 		ownStatus,
 		descendantStatuses: children.map((child) => child.status),

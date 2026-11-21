@@ -102,6 +102,43 @@ export interface ResolveResult {
   verificationTimeMs?: number;
 }
 
+/**
+ * Answers which directory entries belong to a git-tracked shape, so folder
+ * skeleton freshness can ignore scratch trees that git does not track
+ * (untracked-and-not-gitignored entries must not flip skeletons stale, and a
+ * fresh clone must reproduce the same shape). Hosts without a git index
+ * (non-repo worktrees, remote/virtual filesystems) omit this service;
+ * snapshot builds then fall back to counting every on-disk entry.
+ */
+/**
+ * Which tracked-shape domain a directory belongs to.
+ *
+ * - `git`: the directory sits in a repository whose index could be read;
+ *   `names` are the tracked direct children and folder source facts
+ *   fingerprint only those.
+ * - `non-git`: no git index governs this tree (declaration-driven scope,
+ *   virtual or non-repository workspaces). Every on-disk entry counts —
+ *   the stable fallback semantics, and acceptance flows run as before.
+ * - `unavailable`: a git index governs this tree but cannot be read right
+ *   now (transient command failure, oversized output). Reads fall back to
+ *   counting every entry for display, and acceptance writes for
+ *   folder-sourced facts are HELD — bootstrapping, cognition-only and
+ *   ordered auto-acceptance, and explicit resolve must not persist a
+ *   fingerprint derived from the wrong domain.
+ */
+export type TrackedShapeDomain =
+  | { kind: 'git'; names: Set<string> }
+  | { kind: 'non-git' }
+  | { kind: 'unavailable' };
+
+export interface TrackedEntriesIndex {
+  /**
+   * Direct-child names of `directoryUri` that are part of the git-tracked
+   * shape, together with the domain that produced the answer.
+   */
+  trackedChildNames(directoryUri: UriComponents): Promise<TrackedShapeDomain>;
+}
+
 // Core service boundary. Adapters own lifecycle/presentation; core owns project semantics.
 export interface CoggitServices {
   readonly fs: FileSystem;
@@ -109,6 +146,7 @@ export interface CoggitServices {
   readonly registry?: RegistryProviderFactory;
   readonly logger?: CoggitLogger;
   readonly locks?: ProjectLockManager;
+  readonly trackedEntries?: TrackedEntriesIndex;
 }
 
 /**

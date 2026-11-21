@@ -14,6 +14,7 @@ import { NodeConfigProvider, type NodeConfigDiscoveryMode } from './config';
 import { NodeFileSystem } from './fs';
 import { NodeProjectLockManager } from './locks';
 import { NodeRegistryProviderFactory } from './registry';
+import { createGitTrackedEntriesIndex } from './trackedEntries';
 
 export interface CreateNodeServicesOptions {
   workspacePath?: string;
@@ -32,6 +33,7 @@ export function createNodeCoggitServices(
     registry: new NodeRegistryProviderFactory(logger),
     logger,
     locks: new NodeProjectLockManager(),
+    trackedEntries: createGitTrackedEntriesIndex(),
   });
 }
 
@@ -44,3 +46,4 @@ export {
 } from './locks';
 export { NodeRegistryProviderFactory, NodeRegistryProvider } from './registry';
 export { pathToUriComponents, uriComponentsToPath } from './uri';
+export { createGitTrackedEntriesIndex } from './trackedEntries';

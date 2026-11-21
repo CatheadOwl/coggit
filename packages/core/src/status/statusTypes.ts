@@ -18,7 +18,8 @@ export interface EvidenceDiagnostic {
 		| 'metadata-broken'
 		| 'source-deleted'
 		| 'conflicting-evidence'
-	| 'folder-structure-outdated';
+	| 'folder-structure-outdated'
+	| 'tracked-shape-unverified';
 	severity: 'info' | 'warning' | 'error';
 	message: string;
 	relatedPaths?: string[];

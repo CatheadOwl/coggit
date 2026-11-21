@@ -81,6 +81,23 @@ suite('CLI main', () => {
     assert.match(missing.stderr, /skill payload missing: .*SKILL\.md/);
   });
 
+  test('snapshot --json keeps stdout machine-parseable (no debug pollution)', async () => {
+    // Regression: a stray debug console.log inside the acceptance flow once
+    // prefixed stdout and broke JSON.parse for every machine consumer,
+    // including the MCP stdio surface that shares the code path.
+    const workspace = path.join(cwd, 'project');
+    await fs.mkdir(path.join(workspace, 'src'), { recursive: true });
+    await fs.mkdir(path.join(workspace, 'cog'), { recursive: true });
+    await fs.mkdir(path.join(workspace, '.coggit'), { recursive: true });
+    await fs.writeFile(path.join(workspace, '.coggit', 'config.yaml'), 'source_root: src\ncognition_root: cog\n');
+    await fs.writeFile(path.join(workspace, 'src', 'tracked.ts'), 'export const tracked = 1;\n');
+
+    const result = await runCli(['snapshot', '--json'], workspace, homeDirectory);
+    assert.strictEqual(result.stderr, '');
+    const parsed: unknown = JSON.parse(result.stdout);
+    assert.ok(typeof parsed === 'object' && parsed !== null);
+  });
+
   async function runCli(
     args: readonly string[],
     workingDirectory: string,

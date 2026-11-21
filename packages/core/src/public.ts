@@ -219,6 +219,8 @@ export type {
   RegistryProviderFactory,
   AcceptanceStore,
   ResolveResult,
+  TrackedEntriesIndex,
+  TrackedShapeDomain,
   CoggitServices,
   CoggitProject,
   SourcePathResolution,

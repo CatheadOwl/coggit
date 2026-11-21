@@ -26,7 +26,7 @@ import { createPatternWatcher, type FileChangeCallback, type FileChangeKind } fr
 import { VscodeFileSystem } from '../adapter/fs';
 import { VscodeConfigProvider } from '../adapter/config';
 import { VscodeRegistryProvider } from '../adapter/registryFs';
-import { NodeProjectLockManager } from '@coggit/runtime-node';
+import { createGitTrackedEntriesIndex, NodeProjectLockManager } from '@coggit/runtime-node';
 import { fromComponents, toComponents, uriKey } from '../adapter/uri';
 import type { MisplacedTreeEntry } from '../tree/misplacedTreeTypes';
 import { handleSourceRenameFiles } from './sourceRename';
@@ -90,6 +90,7 @@ export class CoggitModel implements vscode.Disposable {
 			{ create: (projectRoot) => new VscodeRegistryProvider(projectRoot, logger) },
 			logger,
 			new NodeProjectLockManager(),
+			createGitTrackedEntriesIndex(),
 		);
 		this.collectIssueViewStateForProjects = dependencies.collectIssueViewState
 			?? ((projects) => collectMaintenanceIssueViewState(projects));

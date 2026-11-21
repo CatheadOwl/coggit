@@ -89,12 +89,13 @@ export function createEnvCoggitLogger(prefix = '[coggit]'): CoggitLogger {
         ? ` ${JSON.stringify(event.data)}`
         : '';
       const line = `${prefix} [${event.level}] ${event.category}: ${event.message}${payload}`;
+      // Diagnostics always stream to stderr: stdout belongs to the machine
+      // surface (snapshot --json, MCP stdio), and a debug-level registry
+      // trace on stdout would break every JSON consumer.
       if (event.level === 'error') {
         console.error(line);
-      } else if (event.level === 'warn') {
-        console.warn(line);
       } else {
-        console.debug(line);
+        console.error(line);
       }
     },
   };

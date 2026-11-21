@@ -1,4 +1,4 @@
-import type { AcceptanceStore, CoggitProject, CoggitServices, ResolveResult, SourcePathResolution, UriComponents } from '../interfaces';
+import type { AcceptanceStore, CoggitProject, CoggitServices, ResolveResult, SourcePathResolution, TrackedEntriesIndex, TrackedShapeDomain, UriComponents } from '../interfaces';
 import type { CoggitLogger } from '../logger';
 import { warnLog } from '../logger';
 import type { AcceptedPair, CoggitSnapshot, CoggitTreeNode, CoggitWorkspaceRoot, PathKeyRecord } from '../types';
@@ -12,7 +12,8 @@ import {
 import { scanCognitionDirectory, reconcileRegistry } from '../registry/reconcile';
 import { discoverCognitionEntries } from '../cognition/cognitionDiscovery';
 import { discoverWorkspaceRoots } from './workspace';
-import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey } from '../snapshot';
+import { buildMappingIndex, buildProjectSnapshot, computeFolderFingerprint, folderSourceKey, trackedNamesHas, trackedShapeChildren } from '../snapshot';
+import type { BuildProjectSnapshotOptions } from '../snapshot';
 import { noOpProjectLockManager } from '../locks';
 import {
   detectMisplacedCognitionEntries,
@@ -44,6 +45,20 @@ import { acceptCurrentPair } from '../acceptance';
 interface ProjectRuntime {
   readonly registry: Registry | null;
   readonly acceptance: AcceptanceStore | null;
+  /** Absent on the error-path reset literal — reads degrade to include-all fallback. */
+  readonly trackedEntries?: TrackedEntriesIndex | null;
+}
+
+/**
+ * One snapshot-options factory per runtime so every build inside an
+ * operation — first attempt and revision-mismatch retry alike — threads the
+ * same acceptance store and tracked-shape domain (decision 0003 (docs/decisions/0003-structural-signal-tracked-shape.md)).
+ */
+function snapshotOptions(runtime: ProjectRuntime): BuildProjectSnapshotOptions {
+  return {
+    acceptance: runtime.acceptance,
+    trackedEntries: runtime.trackedEntries ?? null,
+  };
 }
 
 /**
@@ -57,6 +72,8 @@ export class ResolveAcceptanceError extends Error {
     message: string,
     readonly canonicalSourcePath: string,
     cause?: unknown,
+    /** Stable machine-readable failure code for operation-level mapping. */
+    readonly code?: string,
   ) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = 'ResolveAcceptanceError';
@@ -87,6 +104,16 @@ interface RuntimeEvidenceRecord {
 
 export class RuntimeAcceptanceEvidence {
   private readonly records = new Map<string, RuntimeEvidenceRecord>();
+  /**
+   * Leaf consumption watermark: the arrival generation at which an
+   * acceptance consumed (cleared) a key's record. Leaf source events at or
+   * below it lost their ordering basis (a suspended read completing later
+   * would fabricate ordering against the consuming cognition) and are
+   * refused; fresh arrivals carry higher generations. Folder keys never
+   * consume this — folder pairs do not ordered-auto-accept at all
+   * (decision 0003 (docs/decisions/0003-structural-signal-tracked-shape.md)).
+   */
+  private readonly consumed = new Map<string, number>();
   private fallbackGeneration = 0;
 
   normalizeGeneration(generation: number | undefined): number {
@@ -97,7 +124,23 @@ export class RuntimeAcceptanceEvidence {
     return generation;
   }
 
+  /** The consumption watermark recorded for a key, or null. */
+  consumedGenerationFor(key: string): number | null {
+    return this.consumed.get(key) ?? null;
+  }
+
   beginSource(key: string, generation: number): void {
+    // Folder keys are exempt: their observations feed refresh routing and
+    // rename bookkeeping, never ordered acceptance, so a consumption
+    // watermark must not suppress them (leaf keys keep the guard — a leaf
+    // observation below the consumption point would fabricate ordering
+    // against the consuming cognition; decision 0003
+    // (docs/decisions/0003-structural-signal-tracked-shape.md)).
+    const isFolderKey = key.endsWith('/');
+    if (!isFolderKey
+      && (this.consumed.get(key) ?? Number.NEGATIVE_INFINITY) >= generation) {
+      return;
+    }
     const current = this.records.get(key);
     if (current?.source && current.source.generation > generation) {
       return;
@@ -117,11 +160,22 @@ export class RuntimeAcceptanceEvidence {
     if (!current?.source || current.source.generation !== generation) {
       return false;
     }
+    // The cognition side of this key has already been observed at a later
+    // generation, so this (late-completing) source read cannot prove that
+    // the source fact preceded it; recording it would fabricate ordering.
+    if (current.cognitionGeneration !== null && current.cognitionGeneration > generation) {
+      return false;
+    }
     this.records.set(key, {
       ...current,
       source: { generation, identity },
     });
     return true;
+  }
+
+  /** The identity of the last completed source observation, or null when none. */
+  lastSourceIdentity(key: string): AcceptedPair['source'] | null {
+    return this.records.get(key)?.source?.identity ?? null;
   }
 
   recordCognition(key: string, generation: number): void {
@@ -147,6 +201,7 @@ export class RuntimeAcceptanceEvidence {
   }
 
   clear(key: string): void {
+    this.consumed.set(key, Math.max(this.fallbackGeneration, this.consumed.get(key) ?? 0));
     this.records.delete(key);
   }
 }
@@ -158,6 +213,7 @@ export function createCoggitServices(
   registry?: CoggitServices['registry'],
   logger?: CoggitLogger,
   locks?: CoggitServices['locks'],
+  trackedEntries?: CoggitServices['trackedEntries'],
 ): CoggitServices;
 export function createCoggitServices(
   fsOrServices: CoggitServices | CoggitServices['fs'],
@@ -165,6 +221,7 @@ export function createCoggitServices(
   registry?: CoggitServices['registry'],
   logger?: CoggitLogger,
   locks?: CoggitServices['locks'],
+  trackedEntries?: CoggitServices['trackedEntries'],
 ): CoggitServices {
   if (isCoggitServices(fsOrServices)) {
     return fsOrServices;
@@ -172,7 +229,7 @@ export function createCoggitServices(
   if (!config) {
     throw new Error('Coggit config provider is required');
   }
-  return { fs: fsOrServices, config, registry, logger, locks };
+  return { fs: fsOrServices, config, registry, logger, locks, trackedEntries };
 }
 
 export async function discoverCoggitProjects(
@@ -226,6 +283,7 @@ export async function openCoggitProject(
 		async () => {
 			let snapshot = await buildProjectSnapshot(root, services.fs, {
 				acceptance: runtime.acceptance,
+				trackedEntries: runtime.trackedEntries ?? null,
 			});
 			try {
 				await runtime.registry?.flush();
@@ -234,9 +292,7 @@ export async function openCoggitProject(
 					throw error;
 				}
 				runtime = await reconcileProjectRuntimeInLock(services, root, runtimeEvidence);
-				snapshot = await buildProjectSnapshot(root, services.fs, {
-					acceptance: runtime.acceptance,
-				});
+				snapshot = await buildProjectSnapshot(root, services.fs, snapshotOptions(runtime));
 				await runtime.registry?.flush();
 			}
 			return snapshot;
@@ -299,6 +355,7 @@ export async function openCoggitProject(
 		async () => {
 			let snapshot = await buildProjectSnapshot(root, services.fs, {
 				acceptance: runtime.acceptance,
+				trackedEntries: runtime.trackedEntries ?? null,
 			});
 			try {
 				await runtime.registry?.flush();
@@ -307,9 +364,7 @@ export async function openCoggitProject(
 					throw error;
 				}
 				runtime = await reconcileProjectRuntimeInLock(services, root, runtimeEvidence);
-				snapshot = await buildProjectSnapshot(root, services.fs, {
-					acceptance: runtime.acceptance,
-				});
+				snapshot = await buildProjectSnapshot(root, services.fs, snapshotOptions(runtime));
 				await runtime.registry?.flush();
 			}
 			return snapshot.allNodes.filter((node) =>
@@ -401,7 +456,7 @@ export async function openCoggitProject(
           // used by this runtime is obsolete.  Never keep or flush that stale
           // object; reconcile from the provider so the next status/read sees
           // the moved cognition through the normal stale workflow.
-          runtime = { registry: null, acceptance: null };
+          runtime = { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
           const recovered = await tryReconcileProjectRuntimeInLock(
             services,
             root,
@@ -460,7 +515,7 @@ export async function openCoggitProject(
         // registry file.  Discard the mutated runtime and rebuild from the
         // current provider.  The filesystem rename is authoritative, so
         // re-apply the relocation on the freshly reconciled registry.
-        runtime = { registry: null, acceptance: null };
+        runtime = { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
         const recovered = await tryReconcileProjectRuntimeInLock(
           services,
           root,
@@ -509,7 +564,7 @@ export async function openCoggitProject(
       const eventGeneration = runtimeEvidence.normalizeGeneration(generation);
       runtimeEvidence.beginSource(registryKey, eventGeneration);
       const sourceContent = await services.fs.readFile(uri);
-      return runtimeEvidence.completeSource(
+        return runtimeEvidence.completeSource(
         registryKey,
         eventGeneration,
         computeSourceFactIdentity('file-content', sourceContent),
@@ -532,24 +587,30 @@ export async function openCoggitProject(
         return false;
       }
 
-      const eventGeneration = runtimeEvidence.normalizeGeneration(generation);
-      runtimeEvidence.beginSource(registryKey, eventGeneration);
-      const fingerprint = await readDirectFolderFingerprint(
+      // The observation feeds watcher refresh routing and the rename
+      // relocation counters. It never enables ordered auto-acceptance for
+      // folder pairs: a watcher notification cannot prove that the re-read
+      // shape preceded a cognition edit, so the acceptance store refuses
+      // ordering evidence for folder keys (decision 0003
+      // (docs/decisions/0003-structural-signal-tracked-shape.md)). The read
+      // runs before beginSource: a failed or untrusted read leaves the last
+      // valid observation untouched.
+      const { fingerprint, domain } = await readDirectFolderFingerprint(
         root,
         services.fs,
         folderUri,
         relativePath === '' ? '.' : relativePath,
+        runtime.trackedEntries,
       );
-      if (fingerprint === undefined) {
+      if (fingerprint === undefined || domain.kind === 'unavailable') {
         return false;
       }
+      const eventGeneration = runtimeEvidence.normalizeGeneration(generation);
+      runtimeEvidence.beginSource(registryKey, eventGeneration);
       return runtimeEvidence.completeSource(
         registryKey,
         eventGeneration,
-        computeSourceFactIdentity(
-          'directory-entry',
-          fingerprint,
-        ),
+        computeSourceFactIdentity('directory-entry', fingerprint),
       );
     },
     recordCognitionChange: async (uri, generation) => {
@@ -596,7 +657,7 @@ export async function openCoggitProject(
             if (!(error instanceof RegistryRevisionMismatchError)) {
               throw error;
             }
-            runtime = { registry: null, acceptance: null };
+            runtime = { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
             const recovered = await tryReconcileProjectRuntimeInLock(
               services,
               root,
@@ -630,7 +691,7 @@ export async function openCoggitProject(
             if (!(error instanceof RegistryRevisionMismatchError)) {
               throw error;
             }
-            runtime = { registry: null, acceptance: null };
+            runtime = { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
             const recovered = await tryReconcileProjectRuntimeInLock(
               services,
               root,
@@ -659,12 +720,14 @@ export async function openCoggitProject(
             root,
             services.fs,
             registry,
+            runtime.trackedEntries,
             sourcePath,
           );
           const after = await captureReviewedPair(
             root,
             services.fs,
             registry,
+            runtime.trackedEntries,
             sourcePath,
           );
           if (before.sourceKey !== after.sourceKey
@@ -684,7 +747,7 @@ export async function openCoggitProject(
               throw error;
             }
 
-            runtime = { registry: null, acceptance: null };
+            runtime = { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
             const recovered = await tryReconcileProjectRuntimeInLock(
               services,
               root,
@@ -800,7 +863,7 @@ async function createProjectRuntime(
   options: CoggitProjectDiscoveryOptions,
 ): Promise<ProjectRuntime> {
   if (!services.registry) {
-    return { registry: null, acceptance: null };
+    return { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
   }
 
   try {
@@ -818,7 +881,7 @@ async function createProjectRuntime(
       rootId: root.id,
       error: error instanceof Error ? error.message : String(error),
     });
-    return { registry: null, acceptance: null };
+    return { registry: null, acceptance: null, trackedEntries: services.trackedEntries ?? null };
   }
 }
 
@@ -866,6 +929,7 @@ async function reconcileProjectRuntimeInLock(
   return {
     registry,
     acceptance: createAcceptanceStore(root, registry, runtimeEvidence),
+    trackedEntries: services.trackedEntries ?? null,
   };
 }
 
@@ -1092,6 +1156,14 @@ function createAcceptanceStore(
       if (requestRootId !== root.id) {
         return false;
       }
+      // Ordered auto-acceptance is leaf-only: a folder's directory-entry
+      // event cannot prove that the re-read shape preceded the cognition
+      // edit, so folder pairs (source keys ending in '/') always heal
+      // through explicit resolve (decision 0003
+      // (docs/decisions/0003-structural-signal-tracked-shape.md)).
+      if (sourceKey.endsWith('/')) {
+        return false;
+      }
       const key = registry.getEntry(sourceKey)
         ? sourceKey
         : findRegistryKeyBySourceKey(root, registry, sourceKey);
@@ -1106,9 +1178,12 @@ async function captureReviewedPair(
   root: CoggitWorkspaceRoot,
   fs: CoggitServices['fs'],
   registry: Registry,
+  trackedEntries: TrackedEntriesIndex | null | undefined,
   sourcePath: string,
 ): Promise<{ sourceKey: string; relativePath: string; accepted: AcceptedPair }> {
-  const snapshot = await buildProjectSnapshot(root, fs);
+  const snapshot = await buildProjectSnapshot(root, fs, {
+    trackedEntries: trackedEntries ?? null,
+  });
   const normalizedPath = normalizeSourcePathInput(sourcePath, {
     projectRootUri: root.projectRootUri,
     sourceRootUri: root.sourceRootUri,
@@ -1123,9 +1198,25 @@ async function captureReviewedPair(
     throw new Error('Cognition file is missing');
   }
 
-  const sourceContent = node.kind === 'file'
-    ? await fs.readFile(node.sourceUri)
-    : computeFolderFingerprint(node.children ?? []);
+  // Folder facts fingerprint the tracked shape; accepting while the shape
+  // index is unavailable would persist a fingerprint from the wrong domain.
+  let shapeDomain: TrackedShapeDomain = { kind: 'non-git' };
+  let sourceContent: string;
+  if (node.kind === 'file') {
+    sourceContent = await fs.readFile(node.sourceUri);
+  } else {
+    const shape = await trackedShapeChildren(node.children ?? [], node.sourceUri, trackedEntries);
+    shapeDomain = shape.domain;
+    sourceContent = computeFolderFingerprint(shape.children);
+  }
+  if (shapeDomain.kind === 'unavailable') {
+    throw new ResolveAcceptanceError(
+      'Tracked shape index is unavailable; the folder pair cannot be accepted right now. Retry when git is readable.',
+      node.relativePath,
+      undefined,
+      'tracked-shape-unavailable',
+    );
+  }
   const cognitionContent = await fs.readFile(node.cognitionUri);
   return {
     sourceKey: sourceKeyForReviewedNode(root, registry, node),
@@ -1160,6 +1251,7 @@ async function acceptPassiveCognitionChangeInLock(
     root,
     fs,
     registry,
+    runtime.trackedEntries,
     registryKey,
     entry.sourcePath,
     entry.type,
@@ -1187,6 +1279,7 @@ async function captureCurrentPairForSourcePath(
   root: CoggitWorkspaceRoot,
   fs: CoggitServices['fs'],
   registry: Registry,
+  trackedEntries: TrackedEntriesIndex | null | undefined,
   registryKey: string,
   sourcePath: string,
   entryType: 'leaf' | 'folder',
@@ -1225,11 +1318,18 @@ async function captureCurrentPairForSourcePath(
     return undefined;
   }
 
-  const sourceContent = entryType === 'leaf'
-    ? await fs.readFile(sourceUri)
-    : await readDirectFolderFingerprint(root, fs, sourceUri, normalizedPath);
-  if (sourceContent === undefined) {
-    return undefined;
+  let sourceContent: string;
+  if (entryType === 'leaf') {
+    sourceContent = await fs.readFile(sourceUri);
+  } else {
+    const direct = await readDirectFolderFingerprint(root, fs, sourceUri, normalizedPath, trackedEntries);
+    if (direct.fingerprint === undefined || direct.domain.kind === 'unavailable') {
+      // Passive acceptance must not persist a fingerprint read under the
+      // fallback domain (decision 0003
+      // (docs/decisions/0003-structural-signal-tracked-shape.md)).
+      return undefined;
+    }
+    sourceContent = direct.fingerprint;
   }
 
   const cognitionContent = await fs.readFile(cognitionUri);
@@ -1271,15 +1371,22 @@ async function isSourcePathIgnored(
   return false;
 }
 
+interface DirectFolderFingerprint {
+  fingerprint: string | undefined;
+  /** The tracked-shape domain the fingerprint was read under. */
+  domain: TrackedShapeDomain;
+}
+
 async function readDirectFolderFingerprint(
   root: CoggitWorkspaceRoot,
   fs: CoggitServices['fs'],
   directoryUri: UriComponents,
   normalizedPath: string,
-): Promise<string | undefined> {
+  trackedEntries: TrackedEntriesIndex | null | undefined,
+): Promise<DirectFolderFingerprint> {
   const stat = await fs.stat(directoryUri);
   if (!stat?.isDirectory) {
-    return undefined;
+    return { fingerprint: undefined, domain: { kind: 'non-git' } };
   }
 
   const exclusion = await createSourceExclusion(root, fs);
@@ -1295,6 +1402,10 @@ async function readDirectFolderFingerprint(
     }
   }
   const entries = await fs.readDirectory(directoryUri);
+  const shapeDomain = trackedEntries
+    ? await trackedEntries.trackedChildNames(directoryUri)
+    : { kind: 'non-git' as const };
+  const trackedNames = shapeDomain.kind === 'git' ? shapeDomain.names : null;
   const items: Array<{ name: string; kind: 'file' | 'folder' }> = [];
 
   for (const [name, type] of entries) {
@@ -1308,13 +1419,16 @@ async function readDirectFolderFingerprint(
     if (await exclusion.excludes(childUri, isDirectory)) {
       continue;
     }
+    if (trackedNames !== null && !trackedNamesHas(trackedNames, name)) {
+      continue;
+    }
     items.push({
       name,
       kind: isDirectory ? 'folder' : 'file',
     });
   }
 
-  return directoryEntryFingerprint(items);
+  return { fingerprint: directoryEntryFingerprint(items), domain: shapeDomain };
 }
 
 function sourceKeyForReviewedNode(
@@ -1373,9 +1487,7 @@ async function resolveProjectNode(
   runtime: ProjectRuntime,
   sourcePath: string,
 ): Promise<SourcePathResolution> {
-  const snapshot = await buildProjectSnapshot(root, fs, {
-    acceptance: runtime.acceptance,
-  });
+  const snapshot = await buildProjectSnapshot(root, fs, snapshotOptions(runtime));
   await runtime.registry?.flush();
   return resolveNodeInSnapshot(snapshot, root, sourcePath);
 }
