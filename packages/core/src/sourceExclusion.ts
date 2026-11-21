@@ -78,6 +78,12 @@ const COGGIT_ENGINE_OPTIONS: ScopeOptions = {
   mountPresets: [...COGGIT_SOURCE_PRESETS],
   excludeDotEntries: false,
   alignment: 'scanner',
+  // Rule sources are admitted by intent domain (decision 0004): coggit's
+  // scope answers git's question — "what is this project" — so the
+  // search-domain declarations (.ignore/.rgignore, the rg lineage) do not
+  // govern it. Pinned off explicitly, same composition-declaration status
+  // as the two options above; not a compatibility default.
+  respectIgnoreFamily: false,
 };
 
 /**

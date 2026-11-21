@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@catheadowl/pathscope':
-        specifier: ^0.2.0
-        version: 0.2.0(picomatch@4.0.5)
+        specifier: ^0.4.3
+        version: 0.4.3(picomatch@4.0.5)
       '@coggit/core':
         specifier: workspace:*
         version: link:packages/core
@@ -100,8 +100,8 @@ importers:
   packages/core:
     dependencies:
       '@catheadowl/pathscope':
-        specifier: ^0.2.0
-        version: 0.2.0(picomatch@4.0.5)
+        specifier: ^0.4.3
+        version: 0.4.3(picomatch@4.0.5)
     devDependencies:
       '@types/mocha':
         specifier: ^10.0.10
@@ -244,8 +244,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@catheadowl/pathscope@0.2.0':
-    resolution: {integrity: sha512-UPYTifRxLcuAmWSAYk5rIsp99K5TS9YmhhUc20nmiDDgUHUt57Gz1AGn/5AR6wPmV9gOij9t25ZxBaPkwflRJA==}
+  '@catheadowl/pathscope@0.4.3':
+    resolution: {integrity: sha512-yrY/Itv7vePoF0sYRKUIlEb5aq4+UKzGgEs/2W1iZxseGa5XxgCBZUvst2vH4J/cJ7b7FFEiN2r8LcNhGOJaVw==}
     engines: {node: '>=20'}
 
   '@esbuild/aix-ppc64@0.28.1':
@@ -2163,7 +2163,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@catheadowl/pathscope@0.2.0(picomatch@4.0.5)':
+  '@catheadowl/pathscope@0.4.3(picomatch@4.0.5)':
     dependencies:
       fdir: 6.5.0(picomatch@4.0.5)
       find-up: 8.0.0
