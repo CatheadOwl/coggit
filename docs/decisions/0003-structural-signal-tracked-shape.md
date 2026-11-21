@@ -105,18 +105,26 @@ answering it differently has no principled basis.
   hosts; the stale → sync → resolve loop fires only for genuine tracked
   structure change (add/remove/rename of tracked entries, including
   staging-only changes — the index, not the commit, is the shape).
-- Fresh clones reproduce the accepted fingerprints of the authoring
-  machine; the first status after a clone is fresh for unchanged structure.
-- Git absence (or a failing git binary) silently degrades to the old
-  include-all behavior; the status surface does not distinguish the
-  degraded mode.
+- Fresh clones reproduce the accepted fingerprints when the effective
+  tracked shape, the exclusion rules, and the accepted baseline match
+  the authoring machine; the first status after such a clone is fresh
+  for unchanged structure. The index-binding bullet below qualifies the
+  boundary (staged-only shape is outside the guarantee).
+- Git absence and a failing git read are different domains, not one
+  silent degradation: `non-git` (no git index governs the tree) is the
+  stable include-all semantics by design — no marker; `unavailable` (an
+  index governs the tree but cannot be read right now) degrades display
+  and is never silent — see the `tracked-shape-unverified` bullet
+  below.
 - Test fixtures and workspaces without a git repository exercise the
   fallback; agent-surface eval fixtures are unaffected by construction.
 - Folder pairs do not participate in ordered auto-acceptance: a watcher
   notification cannot prove that the re-read tracked shape preceded the
   cognition edit it is paired against, so directory-entry evidence never
-  enables ordered acceptance and folder pairs always heal through
-  explicit resolve. Leaf facts keep ordered auto-acceptance — their
+  enables ordered acceptance and a folder pair whose tracked shape
+  changed heals through explicit resolve (cognition-only changes still
+  re-accept — that path needs no ordering evidence). Leaf facts keep
+  ordered auto-acceptance — their
   watcher events carry direct causality for the file they name — guarded
   by a leaf consumption watermark: a leaf observation whose arrival
   generation is at or below the acceptance that consumed the key's record
