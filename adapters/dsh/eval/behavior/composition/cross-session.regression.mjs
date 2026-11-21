@@ -83,7 +83,7 @@ function enrichmentTexts(events) {
   const texts = []
   for (const event of events) {
     if (event.type !== 'user/message') continue
-    if (event.data?.source?.plugin !== 'enrichment') continue
+    if (event.data?.source?.kind !== 'enrichment') continue
     const content = Array.isArray(event.data.content) ? event.data.content : []
     texts.push(content.filter(block => block.type === 'text').map(block => block.text).join(''))
   }

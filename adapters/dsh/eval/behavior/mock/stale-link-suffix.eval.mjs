@@ -27,7 +27,7 @@ const ENRICHMENT = 'enrichment'
 
 function staleSuffixInjectedOnce(trace) {
   const injections = trace.userMessages
-    .filter(message => message.source?.plugin === ENRICHMENT)
+    .filter(message => message.source?.kind === ENRICHMENT)
     .filter(message => message.text.includes(COGNITION_HREF))
   if (injections.length !== 1) {
     return {
